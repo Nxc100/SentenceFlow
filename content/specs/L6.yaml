@@ -1,0 +1,47 @@
+# LevelSpec L6 (spec §4.9)
+id: L6
+cefr: "B1+/B2"
+vocab_band: 0            # 2800+短语动词:不设词表带上限,由抽审把关
+max_words: 20
+grammar_whitelist:
+  - be_present
+  - present_simple
+  - simple_question
+  - can_modal
+  - present_continuous
+  - there_be
+  - imperative
+  - past_simple
+  - comparative
+  - adverbs_frequency
+  - future_will
+  - future_going_to
+  - infinitive
+  - object_clause
+  - present_perfect
+  - conditional
+  - passive
+  - complex_clause        # +复合从句
+  - subjunctive           # 虚拟
+  - hedging               # 委婉
+can_do:
+  - "工作闲聊"
+  - "协商"
+practice:
+  flow: mixed
+  review_listening_ratio: 0.4
+  dictation_min_box: 3
+  hints:
+    ipa: hidden
+    first_letter: false
+    zh_hideable: true
+  judge:
+    strict: true
+    track_article_preposition: true
+  srs:
+    daily_new_default: 25
+    daily_new_range: [5, 50]
+    review_cap: 60
+    box_intervals_days: [1, 3, 7, 14]
+    box5_recheck_days: 21
+    listening_weight: 1.5

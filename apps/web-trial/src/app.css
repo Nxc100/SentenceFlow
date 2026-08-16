@@ -1,0 +1,201 @@
+/* 试用版页面样式 — 组件级样式在 @sentenceflow/ui;此处只有页面布局 */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--sf-bg);
+  color: var(--sf-text);
+  font-family: var(--sf-font-ui);
+}
+
+.trial-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.trial-shell--practice {
+  gap: 16px;
+}
+
+/* ---- 首页 ---- */
+.trial-hero h1 {
+  font-size: var(--sf-h1-size, 28px);
+  line-height: 36px;
+  margin: 0 0 12px;
+}
+
+.trial-tagline {
+  font-size: 17px;
+  line-height: 24px;
+  margin: 0 0 8px;
+}
+
+.trial-sub {
+  color: var(--sf-text-3);
+  font-size: 13px;
+  margin: 0;
+}
+
+.trial-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.trial-section-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-card);
+  box-shadow: var(--sf-shadow-1);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: box-shadow var(--sf-dur-fast) var(--sf-ease-standard),
+    border-color var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.trial-section-card:hover:not(:disabled) {
+  border-color: var(--sf-primary);
+  box-shadow: var(--sf-shadow-2);
+}
+
+.trial-section-card:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.trial-section-level {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--sf-primary);
+}
+
+.trial-section-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.trial-section-cando {
+  font-size: 13px;
+  color: var(--sf-text-3);
+}
+
+/* ---- 练习页 ---- */
+.trial-practice-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+}
+
+.trial-back {
+  border: none;
+  background: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--sf-text-2);
+  padding: 8px 12px;
+  border-radius: var(--sf-radius-sm);
+}
+
+.trial-back:hover {
+  background: var(--sf-panel);
+}
+
+.trial-practice-title {
+  font-size: 15px;
+  color: var(--sf-text-2);
+}
+
+.trial-practice-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.trial-parse-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.trial-parse-next {
+  display: flex;
+  justify-content: center;
+}
+
+/* ---- 主题条 / 页脚 / 本地徽标 ---- */
+.trial-themebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sf-text-3);
+  flex-wrap: wrap;
+}
+
+.trial-chip {
+  border: 1px solid var(--sf-border);
+  background: var(--sf-card);
+  color: var(--sf-text-2);
+  border-radius: var(--sf-radius-full, 999px);
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.trial-chip--on {
+  border-color: var(--sf-primary);
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+}
+
+.trial-footer {
+  margin-top: auto;
+  text-align: center;
+}
+
+.trial-cta {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-primary);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.trial-cta:hover {
+  background: var(--sf-primary-hover);
+}
+
+.trial-export-hint {
+  font-size: 13px;
+  color: var(--sf-text-3);
+  text-align: center;
+}
+
+.trial-localbadge {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  font-size: 12px;
+  color: var(--sf-text-placeholder);
+  user-select: none;
+  cursor: default;
+}

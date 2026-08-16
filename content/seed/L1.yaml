@@ -1,0 +1,348 @@
+# 种子句库 L1 — 问候 / 自我介绍 / 家庭 / 教室(格式见 content/seed/README.md)
+level: L1
+sentences:
+  - en: "How are you today?"
+    zh: "今天过得怎么样？"
+    scene: "问候"
+    func: "问候"
+    pattern: "特殊疑问句"
+    note: "How are you 是最常用的问候语。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "subj", i: [2] }
+      - { r: "advl", i: [3] }
+
+  - en: "I am very happy today."
+    zh: "我今天很开心。"
+    scene: "问候"
+    func: "表达心情"
+    pattern: "主+系+表"
+    note: "am 是 be 动词,跟在 I 后面。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "aux" }
+      - { w: "very", ipa: "ˈveri", pos: "adv" }
+      - { w: "happy", ipa: "ˈhæpi", pos: "adj" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3] }
+      - { r: "advl", i: [4] }
+
+  - en: "Nice to meet you."
+    zh: "很高兴认识你。"
+    scene: "问候"
+    func: "初次见面"
+    pattern: "固定表达"
+    note: "初次见面的固定说法,整句记住。"
+    words:
+      - { w: "Nice", ipa: "naɪs", pos: "adj" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "meet", ipa: "miːt", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+    chunks:
+      - { r: "marker", i: [0, 1, 2, 3] }
+
+  - en: "My name is Wang Lei."
+    zh: "我叫王磊。"
+    scene: "自我介绍"
+    func: "介绍姓名"
+    pattern: "主+系+表"
+    note: "介绍名字用 My name is…。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "name", ipa: "neɪm", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "Wang", ipa: "wɒŋ", pos: "propn" }
+      - { w: "Lei", ipa: "leɪ", pos: "propn" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4] }
+
+  - en: "I am a new student here."
+    zh: "我是新来的学生。"
+    scene: "自我介绍"
+    func: "介绍身份"
+    pattern: "主+系+表"
+    note: "a 用在单数可数名词前。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "aux" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "new", ipa: "njuː", pos: "adj" }
+      - { w: "student", ipa: "ˈstjuːdənt", pos: "n" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3, 4] }
+      - { r: "advl", i: [5] }
+
+  - en: "I am ten years old."
+    zh: "我十岁了。"
+    scene: "自我介绍"
+    func: "介绍年龄"
+    pattern: "主+系+表"
+    note: "说年龄用 … years old。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "aux" }
+      - { w: "ten", ipa: "ten", pos: "num" }
+      - { w: "years", ipa: "jɪəz", pos: "n" }
+      - { w: "old", ipa: "əʊld", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3, 4] }
+
+  - en: "I come from China."
+    zh: "我来自中国。"
+    scene: "自我介绍"
+    func: "介绍来处"
+    pattern: "主+谓+状"
+    note: "come from 表示来自哪里。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "come", ipa: "kʌm", pos: "v" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "China", ipa: "ˈtʃaɪnə", pos: "propn" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3] }
+
+  - en: "I like music and sports."
+    zh: "我喜欢音乐和运动。"
+    scene: "自我介绍"
+    func: "介绍爱好"
+    pattern: "主+谓+宾"
+    note: "and 连接两个并列的名词。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "music", ipa: "ˈmjuːzɪk", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "sports", ipa: "spɔːts", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+
+  - en: "This is my good friend."
+    zh: "这是我的好朋友。"
+    scene: "自我介绍"
+    func: "介绍他人"
+    pattern: "主+系+表"
+    note: "介绍别人用 This is…。"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "good", ipa: "ɡʊd", pos: "adj" }
+      - { w: "friend", ipa: "frend", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3, 4] }
+
+  - en: "My family has four people."
+    zh: "我家有四口人。"
+    scene: "家庭"
+    func: "介绍家庭"
+    pattern: "主+谓+宾"
+    note: "主语第三人称单数,have 变 has。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "family", ipa: "ˈfæməli", pos: "n" }
+      - { w: "has", ipa: "hæz", pos: "v" }
+      - { w: "four", ipa: "fɔː", pos: "num" }
+      - { w: "people", ipa: "ˈpiːpəl", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+
+  - en: "My father is a doctor."
+    zh: "我爸爸是医生。"
+    scene: "家庭"
+    func: "介绍职业"
+    pattern: "主+系+表"
+    note: "说职业时职业前要加 a。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "father", ipa: "ˈfɑːðə", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "doctor", ipa: "ˈdɒktə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4] }
+
+  - en: "My mother cooks very well."
+    zh: "我妈妈做饭很好吃。"
+    scene: "家庭"
+    func: "描述家人"
+    pattern: "主+谓+状"
+    note: "well 修饰动词,说\"做得好\"。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "mother", ipa: "ˈmʌðə", pos: "n" }
+      - { w: "cooks", ipa: "kʊks", pos: "v" }
+      - { w: "very", ipa: "ˈveri", pos: "adv" }
+      - { w: "well", ipa: "wel", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4] }
+
+  - en: "My little sister is seven."
+    zh: "我妹妹七岁。"
+    scene: "家庭"
+    func: "介绍家人"
+    pattern: "主+系+表"
+    note: "little sister 指妹妹。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "little", ipa: "ˈlɪtəl", pos: "adj" }
+      - { w: "sister", ipa: "ˈsɪstə", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "seven", ipa: "ˈsevən", pos: "num" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "link", i: [3] }
+      - { r: "comp", i: [4] }
+
+  - en: "I love my family very much."
+    zh: "我非常爱我的家人。"
+    scene: "家庭"
+    func: "表达情感"
+    pattern: "主+谓+宾+状"
+    note: "very much 放句尾表示程度。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "love", ipa: "lʌv", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "family", ipa: "ˈfæməli", pos: "n" }
+      - { w: "very", ipa: "ˈveri", pos: "adv" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+
+  - en: "The classroom is big and clean."
+    zh: "教室又大又干净。"
+    scene: "教室"
+    func: "描述环境"
+    pattern: "主+系+表"
+    note: "and 连接两个并列形容词。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "classroom", ipa: "ˈklɑːsruːm", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "big", ipa: "bɪɡ", pos: "adj" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "clean", ipa: "kliːn", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4, 5] }
+
+  - en: "Where is my English book?"
+    zh: "我的英语书在哪儿？"
+    scene: "教室"
+    func: "找东西"
+    pattern: "特殊疑问句"
+    note: "问位置用 Where is…?"
+    words:
+      - { w: "Where", ipa: "weə", pos: "wh" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "English", ipa: "ˈɪŋɡlɪʃ", pos: "propn" }
+      - { w: "book", ipa: "bʊk", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "subj", i: [2, 3, 4] }
+
+  - en: "We read books at school."
+    zh: "我们在学校看书。"
+    scene: "教室"
+    func: "描述活动"
+    pattern: "主+谓+宾+状"
+    note: "at school 表示在学校。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "read", ipa: "riːd", pos: "v" }
+      - { w: "books", ipa: "bʊks", pos: "n" }
+      - { w: "at", ipa: "æt", pos: "prep" }
+      - { w: "school", ipa: "skuːl", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4] }
+
+  - en: "Do you have a pen?"
+    zh: "你有笔吗？"
+    scene: "教室"
+    func: "借东西"
+    pattern: "一般疑问句"
+    note: "一般疑问句用 Do 开头。"
+    words:
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "pen", ipa: "pen", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+
+  - en: "The teacher is very kind."
+    zh: "老师人很好。"
+    scene: "教室"
+    func: "描述他人"
+    pattern: "主+系+表"
+    note: "kind 形容人和蔼友善。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "teacher", ipa: "ˈtiːtʃə", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "very", ipa: "ˈveri", pos: "adv" }
+      - { w: "kind", ipa: "kaɪnd", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4] }
+
+  - en: "I go to school every day."
+    zh: "我每天都去上学。"
+    scene: "教室"
+    func: "日常习惯"
+    pattern: "主+谓+状"
+    note: "every day 表示每天。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "go", ipa: "ɡəʊ", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "school", ipa: "skuːl", pos: "n" }
+      - { w: "every", ipa: "ˈevri", pos: "adj" }
+      - { w: "day", ipa: "deɪ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }

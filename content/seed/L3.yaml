@@ -1,0 +1,193 @@
+# 种子句库 L3 — 餐厅点餐 / 约时间 / 天气 / 周末活动(格式见 content/seed/README.md)
+level: L3
+sentences:
+  - en: "I would like a cup of tea."
+    zh: "我想要一杯茶。"
+    scene: "餐厅"
+    func: "点餐"
+    pattern: "主+谓+宾"
+    note: "would like 是礼貌地说\"想要\"。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "would", ipa: "wʊd", pos: "modal" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "cup", ipa: "kʌp", pos: "n" }
+      - { w: "of", ipa: "ɒv", pos: "prep" }
+      - { w: "tea", ipa: "tiː", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4, 5, 6] }
+
+  - en: "Could we see the menu, please?"
+    zh: "请给我们看看菜单好吗？"
+    scene: "餐厅"
+    func: "要菜单"
+    pattern: "情态动词疑问句"
+    note: "Could 比 Can 更客气。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "menu", ipa: "ˈmenjuː", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "marker", i: [5] }
+
+  - en: "The fish here tastes better than the chicken."
+    zh: "这儿的鱼比鸡肉好吃。"
+    scene: "餐厅"
+    func: "比较推荐"
+    pattern: "比较级"
+    note: "better 是 good 的比较级。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "fish", ipa: "fɪʃ", pos: "n" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "tastes", ipa: "teɪsts", pos: "v" }
+      - { w: "better", ipa: "ˈbetə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "chicken", ipa: "ˈtʃɪkɪn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "link", i: [3] }
+      - { r: "comp", i: [4, 5, 6, 7] }
+
+  - en: "We ordered two bowls of noodles."
+    zh: "我们点了两碗面。"
+    scene: "餐厅"
+    func: "点餐"
+    pattern: "一般过去时"
+    note: "ordered 是 order 的过去式。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "ordered", ipa: "ˈɔːdəd", pos: "v" }
+      - { w: "two", ipa: "tuː", pos: "num" }
+      - { w: "bowls", ipa: "bəʊlz", pos: "n" }
+      - { w: "of", ipa: "ɒv", pos: "prep" }
+      - { w: "noodles", ipa: "ˈnuːdəlz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5] }
+
+  - en: "Are you free tomorrow afternoon?"
+    zh: "你明天下午有空吗？"
+    scene: "约时间"
+    func: "询问时间"
+    pattern: "一般疑问句"
+    note: "free 在这里指有空。"
+    words:
+      - { w: "Are", ipa: "ɑː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "free", ipa: "friː", pos: "adj" }
+      - { w: "tomorrow", ipa: "təˈmɒrəʊ", pos: "adv" }
+      - { w: "afternoon", ipa: "ˌɑːftəˈnuːn", pos: "n" }
+    chunks:
+      - { r: "link", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "comp", i: [2] }
+      - { r: "advl", i: [3, 4] }
+
+  - en: "Let's meet at the station at nine."
+    zh: "我们九点在车站见吧。"
+    scene: "约时间"
+    func: "定时间地点"
+    pattern: "祈使句"
+    note: "Let's 后面直接跟动词原形。"
+    words:
+      - { w: "Let's", ipa: "lets", pos: "v" }
+      - { w: "meet", ipa: "miːt", pos: "v" }
+      - { w: "at", ipa: "æt", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "station", ipa: "ˈsteɪʃən", pos: "n" }
+      - { w: "at", ipa: "æt", pos: "prep" }
+      - { w: "nine", ipa: "naɪn", pos: "num" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6] }
+
+  - en: "Sorry, I was busy last night."
+    zh: "抱歉，我昨晚很忙。"
+    scene: "约时间"
+    func: "解释原因"
+    pattern: "一般过去时"
+    note: "was 是 is/am 的过去式。"
+    words:
+      - { w: "Sorry", ipa: "ˈsɒri", pos: "adj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "was", ipa: "wɒz", pos: "aux" }
+      - { w: "busy", ipa: "ˈbɪzi", pos: "adj" }
+      - { w: "last", ipa: "lɑːst", pos: "adj" }
+      - { w: "night", ipa: "naɪt", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "advl", i: [4, 5] }
+
+  - en: "It often rains here in spring."
+    zh: "这里春天经常下雨。"
+    scene: "天气"
+    func: "描述天气"
+    pattern: "频度副词"
+    note: "often 放在动词前面。"
+    words:
+      - { w: "It", ipa: "ɪt", pos: "pron" }
+      - { w: "often", ipa: "ˈɒfən", pos: "adv" }
+      - { w: "rains", ipa: "reɪnz", pos: "v" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "spring", ipa: "sprɪŋ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3] }
+      - { r: "advl", i: [4, 5] }
+
+  - en: "Yesterday was colder than today."
+    zh: "昨天比今天冷。"
+    scene: "天气"
+    func: "比较天气"
+    pattern: "比较级"
+    note: "形容词加 er 表示更……。"
+    words:
+      - { w: "Yesterday", ipa: "ˈjestədeɪ", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "aux" }
+      - { w: "colder", ipa: "ˈkəʊldə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3, 4] }
+
+  - en: "We visited my grandparents last weekend."
+    zh: "上周末我们去看了爷爷奶奶。"
+    scene: "周末活动"
+    func: "讲述经历"
+    pattern: "一般过去时"
+    note: "visited 是 visit 的过去式。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "visited", ipa: "ˈvɪzɪtɪd", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "grandparents", ipa: "ˈɡrænpeərənts", pos: "n" }
+      - { w: "last", ipa: "lɑːst", pos: "adj" }
+      - { w: "weekend", ipa: "ˌwiːkˈend", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }

@@ -1,0 +1,40 @@
+[package]
+name = "sf-pipeline"
+description = "Unified generation pipeline (factory/user profiles): prompt assembly, streaming JSON parsing, deterministic validation (vocab band / chunks / IPA / simhash / lexicon reconciliation), triage (spec §7.4)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sf-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+# feature-gated: content store + factory CLI
+rusqlite = { workspace = true, optional = true }
+clap = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+sf-llm = { workspace = true, optional = true }
+
+[features]
+default = []
+# SQLite content store (content.db / user_content.db) — shared by the factory
+# CLI and the desktop app.
+store = ["dep:rusqlite"]
+# The vendor-side `sf` CLI (§8): seed build, gold regression, trial export,
+# channel generation.
+factory = ["store", "dep:clap", "dep:anyhow", "dep:tokio", "dep:futures", "dep:sf-llm"]
+
+[[bin]]
+name = "sf"
+required-features = ["factory"]
+path = "src/bin/sf.rs"
+
+[dev-dependencies]
+

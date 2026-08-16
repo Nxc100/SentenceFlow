@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "rev": 1,
+  "enabled": {
+    "opencode": true,
+    "deepseek": true,
+    "zen": true,
+    "ollama": true
+  },
+  "notices": {},
+  "opencode_known_bad": [],
+  "free_list_fingerprint": "",
+  "deepseek_prices": {
+    "prompt_per_m": 2.0,
+    "completion_per_m": 8.0
+  },
+  "prices_updated_at": 1755302400,
+  "default_microbatch": 20
+}

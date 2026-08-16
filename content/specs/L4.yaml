@@ -1,0 +1,40 @@
+# LevelSpec L4 (spec §4.9)
+id: L4
+cefr: "A2+/B1"
+vocab_band: 2000
+max_words: 14
+grammar_whitelist:
+  - be_present
+  - present_simple
+  - simple_question
+  - can_modal
+  - present_continuous
+  - there_be
+  - imperative
+  - past_simple
+  - comparative
+  - adverbs_frequency
+  - future_will           # +将来时
+  - future_going_to
+  - infinitive            # 不定式
+  - object_clause         # 宾语从句
+can_do:
+  - "电话沟通"
+  - "讲经历"
+practice:
+  flow: typing
+  review_listening_ratio: 0.3
+  dictation_min_box: 0
+  hints:
+    ipa: on_click
+    first_letter: false
+    zh_hideable: false
+  judge:
+    strict: true
+  srs:
+    daily_new_default: 20
+    daily_new_range: [5, 50]
+    review_cap: 60
+    box_intervals_days: [1, 3, 7, 14]
+    box5_recheck_days: 30
+    listening_weight: 1.5

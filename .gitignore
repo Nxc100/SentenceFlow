@@ -1,0 +1,41 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Tauri
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/target/
+
+# wasm build output consumed by the web trial
+crates/sf-wasm/pkg/
+apps/web-trial/src/wasm/pkg/
+
+# Content build artifacts (source YAML stays in git; compiled DBs do not)
+content/build/
+*.db
+*.db-journal
+
+# Local packaging output / UI-test artifacts
+dist-portable/
+.playwright-mcp/
+
+# Secrets — the Ed25519 issuer private key must NEVER enter the repository.
+*.secret
+*.pem
+private-key*
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs / scratch
+*.log

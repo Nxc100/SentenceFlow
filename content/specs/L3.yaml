@@ -1,0 +1,36 @@
+# LevelSpec L3 (spec §4.9)
+id: L3
+cefr: "A2"
+vocab_band: 1500
+max_words: 12
+grammar_whitelist:
+  - be_present
+  - present_simple
+  - simple_question
+  - can_modal
+  - present_continuous
+  - there_be
+  - imperative
+  - past_simple           # +一般过去
+  - comparative           # 比较级
+  - adverbs_frequency     # 频度副词
+can_do:
+  - "点餐"
+  - "约时间"
+practice:
+  flow: typing                  # 打字为主
+  review_listening_ratio: 0.3   # 复习句 30% 转听打
+  dictation_min_box: 0
+  hints:
+    ipa: on_click               # 音标点击显
+    first_letter: false
+    zh_hideable: false
+  judge:
+    strict: true                # 严格
+  srs:
+    daily_new_default: 20
+    daily_new_range: [5, 50]
+    review_cap: 60
+    box_intervals_days: [1, 3, 7, 14]
+    box5_recheck_days: 30
+    listening_weight: 1.5

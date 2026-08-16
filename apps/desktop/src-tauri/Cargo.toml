@@ -1,0 +1,33 @@
+[package]
+name = "sentenceflow-desktop"
+description = "SentenceFlow desktop shell (Tauri 2): commands, rusqlite storage, channel orchestration, licensing (spec §7)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "sentenceflow_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+sf-core = { workspace = true }
+sf-pipeline = { workspace = true, features = ["store"] }
+sf-llm = { workspace = true }
+sf-license = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+rusqlite = { workspace = true }
+keyring = { workspace = true }
+secrecy = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tauri = { version = "2", features = [] }
+zip = { version = "2", default-features = false, features = ["deflate"] }

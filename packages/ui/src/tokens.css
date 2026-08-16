@@ -1,0 +1,204 @@
+/* ============================================================
+   句流 SentenceFlow 设计令牌 — 规范 §5.2/§5.3/§5.4/§6.1 的唯一实现
+   主题:浅色(默认) / 深色 [data-theme="dark"] 或系统偏好 / 护眼纸色 [data-theme="paper"]
+   ============================================================ */
+
+:root {
+  /* ---- 品牌蓝 (§5.2) ---- */
+  --sf-blue-50: #EEF3FE;
+  --sf-blue-100: #D9E4FC;
+  --sf-blue-200: #B3C9F9;
+  --sf-blue-300: #84A7F3;
+  --sf-blue-400: #5583EC;
+  --sf-blue-500: #2E63E7;
+  --sf-blue-600: #234FC4;
+  --sf-blue-700: #1B3E9C;
+
+  /* ---- 中性灰(带 4° 蓝倾向) ---- */
+  --sf-gray-0: #FFFFFF;
+  --sf-gray-50: #F6F7F9;
+  --sf-gray-100: #EEF0F3;
+  --sf-gray-200: #E2E5EA;
+  --sf-gray-300: #C9CED6;
+  --sf-gray-400: #A6ADB8;
+  --sf-gray-500: #7C8492;
+  --sf-gray-600: #575D66;
+  --sf-gray-800: #23262B;
+
+  /* ---- 语义色 ---- */
+  --sf-success: #16A34A;
+  --sf-success-bg: #E8F7EE;
+  --sf-warning: #D97706;
+  --sf-warning-bg: #FDF3E3;
+  --sf-error: #DC2626;
+  --sf-error-bg: #FDECEC;
+
+  /* ---- 语义角色变量(随主题翻转;组件一律使用这些) ---- */
+  --sf-bg: var(--sf-gray-50);            /* 页面底色 */
+  --sf-panel: var(--sf-gray-100);        /* 次级底 */
+  --sf-card: var(--sf-gray-0);           /* 卡片、弹窗 */
+  --sf-border: var(--sf-gray-200);
+  --sf-slot-underline: var(--sf-gray-300);
+  --sf-text: var(--sf-gray-800);
+  --sf-text-2: var(--sf-gray-600);
+  --sf-text-3: var(--sf-gray-500);
+  --sf-text-placeholder: var(--sf-gray-400);
+  --sf-primary: var(--sf-blue-500);
+  --sf-primary-hover: var(--sf-blue-600);
+  --sf-primary-disabled: var(--sf-blue-200);
+  --sf-primary-soft: var(--sf-blue-50);
+  --sf-primary-soft-hover: var(--sf-blue-100);
+
+  /* ---- 词性 POS 胶囊色(教学专属,禁止挪用 §5.1) ---- */
+  --sf-pos-pron-bg: #FFE3EE;  --sf-pos-pron-text: #C2255C;
+  --sf-pos-n-bg: #FFE2DC;     --sf-pos-n-text: #C43A2B;
+  --sf-pos-v-bg: #FCE0F3;     --sf-pos-v-text: #B02890;
+  --sf-pos-aux-bg: #EBE3FC;   --sf-pos-aux-text: #6B3FD1;
+  --sf-pos-modal-bg: #E6DEFA; --sf-pos-modal-text: #5F3DC4;
+  --sf-pos-adj-bg: #F0E4FB;   --sf-pos-adj-text: #8A3FC7;
+  --sf-pos-wh-bg: #E1EBFF;    --sf-pos-wh-text: #2B5BD7;
+  --sf-pos-adv-bg: #DFF3E3;   --sf-pos-adv-text: #1F8A4C;
+  --sf-pos-prep-bg: #FFEDD5;  --sf-pos-prep-text: #C46A0C;
+  --sf-pos-art-bg: #D9F2EF;   --sf-pos-art-text: #0B7F73;
+  --sf-pos-conj-bg: #DBF0FA;  --sf-pos-conj-text: #0B6E99;
+  --sf-pos-num-bg: #FFF3CD;   --sf-pos-num-text: #A67C00;
+  --sf-pos-propn-bg: #FCEFC7; --sf-pos-propn-text: #9C6E00;
+  --sf-pos-part-bg: #E9E9F2;  --sf-pos-part-text: #5A6472;
+
+  /* ---- 成分 ROLE 卡片色(底/文字/描边) ---- */
+  --sf-role-subj-bg: #FBE3E9;   --sf-role-subj-text: #B3536E;   --sf-role-subj-border: #F2C4D0;
+  --sf-role-pred-bg: #E9E3FA;   --sf-role-pred-text: #6D51B8;   --sf-role-pred-border: #CDBEF0;
+  --sf-role-link-bg: #E7E9F8;   --sf-role-link-text: #5B62A8;   --sf-role-link-border: #C3C8EC;
+  --sf-role-obj-bg: #DEEBFB;    --sf-role-obj-text: #3D6BB3;    --sf-role-obj-border: #B7D0F1;
+  --sf-role-comp-bg: #E2E7FB;   --sf-role-comp-text: #4A5AB8;   --sf-role-comp-border: #BFC8F0;
+  --sf-role-advl-bg: #FBF1D3;   --sf-role-advl-text: #9A7A17;   --sf-role-advl-border: #EBD9A0;
+  --sf-role-objc-bg: #FCE8DB;   --sf-role-objc-text: #B0642B;   --sf-role-objc-border: #F0CBA8;
+  --sf-role-marker-bg: #EDEFF3; --sf-role-marker-text: #5A6472; --sf-role-marker-border: #D5D9E0;
+
+  /* ---- 圆角 (§5.4) ---- */
+  --sf-radius-sm: 8px;
+  --sf-radius-md: 12px;
+  --sf-radius-lg: 16px;
+  --sf-radius-xl: 20px;
+  --sf-radius-full: 9999px;
+
+  /* ---- 阴影 ---- */
+  --sf-shadow-1: 0 1px 2px rgba(20, 30, 60, 0.06);
+  --sf-shadow-2: 0 4px 12px rgba(20, 30, 60, 0.08);
+  --sf-shadow-3: 0 12px 32px rgba(20, 30, 60, 0.14);
+
+  /* ---- 动效 (§6.1) ---- */
+  --sf-dur-instant: 80ms;
+  --sf-dur-fast: 140ms;
+  --sf-dur-base: 220ms;
+  --sf-dur-slow: 320ms;
+  --sf-dur-celebrate: 1200ms;
+  --sf-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sf-ease-out: cubic-bezier(0, 0, 0, 1);
+  --sf-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- 字体 (§5.3) ---- */
+  --sf-font-en: "Nunito", ui-rounded, system-ui, sans-serif;
+  --sf-font-zh: "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans SC", sans-serif;
+  --sf-font-ipa: "Charis SIL", "Gentium Plus", "Noto Sans", sans-serif;
+
+  /* ---- 字阶 size/line-height ---- */
+  --sf-fs-display: 40px; --sf-lh-display: 48px;
+  --sf-fs-h1: 28px;      --sf-lh-h1: 36px;
+  --sf-fs-h2: 22px;      --sf-lh-h2: 30px;
+  --sf-fs-h3: 17px;      --sf-lh-h3: 24px;
+  --sf-fs-body: 15px;    --sf-lh-body: 22px;
+  --sf-fs-caption: 13px; --sf-lh-caption: 18px;
+  --sf-fs-micro: 11px;   --sf-lh-micro: 14px;
+
+  /* ---- 练习区字号 ---- */
+  --sf-fs-practice-letter: clamp(24px, 4.2vw, 40px);
+  --sf-fs-parse-word: clamp(26px, 4.6vw, 44px);
+  --sf-fs-ipa: 13px;
+  --sf-fs-pos-label: 12px;
+  --sf-fs-role-name: 13px;
+  --sf-fs-zh-prompt: clamp(18px, 2.6vw, 24px);
+
+  /* ---- 遮罩 ---- */
+  --sf-overlay: rgba(16, 20, 30, 0.45);
+}
+
+/* ============ 深色模式共享值(§5.2 深色) ============ */
+/* 语法色派生规则见 scripts/derive-dark-colors.mjs:
+   文字提亮(锚点 #B3536E→#E58BA4),底=文字 14% 透明,描边=24% 透明 */
+
+/* 显式深色 */
+[data-theme="dark"] {
+  --sf-bg: #101114;
+  --sf-panel: #17181C;
+  --sf-card: #1E2026;
+  --sf-border: #2A2D34;
+  --sf-slot-underline: #3A3E47;
+  --sf-text: #E8EAEE;
+  --sf-text-2: #B6BAC3;
+  --sf-text-3: #8A8F9A;
+  --sf-text-placeholder: #6A707C;
+  --sf-primary: var(--sf-blue-400);
+  --sf-primary-hover: var(--sf-blue-300);
+  --sf-primary-disabled: #2C3A5E;
+  --sf-primary-soft: rgba(85, 131, 236, 0.16);
+  --sf-primary-soft-hover: rgba(85, 131, 236, 0.24);
+  --sf-success-bg: rgba(22, 163, 74, 0.16);
+  --sf-warning-bg: rgba(217, 119, 6, 0.16);
+  --sf-error-bg: rgba(220, 38, 38, 0.16);
+  --sf-overlay: rgba(0, 0, 0, 0.6);
+  --sf-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sf-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --sf-shadow-3: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  --sf-pos-pron-text: #F976A4; --sf-pos-pron-bg: rgba(249, 118, 164, 0.14);
+  --sf-pos-n-text: #F98376;    --sf-pos-n-bg: rgba(249, 131, 118, 0.14);
+  --sf-pos-v-text: #F976DA;    --sf-pos-v-bg: rgba(249, 118, 218, 0.14);
+  --sf-pos-aux-text: #9E76F9;  --sf-pos-aux-bg: rgba(158, 118, 249, 0.14);
+  --sf-pos-modal-text: #997BF5; --sf-pos-modal-bg: rgba(153, 123, 245, 0.14);
+  --sf-pos-adj-text: #BE79F6;  --sf-pos-adj-bg: rgba(190, 121, 246, 0.14);
+  --sf-pos-wh-text: #769BF9;   --sf-pos-wh-bg: rgba(118, 155, 249, 0.14);
+  --sf-pos-adv-text: #76F9AD;  --sf-pos-adv-bg: rgba(118, 249, 173, 0.14);
+  --sf-pos-prep-text: #F9B976; --sf-pos-prep-bg: rgba(249, 185, 118, 0.14);
+  --sf-pos-art-text: #76F9EC;  --sf-pos-art-bg: rgba(118, 249, 236, 0.14);
+  --sf-pos-conj-text: #76D2F9; --sf-pos-conj-bg: rgba(118, 210, 249, 0.14);
+  --sf-pos-num-text: #F9D876;  --sf-pos-num-bg: rgba(249, 216, 118, 0.14);
+  --sf-pos-propn-text: #F9D376; --sf-pos-propn-bg: rgba(249, 211, 118, 0.14);
+  --sf-pos-part-text: #AAB5C5; --sf-pos-part-bg: rgba(170, 181, 197, 0.14);
+
+  --sf-role-subj-text: #E48BA4;   --sf-role-subj-bg: rgba(228, 139, 164, 0.14);   --sf-role-subj-border: rgba(228, 139, 164, 0.24);
+  --sf-role-pred-text: #A288E8;   --sf-role-pred-bg: rgba(162, 136, 232, 0.14);   --sf-role-pred-border: rgba(162, 136, 232, 0.24);
+  --sf-role-link-text: #959BDB;   --sf-role-link-bg: rgba(149, 155, 219, 0.14);   --sf-role-link-border: rgba(149, 155, 219, 0.24);
+  --sf-role-obj-text: #7FABF0;    --sf-role-obj-bg: rgba(127, 171, 240, 0.14);    --sf-role-obj-border: rgba(127, 171, 240, 0.24);
+  --sf-role-comp-text: #8694E9;   --sf-role-comp-bg: rgba(134, 148, 233, 0.14);   --sf-role-comp-border: rgba(134, 148, 233, 0.24);
+  --sf-role-advl-text: #F9D976;   --sf-role-advl-bg: rgba(249, 217, 118, 0.14);   --sf-role-advl-border: rgba(249, 217, 118, 0.24);
+  --sf-role-objc-text: #F9AE76;   --sf-role-objc-bg: rgba(249, 174, 118, 0.14);   --sf-role-objc-border: rgba(249, 174, 118, 0.24);
+  --sf-role-marker-text: #AAB5C5; --sf-role-marker-bg: rgba(170, 181, 197, 0.14); --sf-role-marker-border: rgba(170, 181, 197, 0.24);
+}
+
+/* 护眼纸色 (§5.2) */
+[data-theme="paper"] {
+  --sf-bg: #F7F2E7;
+  --sf-card: #FDFAF2;
+  --sf-panel: #F2ECDD;
+}
+
+/* 全局降级:减少动效 (§6.1) */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --sf-dur-instant: 120ms;
+    --sf-dur-fast: 120ms;
+    --sf-dur-base: 120ms;
+    --sf-dur-slow: 120ms;
+    --sf-dur-celebrate: 120ms;
+    --sf-ease-spring: cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+[data-motion="reduced"] {
+  --sf-dur-instant: 120ms;
+  --sf-dur-fast: 120ms;
+  --sf-dur-base: 120ms;
+  --sf-dur-slow: 120ms;
+  --sf-dur-celebrate: 120ms;
+  --sf-ease-spring: cubic-bezier(0.2, 0, 0, 1);
+}

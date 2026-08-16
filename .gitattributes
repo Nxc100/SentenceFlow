@@ -1,0 +1,9 @@
+# 仓库统一 LF;Windows 检出也保持 LF(rustfmt/prettier/CI 一致)
+* text=auto eol=lf
+
+# 二进制
+*.png binary
+*.ico binary
+*.wasm binary
+*.woff2 binary
+*.onnx binary

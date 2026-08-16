@@ -1,0 +1,239 @@
+/* 基础组件样式(§5.5 核心组件) — 类名前缀 sf- */
+
+/* ---- 按钮 ---- */
+.sf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--sf-radius-md);
+  font-family: var(--sf-font-zh);
+  font-size: var(--sf-fs-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--sf-dur-fast) var(--sf-ease-standard),
+    transform var(--sf-dur-instant) var(--sf-ease-standard);
+  user-select: none;
+}
+.sf-btn:active { transform: scale(0.98); }
+.sf-btn:disabled { cursor: not-allowed; }
+
+.sf-btn--primary { background: var(--sf-primary); color: #fff; }
+.sf-btn--primary:hover:not(:disabled) { background: var(--sf-primary-hover); }
+.sf-btn--primary:disabled { background: var(--sf-primary-disabled); }
+
+.sf-btn--secondary {
+  background: var(--sf-card);
+  color: var(--sf-text);
+  border: 1px solid var(--sf-border);
+}
+.sf-btn--secondary:hover:not(:disabled) { background: var(--sf-panel); }
+.sf-btn--secondary:disabled { color: var(--sf-text-placeholder); }
+
+.sf-btn--ghost { background: transparent; color: var(--sf-primary); }
+.sf-btn--ghost:hover:not(:disabled) { background: var(--sf-primary-soft); }
+.sf-btn--ghost:disabled { color: var(--sf-text-placeholder); }
+
+/* ---- 开关 ---- */
+.sf-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  flex: none;
+  cursor: pointer;
+}
+.sf-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.sf-switch__track {
+  position: absolute;
+  inset: 0;
+  background: var(--sf-panel);
+  border-radius: var(--sf-radius-full);
+  transition: background var(--sf-dur-fast) var(--sf-ease-standard);
+}
+.sf-switch__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: var(--sf-card);
+  border-radius: 50%;
+  box-shadow: var(--sf-shadow-1);
+  transition: transform var(--sf-dur-fast) var(--sf-ease-standard);
+}
+.sf-switch input:checked + .sf-switch__track { background: var(--sf-primary); }
+.sf-switch input:checked + .sf-switch__track .sf-switch__thumb {
+  transform: translateX(18px);
+}
+.sf-switch input:focus-visible + .sf-switch__track {
+  outline: 2px solid var(--sf-primary);
+  outline-offset: 2px;
+}
+
+/* ---- 弹窗 ---- */
+.sf-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--sf-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: sf-fade-in var(--sf-dur-fast) var(--sf-ease-out);
+}
+.sf-modal {
+  background: var(--sf-card);
+  border-radius: var(--sf-radius-xl);
+  box-shadow: var(--sf-shadow-3);
+  max-width: 560px;
+  width: calc(100% - 48px);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+  animation: sf-pop-in var(--sf-dur-base) var(--sf-ease-spring);
+}
+.sf-modal__title {
+  font-size: var(--sf-fs-h2);
+  line-height: var(--sf-lh-h2);
+  font-weight: 600;
+  color: var(--sf-text);
+  margin: 0 0 12px;
+}
+
+/* ---- Toast ---- */
+.sf-toast-region {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 200;
+  pointer-events: none;
+}
+.sf-toast {
+  background: var(--sf-gray-800);
+  color: #fff;
+  font-size: var(--sf-fs-caption);
+  line-height: var(--sf-lh-caption);
+  padding: 10px 18px;
+  border-radius: var(--sf-radius-full);
+  box-shadow: var(--sf-shadow-2);
+  animation: sf-toast-in var(--sf-dur-base) var(--sf-ease-spring);
+}
+[data-theme="dark"] .sf-toast { background: var(--sf-card); color: var(--sf-text); }
+.sf-toast--success { background: var(--sf-success); }
+.sf-toast--error { background: var(--sf-error); }
+
+/* ---- 进度条 (4px) ---- */
+.sf-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--sf-panel);
+  border-radius: var(--sf-radius-full);
+  overflow: hidden;
+}
+.sf-progress__fill {
+  height: 100%;
+  background: var(--sf-primary);
+  border-radius: var(--sf-radius-full);
+  transition: width var(--sf-dur-base) var(--sf-ease-standard);
+}
+
+/* ---- 词性胶囊(高 22) ---- */
+.sf-pos-capsule {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--sf-radius-full);
+  font-family: var(--sf-font-zh);
+  font-size: var(--sf-fs-pos-label);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ---- 成分卡片(圆角 16 描边 1.5) ---- */
+.sf-role-card {
+  border-radius: var(--sf-radius-lg);
+  border: 1.5px solid;
+  padding: 10px 14px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.sf-role-card__name {
+  font-family: var(--sf-font-zh);
+  font-size: var(--sf-fs-role-name);
+  font-weight: 500;
+}
+
+/* ---- 热力日历(5 级绿) ---- */
+.sf-heatmap { display: flex; gap: 3px; }
+.sf-heatmap__col { display: flex; flex-direction: column; gap: 3px; }
+.sf-heatmap__cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--sf-panel);
+}
+.sf-heatmap__cell[data-level="1"] { background: #C9EED6; }
+.sf-heatmap__cell[data-level="2"] { background: #8FDCAA; }
+.sf-heatmap__cell[data-level="3"] { background: #4CBF78; }
+.sf-heatmap__cell[data-level="4"] { background: #16A34A; }
+[data-theme="dark"] .sf-heatmap__cell[data-level="1"] { background: #14351F; }
+[data-theme="dark"] .sf-heatmap__cell[data-level="2"] { background: #1C5230; }
+[data-theme="dark"] .sf-heatmap__cell[data-level="3"] { background: #1F7B41; }
+[data-theme="dark"] .sf-heatmap__cell[data-level="4"] { background: #22C55E; }
+
+/* ---- 统计卡 ---- */
+.sf-stat-card {
+  background: var(--sf-card);
+  border-radius: var(--sf-radius-lg);
+  box-shadow: var(--sf-shadow-1);
+  padding: 16px 20px;
+  min-width: 120px;
+}
+.sf-stat-card__value {
+  font-size: var(--sf-fs-h1);
+  line-height: var(--sf-lh-h1);
+  font-weight: 700;
+  color: var(--sf-text);
+  font-variant-numeric: tabular-nums;
+}
+.sf-stat-card__label {
+  font-size: var(--sf-fs-caption);
+  line-height: var(--sf-lh-caption);
+  color: var(--sf-text-3);
+  margin-top: 2px;
+}
+
+/* ---- 通用动画 ---- */
+@keyframes sf-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sf-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sf-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sf-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}

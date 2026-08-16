@@ -1,0 +1,2772 @@
+{
+  "sections": [
+    {
+      "level": "L1",
+      "title": "L1 体验节",
+      "spec": {
+        "id": "L1",
+        "cefr": "A1",
+        "vocab_band": 500,
+        "max_words": 8,
+        "grammar_whitelist": [
+          "be_present",
+          "present_simple",
+          "simple_question"
+        ],
+        "can_do": [
+          "打招呼",
+          "自我介绍"
+        ],
+        "practice": {
+          "flow": "reorder_then_typing",
+          "review_listening_ratio": 0.0,
+          "dictation_min_box": 0,
+          "hints": {
+            "ipa": "always",
+            "first_letter": true,
+            "zh_hideable": false
+          },
+          "judge": {
+            "strict": false,
+            "track_article_preposition": false
+          },
+          "srs": {
+            "daily_new_default": 10,
+            "daily_new_range": [
+              5,
+              50
+            ],
+            "review_cap": 60,
+            "box_intervals_days": [
+              1,
+              2,
+              4,
+              7
+            ],
+            "box5_recheck_days": 12,
+            "listening_weight": 1.5
+          }
+        }
+      },
+      "sentences": [
+        {
+          "id": 1,
+          "level": "L1",
+          "scene": "问候",
+          "func": "问候",
+          "pattern": "特殊疑问句",
+          "zh": "今天过得怎么样？",
+          "en": "How are you today?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "How",
+              "ipa": "haʊ",
+              "pos": "wh"
+            },
+            {
+              "w": "are",
+              "ipa": "ɑː",
+              "pos": "aux"
+            },
+            {
+              "w": "you",
+              "ipa": "juː",
+              "pos": "pron"
+            },
+            {
+              "w": "today",
+              "ipa": "təˈdeɪ",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                3
+              ]
+            }
+          ],
+          "note": "How are you 是最常用的问候语。",
+          "simhash": 12778814517225505117
+        },
+        {
+          "id": 2,
+          "level": "L1",
+          "scene": "问候",
+          "func": "表达心情",
+          "pattern": "主+系+表",
+          "zh": "我今天很开心。",
+          "en": "I am very happy today.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "am",
+              "ipa": "æm",
+              "pos": "aux"
+            },
+            {
+              "w": "very",
+              "ipa": "ˈveri",
+              "pos": "adv"
+            },
+            {
+              "w": "happy",
+              "ipa": "ˈhæpi",
+              "pos": "adj"
+            },
+            {
+              "w": "today",
+              "ipa": "təˈdeɪ",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                2,
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4
+              ]
+            }
+          ],
+          "note": "am 是 be 动词,跟在 I 后面。",
+          "simhash": 13704734337954748949
+        },
+        {
+          "id": 3,
+          "level": "L1",
+          "scene": "问候",
+          "func": "初次见面",
+          "pattern": "固定表达",
+          "zh": "很高兴认识你。",
+          "en": "Nice to meet you.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "Nice",
+              "ipa": "naɪs",
+              "pos": "adj"
+            },
+            {
+              "w": "to",
+              "ipa": "tuː",
+              "pos": "part"
+            },
+            {
+              "w": "meet",
+              "ipa": "miːt",
+              "pos": "v"
+            },
+            {
+              "w": "you",
+              "ipa": "juː",
+              "pos": "pron"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0,
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "note": "初次见面的固定说法,整句记住。",
+          "simhash": 9325960955168645532
+        },
+        {
+          "id": 4,
+          "level": "L1",
+          "scene": "自我介绍",
+          "func": "介绍姓名",
+          "pattern": "主+系+表",
+          "zh": "我叫王磊。",
+          "en": "My name is Wang Lei.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "My",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "name",
+              "ipa": "neɪm",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "Wang",
+              "ipa": "wɒŋ",
+              "pos": "propn"
+            },
+            {
+              "w": "Lei",
+              "ipa": "leɪ",
+              "pos": "propn"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "介绍名字用 My name is…。",
+          "simhash": 5205921060114672530
+        },
+        {
+          "id": 5,
+          "level": "L1",
+          "scene": "自我介绍",
+          "func": "介绍身份",
+          "pattern": "主+系+表",
+          "zh": "我是新来的学生。",
+          "en": "I am a new student here.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "am",
+              "ipa": "æm",
+              "pos": "aux"
+            },
+            {
+              "w": "a",
+              "ipa": "ə",
+              "pos": "art"
+            },
+            {
+              "w": "new",
+              "ipa": "njuː",
+              "pos": "adj"
+            },
+            {
+              "w": "student",
+              "ipa": "ˈstjuːdənt",
+              "pos": "n"
+            },
+            {
+              "w": "here",
+              "ipa": "hɪə",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                2,
+                3,
+                4
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                5
+              ]
+            }
+          ],
+          "note": "a 用在单数可数名词前。",
+          "simhash": 10023558411504966178
+        },
+        {
+          "id": 6,
+          "level": "L1",
+          "scene": "自我介绍",
+          "func": "介绍年龄",
+          "pattern": "主+系+表",
+          "zh": "我十岁了。",
+          "en": "I am ten years old.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "am",
+              "ipa": "æm",
+              "pos": "aux"
+            },
+            {
+              "w": "ten",
+              "ipa": "ten",
+              "pos": "num"
+            },
+            {
+              "w": "years",
+              "ipa": "jɪəz",
+              "pos": "n"
+            },
+            {
+              "w": "old",
+              "ipa": "əʊld",
+              "pos": "adj"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "说年龄用 … years old。",
+          "simhash": 3652054593413836924
+        },
+        {
+          "id": 7,
+          "level": "L1",
+          "scene": "自我介绍",
+          "func": "介绍来处",
+          "pattern": "主+谓+状",
+          "zh": "我来自中国。",
+          "en": "I come from China.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "come",
+              "ipa": "kʌm",
+              "pos": "v"
+            },
+            {
+              "w": "from",
+              "ipa": "frɒm",
+              "pos": "prep"
+            },
+            {
+              "w": "China",
+              "ipa": "ˈtʃaɪnə",
+              "pos": "propn"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                2,
+                3
+              ]
+            }
+          ],
+          "note": "come from 表示来自哪里。",
+          "simhash": 8037610862384894084
+        },
+        {
+          "id": 8,
+          "level": "L1",
+          "scene": "自我介绍",
+          "func": "介绍爱好",
+          "pattern": "主+谓+宾",
+          "zh": "我喜欢音乐和运动。",
+          "en": "I like music and sports.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "like",
+              "ipa": "laɪk",
+              "pos": "v"
+            },
+            {
+              "w": "music",
+              "ipa": "ˈmjuːzɪk",
+              "pos": "n"
+            },
+            {
+              "w": "and",
+              "ipa": "ænd",
+              "pos": "conj"
+            },
+            {
+              "w": "sports",
+              "ipa": "spɔːts",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "and 连接两个并列的名词。",
+          "simhash": 17285659503829056244
+        },
+        {
+          "id": 9,
+          "level": "L1",
+          "scene": "自我介绍",
+          "func": "介绍他人",
+          "pattern": "主+系+表",
+          "zh": "这是我的好朋友。",
+          "en": "This is my good friend.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "This",
+              "ipa": "ðɪs",
+              "pos": "pron"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "my",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "good",
+              "ipa": "ɡʊd",
+              "pos": "adj"
+            },
+            {
+              "w": "friend",
+              "ipa": "frend",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "介绍别人用 This is…。",
+          "simhash": 406334100700143941
+        },
+        {
+          "id": 10,
+          "level": "L1",
+          "scene": "家庭",
+          "func": "介绍家庭",
+          "pattern": "主+谓+宾",
+          "zh": "我家有四口人。",
+          "en": "My family has four people.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "My",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "family",
+              "ipa": "ˈfæməli",
+              "pos": "n"
+            },
+            {
+              "w": "has",
+              "ipa": "hæz",
+              "pos": "v"
+            },
+            {
+              "w": "four",
+              "ipa": "fɔː",
+              "pos": "num"
+            },
+            {
+              "w": "people",
+              "ipa": "ˈpiːpəl",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "主语第三人称单数,have 变 has。",
+          "simhash": 1674181547231646017
+        },
+        {
+          "id": 11,
+          "level": "L1",
+          "scene": "家庭",
+          "func": "介绍职业",
+          "pattern": "主+系+表",
+          "zh": "我爸爸是医生。",
+          "en": "My father is a doctor.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "My",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "father",
+              "ipa": "ˈfɑːðə",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "a",
+              "ipa": "ə",
+              "pos": "art"
+            },
+            {
+              "w": "doctor",
+              "ipa": "ˈdɒktə",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "说职业时职业前要加 a。",
+          "simhash": 911926490001663027
+        },
+        {
+          "id": 12,
+          "level": "L1",
+          "scene": "家庭",
+          "func": "描述家人",
+          "pattern": "主+谓+状",
+          "zh": "我妈妈做饭很好吃。",
+          "en": "My mother cooks very well.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "My",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "mother",
+              "ipa": "ˈmʌðə",
+              "pos": "n"
+            },
+            {
+              "w": "cooks",
+              "ipa": "kʊks",
+              "pos": "v"
+            },
+            {
+              "w": "very",
+              "ipa": "ˈveri",
+              "pos": "adv"
+            },
+            {
+              "w": "well",
+              "ipa": "wel",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "well 修饰动词,说\"做得好\"。",
+          "simhash": 6570566683496310027
+        },
+        {
+          "id": 13,
+          "level": "L1",
+          "scene": "家庭",
+          "func": "介绍家人",
+          "pattern": "主+系+表",
+          "zh": "我妹妹七岁。",
+          "en": "My little sister is seven.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "My",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "little",
+              "ipa": "ˈlɪtəl",
+              "pos": "adj"
+            },
+            {
+              "w": "sister",
+              "ipa": "ˈsɪstə",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "seven",
+              "ipa": "ˈsevən",
+              "pos": "num"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1,
+                2
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                4
+              ]
+            }
+          ],
+          "note": "little sister 指妹妹。",
+          "simhash": 51602334408267793
+        },
+        {
+          "id": 14,
+          "level": "L1",
+          "scene": "家庭",
+          "func": "表达情感",
+          "pattern": "主+谓+宾+状",
+          "zh": "我非常爱我的家人。",
+          "en": "I love my family very much.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "love",
+              "ipa": "lʌv",
+              "pos": "v"
+            },
+            {
+              "w": "my",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "family",
+              "ipa": "ˈfæməli",
+              "pos": "n"
+            },
+            {
+              "w": "very",
+              "ipa": "ˈveri",
+              "pos": "adv"
+            },
+            {
+              "w": "much",
+              "ipa": "mʌtʃ",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                2,
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "very much 放句尾表示程度。",
+          "simhash": 16589984632059128181
+        },
+        {
+          "id": 15,
+          "level": "L1",
+          "scene": "教室",
+          "func": "描述环境",
+          "pattern": "主+系+表",
+          "zh": "教室又大又干净。",
+          "en": "The classroom is big and clean.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "The",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "classroom",
+              "ipa": "ˈklɑːsruːm",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "big",
+              "ipa": "bɪɡ",
+              "pos": "adj"
+            },
+            {
+              "w": "and",
+              "ipa": "ænd",
+              "pos": "conj"
+            },
+            {
+              "w": "clean",
+              "ipa": "kliːn",
+              "pos": "adj"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "and 连接两个并列形容词。",
+          "simhash": 16588195851160974556
+        },
+        {
+          "id": 16,
+          "level": "L1",
+          "scene": "教室",
+          "func": "找东西",
+          "pattern": "特殊疑问句",
+          "zh": "我的英语书在哪儿？",
+          "en": "Where is my English book?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "Where",
+              "ipa": "weə",
+              "pos": "wh"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "my",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "English",
+              "ipa": "ˈɪŋɡlɪʃ",
+              "pos": "propn"
+            },
+            {
+              "w": "book",
+              "ipa": "bʊk",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                2,
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "问位置用 Where is…?",
+          "simhash": 337008197693907025
+        },
+        {
+          "id": 17,
+          "level": "L1",
+          "scene": "教室",
+          "func": "描述活动",
+          "pattern": "主+谓+宾+状",
+          "zh": "我们在学校看书。",
+          "en": "We read books at school.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "We",
+              "ipa": "wiː",
+              "pos": "pron"
+            },
+            {
+              "w": "read",
+              "ipa": "riːd",
+              "pos": "v"
+            },
+            {
+              "w": "books",
+              "ipa": "bʊks",
+              "pos": "n"
+            },
+            {
+              "w": "at",
+              "ipa": "æt",
+              "pos": "prep"
+            },
+            {
+              "w": "school",
+              "ipa": "skuːl",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "at school 表示在学校。",
+          "simhash": 920822982641574793
+        },
+        {
+          "id": 18,
+          "level": "L1",
+          "scene": "教室",
+          "func": "借东西",
+          "pattern": "一般疑问句",
+          "zh": "你有笔吗？",
+          "en": "Do you have a pen?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "Do",
+              "ipa": "duː",
+              "pos": "aux"
+            },
+            {
+              "w": "you",
+              "ipa": "juː",
+              "pos": "pron"
+            },
+            {
+              "w": "have",
+              "ipa": "hæv",
+              "pos": "v"
+            },
+            {
+              "w": "a",
+              "ipa": "ə",
+              "pos": "art"
+            },
+            {
+              "w": "pen",
+              "ipa": "pen",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "一般疑问句用 Do 开头。",
+          "simhash": 12637483243860042908
+        },
+        {
+          "id": 19,
+          "level": "L1",
+          "scene": "教室",
+          "func": "描述他人",
+          "pattern": "主+系+表",
+          "zh": "老师人很好。",
+          "en": "The teacher is very kind.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "The",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "teacher",
+              "ipa": "ˈtiːtʃə",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "very",
+              "ipa": "ˈveri",
+              "pos": "adv"
+            },
+            {
+              "w": "kind",
+              "ipa": "kaɪnd",
+              "pos": "adj"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "kind 形容人和蔼友善。",
+          "simhash": 5167411102440820977
+        },
+        {
+          "id": 20,
+          "level": "L1",
+          "scene": "教室",
+          "func": "日常习惯",
+          "pattern": "主+谓+状",
+          "zh": "我每天都去上学。",
+          "en": "I go to school every day.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "go",
+              "ipa": "ɡəʊ",
+              "pos": "v"
+            },
+            {
+              "w": "to",
+              "ipa": "tuː",
+              "pos": "prep"
+            },
+            {
+              "w": "school",
+              "ipa": "skuːl",
+              "pos": "n"
+            },
+            {
+              "w": "every",
+              "ipa": "ˈevri",
+              "pos": "adj"
+            },
+            {
+              "w": "day",
+              "ipa": "deɪ",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                2,
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "every day 表示每天。",
+          "simhash": 9988624762684295940
+        }
+      ]
+    },
+    {
+      "level": "L2",
+      "title": "L2 体验节",
+      "spec": {
+        "id": "L2",
+        "cefr": "A1+",
+        "vocab_band": 1000,
+        "max_words": 10,
+        "grammar_whitelist": [
+          "be_present",
+          "present_simple",
+          "simple_question",
+          "can_modal",
+          "present_continuous",
+          "there_be",
+          "imperative"
+        ],
+        "can_do": [
+          "购物",
+          "问价",
+          "问路"
+        ],
+        "practice": {
+          "flow": "reorder_then_typing",
+          "review_listening_ratio": 0.0,
+          "dictation_min_box": 0,
+          "hints": {
+            "ipa": "always",
+            "first_letter": true,
+            "zh_hideable": false
+          },
+          "judge": {
+            "strict": false,
+            "track_article_preposition": false
+          },
+          "srs": {
+            "daily_new_default": 10,
+            "daily_new_range": [
+              5,
+              50
+            ],
+            "review_cap": 60,
+            "box_intervals_days": [
+              1,
+              2,
+              4,
+              7
+            ],
+            "box5_recheck_days": 12,
+            "listening_weight": 1.5
+          }
+        }
+      },
+      "sentences": [
+        {
+          "id": 1,
+          "level": "L2",
+          "scene": "问价",
+          "func": "询问价格",
+          "pattern": "特殊疑问句",
+          "zh": "这件红色的衬衫多少钱？",
+          "en": "How much is this red shirt?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "How",
+              "ipa": "haʊ",
+              "pos": "wh"
+            },
+            {
+              "w": "much",
+              "ipa": "mʌtʃ",
+              "pos": "adj"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "this",
+              "ipa": "ðɪs",
+              "pos": "pron"
+            },
+            {
+              "w": "red",
+              "ipa": "red",
+              "pos": "adj"
+            },
+            {
+              "w": "shirt",
+              "ipa": "ʃɜːt",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "问价格用 How much is…?",
+          "simhash": 12367781284719976556
+        },
+        {
+          "id": 2,
+          "level": "L2",
+          "scene": "购物",
+          "func": "请求试穿",
+          "pattern": "一般疑问句",
+          "zh": "我能试穿一下吗？",
+          "en": "Can I try it on?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "Can",
+              "ipa": "kæn",
+              "pos": "modal"
+            },
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "try",
+              "ipa": "traɪ",
+              "pos": "v"
+            },
+            {
+              "w": "it",
+              "ipa": "ɪt",
+              "pos": "pron"
+            },
+            {
+              "w": "on",
+              "ipa": "ɒn",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                2,
+                4
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3
+              ]
+            }
+          ],
+          "note": "try on 表示试穿,代词放中间。",
+          "simhash": 370385915653419476
+        },
+        {
+          "id": 3,
+          "level": "L2",
+          "scene": "购物",
+          "func": "评价价格",
+          "pattern": "主+系+表",
+          "zh": "这双鞋太贵了。",
+          "en": "The shoes are too expensive.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "The",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "shoes",
+              "ipa": "ʃuːz",
+              "pos": "n"
+            },
+            {
+              "w": "are",
+              "ipa": "ɑː",
+              "pos": "aux"
+            },
+            {
+              "w": "too",
+              "ipa": "tuː",
+              "pos": "adv"
+            },
+            {
+              "w": "expensive",
+              "ipa": "ɪkˈspensɪv",
+              "pos": "adj"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "comp",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "too 加形容词表示\"太…了\"。",
+          "simhash": 17759327588937226357
+        },
+        {
+          "id": 4,
+          "level": "L2",
+          "scene": "购物",
+          "func": "说明来意",
+          "pattern": "现在进行时",
+          "zh": "我想找一个蓝色的包。",
+          "en": "I am looking for a blue bag.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "am",
+              "ipa": "æm",
+              "pos": "aux"
+            },
+            {
+              "w": "looking",
+              "ipa": "ˈlʊkɪŋ",
+              "pos": "v"
+            },
+            {
+              "w": "for",
+              "ipa": "fɔː",
+              "pos": "prep"
+            },
+            {
+              "w": "a",
+              "ipa": "ə",
+              "pos": "art"
+            },
+            {
+              "w": "blue",
+              "ipa": "bluː",
+              "pos": "adj"
+            },
+            {
+              "w": "bag",
+              "ipa": "bæɡ",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "note": "look for 表示寻找。",
+          "simhash": 9526507996449454276
+        },
+        {
+          "id": 5,
+          "level": "L2",
+          "scene": "问价",
+          "func": "介绍信息",
+          "pattern": "There be 句型",
+          "zh": "今天有大促销。",
+          "en": "There is a big sale today.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "There",
+              "ipa": "ðeə",
+              "pos": "part"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "a",
+              "ipa": "ə",
+              "pos": "art"
+            },
+            {
+              "w": "big",
+              "ipa": "bɪɡ",
+              "pos": "adj"
+            },
+            {
+              "w": "sale",
+              "ipa": "seɪl",
+              "pos": "n"
+            },
+            {
+              "w": "today",
+              "ipa": "təˈdeɪ",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                2,
+                3,
+                4
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                5
+              ]
+            }
+          ],
+          "note": "There is 表示\"有\"。",
+          "simhash": 3050991237559578714
+        },
+        {
+          "id": 6,
+          "level": "L2",
+          "scene": "购物",
+          "func": "购买东西",
+          "pattern": "祈使句",
+          "zh": "请给我两个苹果。",
+          "en": "Please give me two apples.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "Please",
+              "ipa": "pliːz",
+              "pos": "adv"
+            },
+            {
+              "w": "give",
+              "ipa": "ɡɪv",
+              "pos": "v"
+            },
+            {
+              "w": "me",
+              "ipa": "miː",
+              "pos": "pron"
+            },
+            {
+              "w": "two",
+              "ipa": "tuː",
+              "pos": "num"
+            },
+            {
+              "w": "apples",
+              "ipa": "ˈæpəlz",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3,
+                4
+              ]
+            }
+          ],
+          "note": "give me 后接要的东西。",
+          "simhash": 15199045400503928616
+        },
+        {
+          "id": 7,
+          "level": "L2",
+          "scene": "问路",
+          "func": "问路",
+          "pattern": "特殊疑问句",
+          "zh": "打扰一下，公交车站在哪儿？",
+          "en": "Excuse me, where is the bus stop?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "Excuse",
+              "ipa": "ɪkˈskjuːz",
+              "pos": "v"
+            },
+            {
+              "w": "me",
+              "ipa": "miː",
+              "pos": "pron"
+            },
+            {
+              "w": "where",
+              "ipa": "weə",
+              "pos": "wh"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "the",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "bus",
+              "ipa": "bʌs",
+              "pos": "n"
+            },
+            {
+              "w": "stop",
+              "ipa": "stɒp",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "marker",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "note": "Excuse me 用于礼貌地开口。",
+          "simhash": 880272415464911032
+        },
+        {
+          "id": 8,
+          "level": "L2",
+          "scene": "问路",
+          "func": "指路",
+          "pattern": "祈使句",
+          "zh": "直走然后左转。",
+          "en": "Go straight and turn left.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "Go",
+              "ipa": "ɡəʊ",
+              "pos": "v"
+            },
+            {
+              "w": "straight",
+              "ipa": "streɪt",
+              "pos": "adv"
+            },
+            {
+              "w": "and",
+              "ipa": "ænd",
+              "pos": "conj"
+            },
+            {
+              "w": "turn",
+              "ipa": "tɜːn",
+              "pos": "v"
+            },
+            {
+              "w": "left",
+              "ipa": "left",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "pred",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "marker",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4
+              ]
+            }
+          ],
+          "note": "指路常用 go straight 和 turn。",
+          "simhash": 9841723654516702435
+        },
+        {
+          "id": 9,
+          "level": "L2",
+          "scene": "问路",
+          "func": "说明位置",
+          "pattern": "主+系+状",
+          "zh": "商店在学校附近。",
+          "en": "The store is near the school.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "The",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "store",
+              "ipa": "stɔː",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "near",
+              "ipa": "nɪə",
+              "pos": "prep"
+            },
+            {
+              "w": "the",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "school",
+              "ipa": "skuːl",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "near 表示在…附近。",
+          "simhash": 4953929059943355868
+        },
+        {
+          "id": 10,
+          "level": "L2",
+          "scene": "问路",
+          "func": "问路",
+          "pattern": "特殊疑问句",
+          "zh": "我怎么去车站？",
+          "en": "How can I get to the station?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "How",
+              "ipa": "haʊ",
+              "pos": "wh"
+            },
+            {
+              "w": "can",
+              "ipa": "kæn",
+              "pos": "modal"
+            },
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "get",
+              "ipa": "ɡet",
+              "pos": "v"
+            },
+            {
+              "w": "to",
+              "ipa": "tuː",
+              "pos": "prep"
+            },
+            {
+              "w": "the",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "station",
+              "ipa": "ˈsteɪʃən",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "marker",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "note": "get to 表示到达某地。",
+          "simhash": 4027028513983846900
+        },
+        {
+          "id": 11,
+          "level": "L2",
+          "scene": "问路",
+          "func": "询问设施",
+          "pattern": "There be 句型",
+          "zh": "附近有银行吗？",
+          "en": "Is there a bank near here?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "Is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "there",
+              "ipa": "ðeə",
+              "pos": "part"
+            },
+            {
+              "w": "a",
+              "ipa": "ə",
+              "pos": "art"
+            },
+            {
+              "w": "bank",
+              "ipa": "bæŋk",
+              "pos": "n"
+            },
+            {
+              "w": "near",
+              "ipa": "nɪə",
+              "pos": "prep"
+            },
+            {
+              "w": "here",
+              "ipa": "hɪə",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "link",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "marker",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                2,
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "There be 的疑问句把 is 提前。",
+          "simhash": 12576255756441088159
+        },
+        {
+          "id": 12,
+          "level": "L2",
+          "scene": "日常",
+          "func": "描述当下",
+          "pattern": "现在进行时",
+          "zh": "我在和妈妈一起看电视。",
+          "en": "I am watching TV with my mother.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "am",
+              "ipa": "æm",
+              "pos": "aux"
+            },
+            {
+              "w": "watching",
+              "ipa": "ˈwɒtʃɪŋ",
+              "pos": "v"
+            },
+            {
+              "w": "TV",
+              "ipa": "ˌtiːˈviː",
+              "pos": "n"
+            },
+            {
+              "w": "with",
+              "ipa": "wɪð",
+              "pos": "prep"
+            },
+            {
+              "w": "my",
+              "ipa": "maɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "mother",
+              "ipa": "ˈmʌðə",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1,
+                2
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "note": "am + 动词 ing 表示正在做。",
+          "simhash": 1931627277003621042
+        },
+        {
+          "id": 13,
+          "level": "L2",
+          "scene": "日常",
+          "func": "描述天气",
+          "pattern": "现在进行时",
+          "zh": "外面正在下雨。",
+          "en": "It is raining outside now.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "It",
+              "ipa": "ɪt",
+              "pos": "pron"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "raining",
+              "ipa": "ˈreɪnɪŋ",
+              "pos": "v"
+            },
+            {
+              "w": "outside",
+              "ipa": "ˌaʊtˈsaɪd",
+              "pos": "adv"
+            },
+            {
+              "w": "now",
+              "ipa": "naʊ",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1,
+                2
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4
+              ]
+            }
+          ],
+          "note": "说天气用 It 作主语。",
+          "simhash": 600912841688380820
+        },
+        {
+          "id": 14,
+          "level": "L2",
+          "scene": "日常",
+          "func": "请求帮助",
+          "pattern": "一般疑问句",
+          "zh": "你能开一下窗户吗？",
+          "en": "Can you open the window, please?",
+          "punct": "?",
+          "words": [
+            {
+              "w": "Can",
+              "ipa": "kæn",
+              "pos": "modal"
+            },
+            {
+              "w": "you",
+              "ipa": "juː",
+              "pos": "pron"
+            },
+            {
+              "w": "open",
+              "ipa": "ˈəʊpən",
+              "pos": "v"
+            },
+            {
+              "w": "the",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "window",
+              "ipa": "ˈwɪndəʊ",
+              "pos": "n"
+            },
+            {
+              "w": "please",
+              "ipa": "pliːz",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "marker",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "subj",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3,
+                4
+              ]
+            },
+            {
+              "r": "marker",
+              "i": [
+                5
+              ]
+            }
+          ],
+          "note": "Can you…? 是礼貌的请求。",
+          "simhash": 17686710068602631628
+        },
+        {
+          "id": 15,
+          "level": "L2",
+          "scene": "日常",
+          "func": "描述当下",
+          "pattern": "现在进行时",
+          "zh": "我们正在家里吃午饭。",
+          "en": "We are having lunch at home.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "We",
+              "ipa": "wiː",
+              "pos": "pron"
+            },
+            {
+              "w": "are",
+              "ipa": "ɑː",
+              "pos": "aux"
+            },
+            {
+              "w": "having",
+              "ipa": "ˈhævɪŋ",
+              "pos": "v"
+            },
+            {
+              "w": "lunch",
+              "ipa": "lʌntʃ",
+              "pos": "n"
+            },
+            {
+              "w": "at",
+              "ipa": "æt",
+              "pos": "prep"
+            },
+            {
+              "w": "home",
+              "ipa": "həʊm",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1,
+                2
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "have lunch 表示吃午饭。",
+          "simhash": 9681710690400059256
+        },
+        {
+          "id": 16,
+          "level": "L2",
+          "scene": "日常",
+          "func": "说明位置",
+          "pattern": "主+系+状",
+          "zh": "牛奶在桌子上。",
+          "en": "The milk is on the table.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "The",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "milk",
+              "ipa": "mɪlk",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "on",
+              "ipa": "ɒn",
+              "pos": "prep"
+            },
+            {
+              "w": "the",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "table",
+              "ipa": "ˈteɪbəl",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                2
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "on 表示在…上面。",
+          "simhash": 15470231009952613498
+        },
+        {
+          "id": 17,
+          "level": "L2",
+          "scene": "日常",
+          "func": "描述能力",
+          "pattern": "情态动词句",
+          "zh": "她英文歌唱得很好。",
+          "en": "She can sing English songs very well.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "She",
+              "ipa": "ʃiː",
+              "pos": "pron"
+            },
+            {
+              "w": "can",
+              "ipa": "kæn",
+              "pos": "modal"
+            },
+            {
+              "w": "sing",
+              "ipa": "sɪŋ",
+              "pos": "v"
+            },
+            {
+              "w": "English",
+              "ipa": "ˈɪŋɡlɪʃ",
+              "pos": "propn"
+            },
+            {
+              "w": "songs",
+              "ipa": "sɒŋz",
+              "pos": "n"
+            },
+            {
+              "w": "very",
+              "ipa": "ˈveri",
+              "pos": "adv"
+            },
+            {
+              "w": "well",
+              "ipa": "wel",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1,
+                2
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                3,
+                4
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                5,
+                6
+              ]
+            }
+          ],
+          "note": "can 后面的动词用原形。",
+          "simhash": 2822237686186015521
+        },
+        {
+          "id": 18,
+          "level": "L2",
+          "scene": "日常",
+          "func": "提出要求",
+          "pattern": "祈使句",
+          "zh": "不要在教室里跑。",
+          "en": "Do not run in the classroom.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "Do",
+              "ipa": "duː",
+              "pos": "aux"
+            },
+            {
+              "w": "not",
+              "ipa": "nɒt",
+              "pos": "adv"
+            },
+            {
+              "w": "run",
+              "ipa": "rʌn",
+              "pos": "v"
+            },
+            {
+              "w": "in",
+              "ipa": "ɪn",
+              "pos": "prep"
+            },
+            {
+              "w": "the",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "classroom",
+              "ipa": "ˈklɑːsruːm",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "pred",
+              "i": [
+                0,
+                1,
+                2
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "Do not 开头表示禁止。",
+          "simhash": 2428152945581201340
+        },
+        {
+          "id": 19,
+          "level": "L2",
+          "scene": "购物",
+          "func": "说明位置",
+          "pattern": "主+系+状",
+          "zh": "试衣间在那边。",
+          "en": "The fitting room is over there.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "The",
+              "ipa": "ðə",
+              "pos": "art"
+            },
+            {
+              "w": "fitting",
+              "ipa": "ˈfɪtɪŋ",
+              "pos": "adj"
+            },
+            {
+              "w": "room",
+              "ipa": "ruːm",
+              "pos": "n"
+            },
+            {
+              "w": "is",
+              "ipa": "ɪz",
+              "pos": "aux"
+            },
+            {
+              "w": "over",
+              "ipa": "ˈəʊvə",
+              "pos": "adv"
+            },
+            {
+              "w": "there",
+              "ipa": "ðeə",
+              "pos": "adv"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0,
+                1,
+                2
+              ]
+            },
+            {
+              "r": "link",
+              "i": [
+                3
+              ]
+            },
+            {
+              "r": "advl",
+              "i": [
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "over there 表示在那边。",
+          "simhash": 14903990146277101653
+        },
+        {
+          "id": 20,
+          "level": "L2",
+          "scene": "购物",
+          "func": "购买东西",
+          "pattern": "主+谓+宾",
+          "zh": "我需要一些牛奶和面包。",
+          "en": "I need some milk and bread.",
+          "punct": ".",
+          "words": [
+            {
+              "w": "I",
+              "ipa": "aɪ",
+              "pos": "pron"
+            },
+            {
+              "w": "need",
+              "ipa": "niːd",
+              "pos": "v"
+            },
+            {
+              "w": "some",
+              "ipa": "sʌm",
+              "pos": "adj"
+            },
+            {
+              "w": "milk",
+              "ipa": "mɪlk",
+              "pos": "n"
+            },
+            {
+              "w": "and",
+              "ipa": "ænd",
+              "pos": "conj"
+            },
+            {
+              "w": "bread",
+              "ipa": "bred",
+              "pos": "n"
+            }
+          ],
+          "chunks": [
+            {
+              "r": "subj",
+              "i": [
+                0
+              ]
+            },
+            {
+              "r": "pred",
+              "i": [
+                1
+              ]
+            },
+            {
+              "r": "obj",
+              "i": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "note": "some 表示一些,后接名词。",
+          "simhash": 16533730309214166148
+        }
+      ]
+    }
+  ]
+}

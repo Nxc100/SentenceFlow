@@ -1,0 +1,26 @@
+[package]
+name = "sf-llm"
+description = "Four-channel LLM access (opencode local / DeepSeek / Zen direct / Ollama), dual-track metering (Money / RateBudget), keyring secrets, generation task queue (spec §3, §7.5)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sf-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+reqwest = { workspace = true }
+secrecy = { workspace = true }
+tracing = { workspace = true }
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+keyring = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

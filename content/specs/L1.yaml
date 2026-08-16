@@ -1,0 +1,29 @@
+# LevelSpec L1 — 单一事实源 (spec §4.9):生成端约束、校验端反查、练习端玩法
+id: L1
+cefr: "A1"
+vocab_band: 500
+max_words: 8
+grammar_whitelist:
+  - be_present          # be 现在时
+  - present_simple      # 一般现在
+  - simple_question     # 简单疑问
+can_do:
+  - "打招呼"
+  - "自我介绍"
+practice:
+  flow: reorder_then_typing     # 每句先重组后打字
+  review_listening_ratio: 0.0   # 未解锁听打
+  dictation_min_box: 0          # 未解锁默写
+  hints:
+    ipa: always                 # 音标常显
+    first_letter: true          # 首字母提示
+    zh_hideable: false          # 中文常显
+  judge:
+    strict: false               # 忽略大小写/标点(宽松判分)
+  srs:
+    daily_new_default: 10
+    daily_new_range: [5, 50]
+    review_cap: 60
+    box_intervals_days: [1, 2, 4, 7]   # 进入盒 2/3/4/5
+    box5_recheck_days: 12
+    listening_weight: 1.5

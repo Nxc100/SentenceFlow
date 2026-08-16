@@ -1,0 +1,34 @@
+# LevelSpec L2 (spec §4.9)
+id: L2
+cefr: "A1+"
+vocab_band: 1000
+max_words: 10
+grammar_whitelist:
+  - be_present
+  - present_simple
+  - simple_question
+  - can_modal           # +can
+  - present_continuous  # 现在进行
+  - there_be            # There be
+  - imperative          # 祈使
+can_do:
+  - "购物"
+  - "问价"
+  - "问路"
+practice:
+  flow: reorder_then_typing
+  review_listening_ratio: 0.0
+  dictation_min_box: 0
+  hints:
+    ipa: always
+    first_letter: true
+    zh_hideable: false
+  judge:
+    strict: false
+  srs:
+    daily_new_default: 10
+    daily_new_range: [5, 50]
+    review_cap: 60
+    box_intervals_days: [1, 2, 4, 7]
+    box5_recheck_days: 12
+    listening_weight: 1.5

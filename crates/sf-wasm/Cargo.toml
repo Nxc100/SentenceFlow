@@ -1,0 +1,22 @@
+[package]
+name = "sf-wasm"
+description = "wasm-bindgen bindings exposing sf-core to the web trial (spec §7.9). JSON-string boundary keeps the ABI trivial and versionable."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# wasm-pack 捆绑的 wasm-opt 尚不支持新 rustc 默认的 bulk-memory 指令;
+# 关闭优化(核心极小,体积差异 ~几十 KB,不值得为它锁死工具链)。
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[dependencies]
+sf-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+wasm-bindgen = { workspace = true }
