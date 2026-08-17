@@ -118,7 +118,10 @@ fn main() -> Result<()> {
                 out,
                 rev,
             } => build(&content_dir, &out, rev),
-            FactoryCmd::Validate { content_dir } => validate_seeds(&content_dir).map(|_| ()),
+            FactoryCmd::Validate { content_dir } => {
+                validate_seeds(&content_dir)?;
+                run_placement(&content_dir).map(|_| ())
+            }
             FactoryCmd::Gen {
                 scene,
                 level,
@@ -259,6 +262,193 @@ fn validate_seeds(content_dir: &Path) -> Result<SeedRun> {
     Ok(run)
 }
 
+// ---------------------------------------------------------------- placement
+
+/// 定级题库文件(content/placement/placement.yaml,《定级测试实现方案》§3.2)。
+#[derive(serde::Deserialize)]
+struct PlacementFile {
+    version: u32,
+    vocab: PlacementVocab,
+    sentences: Vec<PlacementSeed>,
+    grammar: Vec<PlacementGrammar>,
+}
+
+#[derive(serde::Deserialize)]
+struct PlacementVocab {
+    strata: Vec<u32>,
+    per_stratum: u32,
+    pseudo_count: u32,
+    pseudowords: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct PlacementSeed {
+    level: LevelId,
+    #[serde(flatten)]
+    seed: sf_pipeline::seed::SeedSentence,
+}
+
+#[derive(serde::Deserialize)]
+struct PlacementGrammar {
+    lo: LevelId,
+    hi: LevelId,
+    topic_zh: String,
+    prompt_zh: String,
+    stem: String,
+    options: Vec<String>,
+    answer: u8,
+}
+
+/// 每级最少定级句数(阶梯自适应要有足够抽题余量)。
+const PLACEMENT_MIN_PER_LEVEL: usize = 6;
+/// 每个相邻边界最少语法题数(与 sf-core 的加测题数对齐)。
+const PLACEMENT_MIN_GRAMMAR: usize = 4;
+
+/// 校验定级题库并装配为 [`sf_core::PlacementBank`](sf_core::placement::PlacementBank)
+/// (`vocab_pool` 留空,客户端运行时从 lemma 表装配)。题库文件缺失时返回
+/// `None`(向后兼容);校验不过则构建失败——题目质量红线在构建期把守。
+fn run_placement(content_dir: &Path) -> Result<Option<sf_core::PlacementBank>> {
+    let path = content_dir.join("placement").join("placement.yaml");
+    if !path.exists() {
+        return Ok(None);
+    }
+    let file: PlacementFile = serde_yaml::from_str(&std::fs::read_to_string(&path)?)
+        .with_context(|| format!("parsing {}", path.display()))?;
+    let specs = load_specs(content_dir)?;
+    let lexicon = load_lexicon(content_dir)?;
+    let mut problems: Vec<String> = Vec::new();
+
+    // 词汇配置红线
+    if file.vocab.strata.is_empty() || file.vocab.strata.windows(2).any(|w| w[0] >= w[1]) {
+        problems.push("vocab.strata 必须非空且严格升序".into());
+    }
+    if file.vocab.per_stratum == 0 {
+        problems.push("vocab.per_stratum 必须 > 0".into());
+    }
+    if file.vocab.pseudowords.len() < file.vocab.pseudo_count as usize {
+        problems.push("伪词数量少于 pseudo_count".into());
+    }
+    for p in &file.vocab.pseudowords {
+        if lexicon.lookup(p).is_some() {
+            problems.push(format!("伪词「{p}」是词表内真词,必须更换"));
+        }
+        if !(3..=9).contains(&p.len()) || !p.chars().all(|c| c.is_ascii_lowercase()) {
+            problems.push(format!("伪词「{p}」需为 3–9 个小写字母"));
+        }
+    }
+
+    // 定级句:按各自等级的 spec 走完整校验管线;题库内部互不重复
+    // (独立 dedupe——定级句先于练习内容出现,与出厂句库重叠可接受)。
+    let mut dedupe = DedupeIndex::default();
+    let mut sentences: Vec<Sentence> = Vec::new();
+    let mut per_level: BTreeMap<LevelId, usize> = BTreeMap::new();
+    for (idx, ps) in file.sentences.iter().enumerate() {
+        let Some((spec, _)) = specs.get(&ps.level) else {
+            problems.push(format!("placement#{}: 无 {} 级 spec", idx + 1, ps.level));
+            continue;
+        };
+        let validator = Validator::new(spec, &lexicon);
+        let report = validator.validate(&ps.seed.to_draft(), &ps.seed.scene, "", &dedupe);
+        match report.verdict {
+            VerdictKind::Pass => {
+                dedupe.add(report.simhash);
+                let mut s = report.sentence.expect("Pass carries a sentence");
+                s.id = idx as i64 + 1;
+                s.note = ps.seed.note.clone();
+                *per_level.entry(ps.level).or_default() += 1;
+                sentences.push(s);
+            }
+            verdict => {
+                let reasons: Vec<String> = report
+                    .issues
+                    .iter()
+                    .filter(|i| i.severity() != sf_pipeline::validate::Severity::AutoFixed)
+                    .map(|i| i.zh_reason())
+                    .collect();
+                problems.push(format!(
+                    "placement#{} [{}] {verdict:?}: {}",
+                    idx + 1,
+                    ps.seed.en,
+                    reasons.join("；")
+                ));
+            }
+        }
+    }
+    for level in LevelId::ALL {
+        let n = per_level.get(&level).copied().unwrap_or(0);
+        if n < PLACEMENT_MIN_PER_LEVEL {
+            problems.push(format!(
+                "{level} 级定级句仅 {n} 句,少于 {PLACEMENT_MIN_PER_LEVEL} 句下限"
+            ));
+        }
+    }
+
+    // 语法题:二选一、答案有效、边界相邻、每个边界题量达标
+    for (i, g) in file.grammar.iter().enumerate() {
+        if g.options.len() != 2 {
+            problems.push(format!("grammar#{}: 必须二选一", i + 1));
+        }
+        if (g.answer as usize) >= g.options.len() {
+            problems.push(format!("grammar#{}: answer 越界", i + 1));
+        }
+        if g.hi as i32 - g.lo as i32 != 1 {
+            problems.push(format!(
+                "grammar#{}: 边界必须相邻({}-{})",
+                i + 1,
+                g.lo,
+                g.hi
+            ));
+        }
+        if !g.stem.contains("___") {
+            problems.push(format!("grammar#{}: 挖空句缺少 ___", i + 1));
+        }
+    }
+    for w in LevelId::ALL.windows(2) {
+        let n = file
+            .grammar
+            .iter()
+            .filter(|g| g.lo == w[0] && g.hi == w[1])
+            .count();
+        if n < PLACEMENT_MIN_GRAMMAR {
+            problems.push(format!(
+                "边界 {}-{} 语法题仅 {n} 题,少于 {PLACEMENT_MIN_GRAMMAR} 题下限",
+                w[0], w[1]
+            ));
+        }
+    }
+
+    if !problems.is_empty() {
+        println!("placement problems ({}):", problems.len());
+        for p in &problems {
+            println!("  ✕ {p}");
+        }
+        bail!("{} placement item(s) failed validation", problems.len());
+    }
+
+    Ok(Some(sf_core::PlacementBank {
+        version: file.version,
+        strata: file.vocab.strata,
+        per_stratum: file.vocab.per_stratum,
+        pseudo_count: file.vocab.pseudo_count,
+        pseudowords: file.vocab.pseudowords,
+        vocab_pool: Vec::new(),
+        sentences,
+        grammar: file
+            .grammar
+            .into_iter()
+            .map(|g| sf_core::GrammarItem {
+                lo: g.lo,
+                hi: g.hi,
+                topic_zh: g.topic_zh,
+                prompt_zh: g.prompt_zh,
+                stem: g.stem,
+                options: g.options,
+                answer: g.answer,
+            })
+            .collect(),
+    }))
+}
+
 // ---------------------------------------------------------------- build
 
 fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
@@ -311,6 +501,23 @@ fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
             .insert_sentence(s, "", rev)
             .map_err(|e| anyhow::anyhow!(e.to_string()))?;
     }
+
+    // 定级题库(方案 §3.2):校验后整体打进 meta["placement"]。
+    if let Some(bank) = run_placement(content_dir)? {
+        store
+            .set_meta("placement", &serde_json::to_string(&bank)?)
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        store
+            .set_meta("placement_rev", &bank.version.to_string())
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        println!(
+            "placement bank embedded: {} sentences, {} grammar items, {} pseudowords",
+            bank.sentences.len(),
+            bank.grammar.len(),
+            bank.pseudowords.len()
+        );
+    }
+
     println!(
         "content.db written: {} ({} sentences, rev {rev})",
         out.display(),

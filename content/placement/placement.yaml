@@ -1,0 +1,902 @@
+# 定级测试题库 — 单一事实源(《英语水平定级测试-实现方案》§3.2)
+# `sf factory build` 按级 spec 校验(词表带/句长/成分覆盖)后打进 content.db
+# 的 meta["placement"];校验不过则构建失败。
+version: 1
+
+vocab:
+  # 词汇快筛分层(NGSL band 上界,升序);真词运行时从 lemma 表按层抽样
+  strata: [300, 600, 1100, 1600, 2200, 2800]
+  per_stratum: 3
+  pseudo_count: 6
+  # 伪词:符合英语音系、不在词表内(构建期校验),用于猜测校正
+  pseudowords:
+    - plore
+    - tandle
+    - brastic
+    - mefty
+    - clander
+    - strule
+    - dremp
+    - quimble
+    - prilt
+    - shonter
+    - velpid
+    - crandle
+
+# 各级定级句(每级 8 句):词汇难度由该级词表带保证,语法按各级白名单递进
+sentences:
+  # ---------------- L1(≤500 词带,≤8 词):be 现在时 / 一般现在 / 简单疑问
+  - level: L1
+    en: "I am a new student."
+    zh: "我是一名新学生。"
+    scene: "定级"
+    pattern: "主+系+表"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "aux" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "new", ipa: "njuː", pos: "adj" }
+      - { w: "student", ipa: "ˈstjuːdənt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3, 4] }
+  - level: L1
+    en: "She is my good friend."
+    zh: "她是我的好朋友。"
+    scene: "定级"
+    pattern: "主+系+表"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "good", ipa: "ɡʊd", pos: "adj" }
+      - { w: "friend", ipa: "frend", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3, 4] }
+  - level: L1
+    en: "We go to school today."
+    zh: "我们今天去上学。"
+    scene: "定级"
+    pattern: "主+谓+状"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "go", ipa: "ɡəʊ", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "school", ipa: "skuːl", pos: "n" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3] }
+      - { r: "advl", i: [4] }
+  - level: L1
+    en: "What is your name?"
+    zh: "你叫什么名字？"
+    scene: "定级"
+    pattern: "特殊疑问句"
+    words:
+      - { w: "What", ipa: "wɒt", pos: "wh" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "name", ipa: "neɪm", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "subj", i: [2, 3] }
+  - level: L1
+    en: "I like this book."
+    zh: "我喜欢这本书。"
+    scene: "定级"
+    pattern: "主+谓+宾"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "book", ipa: "bʊk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+  - level: L1
+    en: "He is at home now."
+    zh: "他现在在家。"
+    scene: "定级"
+    pattern: "主+系+介词短语"
+    words:
+      - { w: "He", ipa: "hiː", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "at", ipa: "ət", pos: "prep" }
+      - { w: "home", ipa: "həʊm", pos: "n" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "advl", i: [2, 3] }
+      - { r: "advl", i: [4] }
+  - level: L1
+    en: "Are you happy today?"
+    zh: "你今天开心吗？"
+    scene: "定级"
+    pattern: "一般疑问句"
+    words:
+      - { w: "Are", ipa: "ɑː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "happy", ipa: "ˈhæpi", pos: "adj" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "link", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "comp", i: [2] }
+      - { r: "advl", i: [3] }
+  - level: L1
+    en: "They are in the room."
+    zh: "他们在房间里。"
+    scene: "定级"
+    pattern: "主+系+介词短语"
+    words:
+      - { w: "They", ipa: "ðeɪ", pos: "pron" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "room", ipa: "ruːm", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "advl", i: [2, 3, 4] }
+
+  # ---------------- L2(≤1000 词带,≤10 词):+can / 现在进行 / There be / 祈使
+  - level: L2
+    en: "Can you help me, please?"
+    zh: "你能帮我一下吗？"
+    scene: "定级"
+    pattern: "情态动词疑问句"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "help", ipa: "help", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "marker", i: [4] }
+  - level: L2
+    en: "She is reading a book now."
+    zh: "她现在正在看书。"
+    scene: "定级"
+    pattern: "现在进行时"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "reading", ipa: "ˈriːdɪŋ", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "book", ipa: "bʊk", pos: "n" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5] }
+  - level: L2
+    en: "There is a shop near here."
+    zh: "附近有一家商店。"
+    scene: "定级"
+    pattern: "There be 句型"
+    words:
+      - { w: "There", ipa: "ðeə", pos: "adv" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "shop", ipa: "ʃɒp", pos: "n" }
+      - { w: "near", ipa: "nɪə", pos: "prep" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "subj", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+  - level: L2
+    en: "How much is this bag?"
+    zh: "这个包多少钱？"
+    scene: "定级"
+    pattern: "特殊疑问句"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adj" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "bag", ipa: "bæɡ", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "subj", i: [3, 4] }
+  - level: L2
+    en: "Open the window, please."
+    zh: "请打开窗户。"
+    scene: "定级"
+    pattern: "祈使句"
+    words:
+      - { w: "Open", ipa: "ˈəʊpən", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "window", ipa: "ˈwɪndəʊ", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "marker", i: [3] }
+  - level: L2
+    en: "I want two apples and milk."
+    zh: "我要两个苹果和牛奶。"
+    scene: "定级"
+    pattern: "主+谓+宾"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "want", ipa: "wɒnt", pos: "v" }
+      - { w: "two", ipa: "tuː", pos: "num" }
+      - { w: "apples", ipa: "ˈæplz", pos: "n" }
+      - { w: "and", ipa: "ənd", pos: "conj" }
+      - { w: "milk", ipa: "mɪlk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5] }
+  - level: L2
+    en: "Which bus goes to the school?"
+    zh: "哪路公交车去学校？"
+    scene: "定级"
+    pattern: "特殊疑问句"
+    words:
+      - { w: "Which", ipa: "wɪtʃ", pos: "wh" }
+      - { w: "bus", ipa: "bʌs", pos: "n" }
+      - { w: "goes", ipa: "ɡəʊz", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "school", ipa: "skuːl", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5] }
+  - level: L2
+    en: "The children are playing music now."
+    zh: "孩子们正在演奏音乐。"
+    scene: "定级"
+    pattern: "现在进行时"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "children", ipa: "ˈtʃɪldrən", pos: "n" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "playing", ipa: "ˈpleɪɪŋ", pos: "v" }
+      - { w: "music", ipa: "ˈmjuːzɪk", pos: "n" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "obj", i: [4] }
+      - { r: "advl", i: [5] }
+
+  # ---------------- L3(≤1500 词带,≤12 词):+一般过去 / 比较级 / 频度副词
+  - level: L3
+    en: "I visited my old friend last weekend."
+    zh: "上周末我去看望了我的老朋友。"
+    scene: "定级"
+    pattern: "一般过去时"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "visited", ipa: "ˈvɪzɪtɪd", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "old", ipa: "əʊld", pos: "adj" }
+      - { w: "friend", ipa: "frend", pos: "n" }
+      - { w: "last", ipa: "lɑːst", pos: "adj" }
+      - { w: "weekend", ipa: "ˌwiːkˈend", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6] }
+  - level: L3
+    en: "My father usually watches television at night."
+    zh: "我爸爸通常晚上看电视。"
+    scene: "定级"
+    pattern: "频度副词+一般现在"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "father", ipa: "ˈfɑːðə", pos: "n" }
+      - { w: "usually", ipa: "ˈjuːʒuəli", pos: "adv" }
+      - { w: "watches", ipa: "ˈwɒtʃɪz", pos: "v" }
+      - { w: "television", ipa: "ˈtelɪvɪʒn", pos: "n" }
+      - { w: "at", ipa: "ət", pos: "prep" }
+      - { w: "night", ipa: "naɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "advl", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4] }
+      - { r: "advl", i: [5, 6] }
+  - level: L3
+    en: "This restaurant is cheaper than that one."
+    zh: "这家餐厅比那家便宜。"
+    scene: "定级"
+    pattern: "比较级"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "restaurant", ipa: "ˈrestrɒnt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "cheaper", ipa: "ˈtʃiːpə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "that", ipa: "ðæt", pos: "pron" }
+      - { w: "one", ipa: "wʌn", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4, 5, 6] }
+  - level: L3
+    en: "We ordered chicken and coffee for dinner."
+    zh: "我们晚餐点了鸡肉和咖啡。"
+    scene: "定级"
+    pattern: "一般过去时"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "ordered", ipa: "ˈɔːdəd", pos: "v" }
+      - { w: "chicken", ipa: "ˈtʃɪkɪn", pos: "n" }
+      - { w: "and", ipa: "ənd", pos: "conj" }
+      - { w: "coffee", ipa: "ˈkɒfi", pos: "n" }
+      - { w: "for", ipa: "fə", pos: "prep" }
+      - { w: "dinner", ipa: "ˈdɪnə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6] }
+  - level: L3
+    en: "She called me yesterday afternoon."
+    zh: "她昨天下午给我打了电话。"
+    scene: "定级"
+    pattern: "一般过去时"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "called", ipa: "kɔːld", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "yesterday", ipa: "ˈjestədeɪ", pos: "adv" }
+      - { w: "afternoon", ipa: "ˌɑːftəˈnuːn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4] }
+  - level: L3
+    en: "Can we meet here again tomorrow?"
+    zh: "我们明天再在这里见面可以吗？"
+    scene: "定级"
+    pattern: "情态动词疑问句"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "meet", ipa: "miːt", pos: "v" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "again", ipa: "əˈɡen", pos: "adv" }
+      - { w: "tomorrow", ipa: "təˈmɒrəʊ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4] }
+      - { r: "advl", i: [5] }
+  - level: L3
+    en: "I often walk to work with my sister."
+    zh: "我经常和妹妹走路上班。"
+    scene: "定级"
+    pattern: "频度副词+一般现在"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "often", ipa: "ˈɒfn", pos: "adv" }
+      - { w: "walk", ipa: "wɔːk", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "work", ipa: "wɜːk", pos: "n" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "sister", ipa: "ˈsɪstə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - level: L3
+    en: "The film was better than the book."
+    zh: "这部电影比书好看。"
+    scene: "定级"
+    pattern: "比较级"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "film", ipa: "fɪlm", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "aux" }
+      - { w: "better", ipa: "ˈbetə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "book", ipa: "bʊk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4, 5, 6] }
+
+  # ---------------- L4(≤2000 词带,≤14 词):+将来时 / 不定式 / 宾语从句
+  - level: L4
+    en: "I will call you when I arrive."
+    zh: "我到了就给你打电话。"
+    scene: "定级"
+    pattern: "将来时+时间状语从句"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "call", ipa: "kɔːl", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "arrive", ipa: "əˈraɪv", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - level: L4
+    en: "She wants to learn another language."
+    zh: "她想再学一门语言。"
+    scene: "定级"
+    pattern: "动词+不定式"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "wants", ipa: "wɒnts", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "learn", ipa: "lɜːn", pos: "v" }
+      - { w: "another", ipa: "əˈnʌðə", pos: "pron" }
+      - { w: "language", ipa: "ˈlæŋɡwɪdʒ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5] }
+  - level: L4
+    en: "I think that he needs more practice."
+    zh: "我觉得他需要更多练习。"
+    scene: "定级"
+    pattern: "宾语从句"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "think", ipa: "θɪŋk", pos: "v" }
+      - { w: "that", ipa: "ðət", pos: "conj" }
+      - { w: "he", ipa: "hiː", pos: "pron" }
+      - { w: "needs", ipa: "niːdz", pos: "v" }
+      - { w: "more", ipa: "mɔː", pos: "adj" }
+      - { w: "practice", ipa: "ˈpræktɪs", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5, 6] }
+  - level: L4
+    en: "My parents are going to sell the house."
+    zh: "我父母打算把房子卖掉。"
+    scene: "定级"
+    pattern: "be going to 将来时"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "parents", ipa: "ˈpeərənts", pos: "n" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "going", ipa: "ˈɡəʊɪŋ", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "sell", ipa: "sel", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "house", ipa: "haʊs", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3, 4, 5] }
+      - { r: "obj", i: [6, 7] }
+  - level: L4
+    en: "Could you tell me your phone number?"
+    zh: "能告诉我你的电话号码吗？"
+    scene: "定级"
+    pattern: "礼貌请求+双宾语"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "tell", ipa: "tel", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "phone", ipa: "fəʊn", pos: "n" }
+      - { w: "number", ipa: "ˈnʌmbə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "obj", i: [4, 5, 6] }
+  - level: L4
+    en: "He told me that the plan changed."
+    zh: "他告诉我计划变了。"
+    scene: "定级"
+    pattern: "宾语从句"
+    words:
+      - { w: "He", ipa: "hiː", pos: "pron" }
+      - { w: "told", ipa: "təʊld", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "that", ipa: "ðət", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "plan", ipa: "plæn", pos: "n" }
+      - { w: "changed", ipa: "tʃeɪndʒd", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "obj", i: [3, 4, 5, 6] }
+  - level: L4
+    en: "I hope to see you again soon."
+    zh: "希望很快能再见到你。"
+    scene: "定级"
+    pattern: "动词+不定式"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "hope", ipa: "həʊp", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "again", ipa: "əˈɡen", pos: "adv" }
+      - { w: "soon", ipa: "suːn", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6] }
+  - level: L4
+    en: "Will you join us for lunch tomorrow?"
+    zh: "明天和我们一起吃午饭好吗？"
+    scene: "定级"
+    pattern: "将来时疑问句"
+    words:
+      - { w: "Will", ipa: "wɪl", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "join", ipa: "dʒɔɪn", pos: "v" }
+      - { w: "us", ipa: "ʌs", pos: "pron" }
+      - { w: "for", ipa: "fə", pos: "prep" }
+      - { w: "lunch", ipa: "lʌntʃ", pos: "n" }
+      - { w: "tomorrow", ipa: "təˈmɒrəʊ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5] }
+      - { r: "advl", i: [6] }
+
+  # ---------------- L5(≤2800 词带,≤16 词):+现在完成 / 条件句 / 被动
+  - level: L5
+    en: "I have worked here for many years."
+    zh: "我已经在这里工作很多年了。"
+    scene: "定级"
+    pattern: "现在完成时"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "worked", ipa: "wɜːkt", pos: "v" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "for", ipa: "fə", pos: "prep" }
+      - { w: "many", ipa: "ˈmeni", pos: "adj" }
+      - { w: "years", ipa: "jɪəz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "advl", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - level: L5
+    en: "If it rains, we will stay at home."
+    zh: "如果下雨，我们就待在家里。"
+    scene: "定级"
+    pattern: "条件句"
+    words:
+      - { w: "If", ipa: "ɪf", pos: "conj" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "rains", ipa: "reɪnz", pos: "v" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "stay", ipa: "steɪ", pos: "v" }
+      - { w: "at", ipa: "ət", pos: "prep" }
+      - { w: "home", ipa: "həʊm", pos: "n" }
+    chunks:
+      - { r: "advl", i: [0, 1, 2] }
+      - { r: "subj", i: [3] }
+      - { r: "pred", i: [4, 5] }
+      - { r: "advl", i: [6, 7] }
+  - level: L5
+    en: "The office was cleaned this morning."
+    zh: "办公室今天早上打扫过了。"
+    scene: "定级"
+    pattern: "被动语态"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "office", ipa: "ˈɒfɪs", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "aux" }
+      - { w: "cleaned", ipa: "kliːnd", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "morning", ipa: "ˈmɔːnɪŋ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+  - level: L5
+    en: "She has already finished the report."
+    zh: "她已经完成了报告。"
+    scene: "定级"
+    pattern: "现在完成时"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "has", ipa: "hæz", pos: "aux" }
+      - { w: "already", ipa: "ɔːlˈredi", pos: "adv" }
+      - { w: "finished", ipa: "ˈfɪnɪʃt", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "report", ipa: "rɪˈpɔːt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5] }
+  - level: L5
+    en: "I have never been to another country."
+    zh: "我从未去过别的国家。"
+    scene: "定级"
+    pattern: "现在完成时"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "never", ipa: "ˈnevə", pos: "adv" }
+      - { w: "been", ipa: "biːn", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "another", ipa: "əˈnʌðə", pos: "pron" }
+      - { w: "country", ipa: "ˈkʌntri", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - level: L5
+    en: "If you need help, please let me know."
+    zh: "需要帮助的话请告诉我。"
+    scene: "定级"
+    pattern: "条件句+祈使"
+    words:
+      - { w: "If", ipa: "ɪf", pos: "conj" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "help", ipa: "help", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+      - { w: "let", ipa: "let", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "know", ipa: "nəʊ", pos: "v" }
+    chunks:
+      - { r: "advl", i: [0, 1, 2, 3] }
+      - { r: "marker", i: [4] }
+      - { r: "pred", i: [5] }
+      - { r: "obj", i: [6] }
+      - { r: "objc", i: [7] }
+  - level: L5
+    en: "This problem can be solved in many ways."
+    zh: "这个问题有很多解决办法。"
+    scene: "定级"
+    pattern: "情态动词被动"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "problem", ipa: "ˈprɒbləm", pos: "n" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "be", ipa: "biː", pos: "aux" }
+      - { w: "solved", ipa: "sɒlvd", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "many", ipa: "ˈmeni", pos: "adj" }
+      - { w: "ways", ipa: "weɪz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - level: L5
+    en: "Have you ever complained about the service?"
+    zh: "你投诉过这项服务吗？"
+    scene: "定级"
+    pattern: "现在完成时疑问句"
+    words:
+      - { w: "Have", ipa: "hæv", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "ever", ipa: "ˈevə", pos: "adv" }
+      - { w: "complained", ipa: "kəmˈpleɪnd", pos: "v" }
+      - { w: "about", ipa: "əˈbaʊt", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "service", ipa: "ˈsɜːvɪs", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0, 2, 3] }
+      - { r: "subj", i: [1] }
+      - { r: "advl", i: [4, 5, 6] }
+
+  # ---------------- L6(词带不设限,≤20 词):+复合从句 / 虚拟 / 委婉
+  - level: L6
+    en: "If I were you, I would take the earlier train."
+    zh: "如果我是你，我会坐早一点的那班火车。"
+    scene: "定级"
+    pattern: "虚拟语气"
+    words:
+      - { w: "If", ipa: "ɪf", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "were", ipa: "wɜː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "would", ipa: "wʊd", pos: "modal" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "earlier", ipa: "ˈɜːliə", pos: "adj" }
+      - { w: "train", ipa: "treɪn", pos: "n" }
+    chunks:
+      - { r: "advl", i: [0, 1, 2, 3] }
+      - { r: "subj", i: [4] }
+      - { r: "pred", i: [5, 6] }
+      - { r: "obj", i: [7, 8, 9] }
+  - level: L6
+    en: "I was wondering whether we should change the date."
+    zh: "我在想我们是否应该改一下日期。"
+    scene: "定级"
+    pattern: "委婉商量"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "was", ipa: "wɒz", pos: "aux" }
+      - { w: "wondering", ipa: "ˈwʌndərɪŋ", pos: "v" }
+      - { w: "whether", ipa: "ˈweðə", pos: "conj" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "should", ipa: "ʃʊd", pos: "modal" }
+      - { w: "change", ipa: "tʃeɪndʒ", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "date", ipa: "deɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4, 5, 6, 7, 8] }
+  - level: L6
+    en: "What she said at the meeting surprised everyone."
+    zh: "她在会上说的话让所有人吃惊。"
+    scene: "定级"
+    pattern: "主语从句"
+    words:
+      - { w: "What", ipa: "wɒt", pos: "wh" }
+      - { w: "she", ipa: "ʃiː", pos: "pron" }
+      - { w: "said", ipa: "sed", pos: "v" }
+      - { w: "at", ipa: "ət", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "meeting", ipa: "ˈmiːtɪŋ", pos: "n" }
+      - { w: "surprised", ipa: "səˈpraɪzd", pos: "v" }
+      - { w: "everyone", ipa: "ˈevriwʌn", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2, 3, 4, 5] }
+      - { r: "pred", i: [6] }
+      - { r: "obj", i: [7] }
+  - level: L6
+    en: "I wish I had known about this earlier."
+    zh: "要是我早点知道这件事就好了。"
+    scene: "定级"
+    pattern: "虚拟语气"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "wish", ipa: "wɪʃ", pos: "v" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "had", ipa: "hæd", pos: "aux" }
+      - { w: "known", ipa: "nəʊn", pos: "v" }
+      - { w: "about", ipa: "əˈbaʊt", pos: "prep" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "earlier", ipa: "ˈɜːliə", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5, 6] }
+      - { r: "advl", i: [7] }
+  - level: L6
+    en: "Would you mind closing the door a little?"
+    zh: "麻烦把门关小一点好吗？"
+    scene: "定级"
+    pattern: "委婉请求"
+    words:
+      - { w: "Would", ipa: "wʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "mind", ipa: "maɪnd", pos: "v" }
+      - { w: "closing", ipa: "ˈkləʊzɪŋ", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "door", ipa: "dɔː", pos: "n" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "little", ipa: "ˈlɪtl", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "advl", i: [6, 7] }
+  - level: L6
+    en: "The plan sounds great, though we might need more time."
+    zh: "计划听起来不错，不过我们可能需要更多时间。"
+    scene: "定级"
+    pattern: "让步从句+委婉"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "plan", ipa: "plæn", pos: "n" }
+      - { w: "sounds", ipa: "saʊndz", pos: "v" }
+      - { w: "great", ipa: "ɡreɪt", pos: "adj" }
+      - { w: "though", ipa: "ðəʊ", pos: "conj" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "might", ipa: "maɪt", pos: "modal" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "more", ipa: "mɔː", pos: "adj" }
+      - { w: "time", ipa: "taɪm", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "advl", i: [4, 5, 6, 7, 8, 9] }
+  - level: L6
+    en: "He suggested that we start the project next week."
+    zh: "他建议我们下周启动这个项目。"
+    scene: "定级"
+    pattern: "建议+虚拟"
+    words:
+      - { w: "He", ipa: "hiː", pos: "pron" }
+      - { w: "suggested", ipa: "səˈdʒestɪd", pos: "v" }
+      - { w: "that", ipa: "ðət", pos: "conj" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "start", ipa: "stɑːt", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "project", ipa: "ˈprɒdʒekt", pos: "n" }
+      - { w: "next", ipa: "nekst", pos: "adj" }
+      - { w: "week", ipa: "wiːk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5, 6] }
+      - { r: "advl", i: [7, 8] }
+  - level: L6
+    en: "Could we possibly move the meeting to Friday?"
+    zh: "我们能不能把会议挪到周五？"
+    scene: "定级"
+    pattern: "委婉协商"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "possibly", ipa: "ˈpɒsəbli", pos: "adv" }
+      - { w: "move", ipa: "muːv", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "meeting", ipa: "ˈmiːtɪŋ", pos: "n" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "Friday", ipa: "ˈfraɪdeɪ", pos: "propn" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "advl", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7] }
+
+# 边界语法题:考察相邻两级 grammar_whitelist 的增量语法点,二选一
+grammar:
+  # L1/L2 边界:can / 现在进行 / There be / 祈使
+  - { lo: L1, hi: L2, topic_zh: "can 和现在进行时", prompt_zh: "我会游泳。", stem: "I ___ swim.", options: ["can", "am"], answer: 0 }
+  - { lo: L1, hi: L2, topic_zh: "can 和现在进行时", prompt_zh: "她正在看电视。", stem: "She is ___ TV.", options: ["watch", "watching"], answer: 1 }
+  - { lo: L1, hi: L2, topic_zh: "can 和现在进行时", prompt_zh: "桌上有一本书。", stem: "___ is a book on the table.", options: ["There", "Here"], answer: 0 }
+  - { lo: L1, hi: L2, topic_zh: "can 和现在进行时", prompt_zh: "请开门。", stem: "___ the door, please.", options: ["Opening", "Open"], answer: 1 }
+  # L2/L3 边界:一般过去时 / 比较级
+  - { lo: L2, hi: L3, topic_zh: "一般过去时", prompt_zh: "我昨天看了一部电影。", stem: "I ___ a film yesterday.", options: ["watched", "watch"], answer: 0 }
+  - { lo: L2, hi: L3, topic_zh: "一般过去时", prompt_zh: "他上周去了北京。", stem: "He ___ to Beijing last week.", options: ["goes", "went"], answer: 1 }
+  - { lo: L2, hi: L3, topic_zh: "一般过去时", prompt_zh: "这个比那个大。", stem: "This one is ___ than that one.", options: ["bigger", "big"], answer: 0 }
+  - { lo: L2, hi: L3, topic_zh: "一般过去时", prompt_zh: "她经常步行上学。", stem: "She ___ walks to school.", options: ["very", "often"], answer: 1 }
+  # L3/L4 边界:将来时 / 不定式 / 宾语从句
+  - { lo: L3, hi: L4, topic_zh: "将来时和宾语从句", prompt_zh: "我明天会给你打电话。", stem: "I ___ call you tomorrow.", options: ["will", "did"], answer: 0 }
+  - { lo: L3, hi: L4, topic_zh: "将来时和宾语从句", prompt_zh: "我们打算下个月搬家。", stem: "We are ___ to move next month.", options: ["coming", "going"], answer: 1 }
+  - { lo: L3, hi: L4, topic_zh: "将来时和宾语从句", prompt_zh: "我想学英语。", stem: "I want ___ English.", options: ["to learn", "learning"], answer: 0 }
+  - { lo: L3, hi: L4, topic_zh: "将来时和宾语从句", prompt_zh: "我觉得他是对的。", stem: "I think ___ he is right.", options: ["what", "that"], answer: 1 }
+  # L4/L5 边界:现在完成时 / 条件句 / 被动
+  - { lo: L4, hi: L5, topic_zh: "现在完成时", prompt_zh: "我已经吃过午饭了。", stem: "I ___ already had lunch.", options: ["have", "was"], answer: 0 }
+  - { lo: L4, hi: L5, topic_zh: "现在完成时", prompt_zh: "如果下雨，我们就待在家里。", stem: "If it rains, we ___ stay at home.", options: ["would", "will"], answer: 1 }
+  - { lo: L4, hi: L5, topic_zh: "现在完成时", prompt_zh: "这座桥建于 1990 年。", stem: "The bridge ___ built in 1990.", options: ["was", "is"], answer: 0 }
+  - { lo: L4, hi: L5, topic_zh: "现在完成时", prompt_zh: "她在这里住了十年了。", stem: "She has ___ here for ten years.", options: ["living", "lived"], answer: 1 }
+  # L5/L6 边界:虚拟 / 委婉 / 复合从句
+  - { lo: L5, hi: L6, topic_zh: "虚拟和委婉表达", prompt_zh: "如果我是你，我会早点出发。", stem: "If I ___ you, I would leave earlier.", options: ["were", "am"], answer: 0 }
+  - { lo: L5, hi: L6, topic_zh: "虚拟和委婉表达", prompt_zh: "不知您能否再发一次邮件？", stem: "I was wondering if you ___ send it again.", options: ["can", "could"], answer: 1 }
+  - { lo: L5, hi: L6, topic_zh: "虚拟和委婉表达", prompt_zh: "要是我早点知道就好了。", stem: "I wish I ___ known earlier.", options: ["had", "have"], answer: 0 }
+  - { lo: L5, hi: L6, topic_zh: "虚拟和委婉表达", prompt_zh: "她说的话让大家都放松了。", stem: "___ she said made everyone relax.", options: ["That", "What"], answer: 1 }

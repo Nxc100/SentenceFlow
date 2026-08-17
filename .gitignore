@@ -7,7 +7,7 @@ node_modules/
 dist/
 .vite/
 *.tsbuildinfo
-
+/logo
 # Tauri
 apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/target/

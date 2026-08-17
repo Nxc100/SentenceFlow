@@ -29,6 +29,8 @@ pub struct AppState {
     pub tts: Option<crate::tts::PiperTts>,
     /// Set while a workshop job is streaming; [停止] flips it.
     pub gen_cancel: AtomicBool,
+    /// 进行中的定级测试(一次一个;开始新测试即丢弃旧的)。
+    pub placement: Mutex<Option<sf_core::PlacementTest>>,
 }
 
 impl AppState {
@@ -95,6 +97,7 @@ impl AppState {
             policy,
             tts,
             gen_cancel: AtomicBool::new(false),
+            placement: Mutex::new(None),
         })
     }
 

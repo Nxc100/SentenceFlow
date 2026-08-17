@@ -15,6 +15,7 @@ import { LibraryPage } from "./pages/Library";
 import { WorkshopPage } from "./pages/Workshop";
 import { ReportPage } from "./pages/Report";
 import { SettingsPage } from "./pages/Settings";
+import { PlacementTestScreen } from "./pages/PlacementTest";
 
 export type NavKey = "today" | "library" | "workshop" | "report" | "settings";
 
@@ -56,14 +57,29 @@ export function App() {
 }
 
 function Shell() {
-  const { settings, license } = useApp();
+  const { settings, license, setLevel } = useApp();
   const [nav, setNav] = useState<NavKey>("today");
   const [practice, setPractice] = useState<PracticeLaunch | null>(null);
   const [workshopPrefill, setWorkshopPrefill] = useState<string | null>(null);
+  const [placementOpen, setPlacementOpen] = useState(false);
+
+  // 定级测试全屏(首启「帮我测一下」/ 设置「重新测一下」都走这里;
+  // 必须先于首启分支,首启路径才能进入测试)
+  if (placementOpen) {
+    return (
+      <PlacementTestScreen
+        onExit={() => setPlacementOpen(false)}
+        onPick={(level) => {
+          void setLevel(level);
+          setPlacementOpen(false);
+        }}
+      />
+    );
+  }
 
   // 首启:未定级 → 等级选择(通道配置绝不出现在首启路径,§6.3)
   if (settings.level === null) {
-    return <Onboarding />;
+    return <Onboarding onStartTest={() => setPlacementOpen(true)} />;
   }
 
   // 练习全屏模态(§2.2)
@@ -131,7 +147,7 @@ function Shell() {
             }}
           />
         )}
-        {nav === "settings" && <SettingsPage />}
+        {nav === "settings" && <SettingsPage onPlacement={() => setPlacementOpen(true)} />}
       </div>
     </div>
   );

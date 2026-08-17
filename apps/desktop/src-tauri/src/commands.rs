@@ -380,6 +380,100 @@ pub fn judge_text(state: S<'_>, sentence_id: i64, input: String) -> CmdResult<Ve
     ))
 }
 
+// ------------------------------------------------------------- placement(定级测试)
+
+/// 定级测试一步的呈现载荷:当前题(None = 已结束)+ 进度 + 结果。
+/// 刻意不走 `submit_attempt`:不写 SRS/练习日志、不占试用版每日额度。
+#[derive(Debug, Serialize)]
+pub struct PlacementStep {
+    pub item: Option<sf_core::PlacementItem>,
+    pub progress: f32,
+    pub result: Option<sf_core::PlacementResult>,
+}
+
+const PLACEMENT_KV_KEY: &str = "placement";
+
+fn placement_step(test: &mut sf_core::PlacementTest) -> PlacementStep {
+    PlacementStep {
+        item: test.next_item(),
+        progress: test.progress(),
+        result: test.result().cloned(),
+    }
+}
+
+/// 开始一次定级测试(丢弃可能存在的旧测试)。题库 = content.db
+/// `meta["placement"]`(构建期已按级校验)+ 运行时从 lemma 表装配的
+/// 词汇候选池;seed 取当前时间,重测自然换题。
+#[tauri::command]
+pub fn placement_start(state: S<'_>, allow_listening: bool) -> CmdResult<PlacementStep> {
+    let bank_json = {
+        let content = state.content.lock().expect("content lock");
+        content.factory.get_meta(PLACEMENT_KV_KEY)?
+    }
+    .ok_or_else(|| CmdError::new("placement", "内容包缺少定级题库,请更新内容包"))?;
+    let mut bank: sf_core::PlacementBank = serde_json::from_str(&bank_json)
+        .map_err(|e| CmdError::new("placement", format!("定级题库损坏: {e}")))?;
+    bank.vocab_pool = state
+        .lexicon
+        .entries()
+        .filter(|e| {
+            // 词汇判断题只出正经的内容词:太短的功能词没有区分度
+            e.band > 0 && e.lemma.len() >= 3 && e.lemma.chars().all(|c| c.is_ascii_alphabetic())
+        })
+        .map(|e| sf_core::VocabWord {
+            word: e.lemma.clone(),
+            band: e.band,
+        })
+        .collect();
+
+    let now = now_unix();
+    let test = sf_core::PlacementTest::new(
+        &bank,
+        now as u64,
+        now,
+        sf_core::PlacementConfig { allow_listening },
+    )
+    .map_err(|e| CmdError::new("placement", e))?;
+    let mut slot = state.placement.lock().expect("placement lock");
+    *slot = Some(test);
+    Ok(placement_step(slot.as_mut().expect("just set")))
+}
+
+/// 提交当前题的作答;测试结束时结果自动持久化(kv)并清空进行态。
+#[tauri::command]
+pub fn placement_answer(
+    state: S<'_>,
+    answer: sf_core::PlacementAnswer,
+) -> CmdResult<PlacementStep> {
+    let step = {
+        let mut slot = state.placement.lock().expect("placement lock");
+        let test = slot
+            .as_mut()
+            .ok_or_else(|| CmdError::new("placement", "没有进行中的定级测试"))?;
+        test.submit(answer)
+            .map_err(|e| CmdError::new("placement", e))?;
+        let step = placement_step(test);
+        if step.result.is_some() {
+            *slot = None;
+        }
+        step
+    };
+    if let Some(result) = &step.result {
+        let progress = state.progress.lock().expect("progress lock");
+        progress.kv_set(PLACEMENT_KV_KEY, &serde_json::to_string(result)?)?;
+    }
+    Ok(step)
+}
+
+/// 上次定级结果(设置页展示 + 重测入口的摘要)。
+#[tauri::command]
+pub fn placement_last(state: S<'_>) -> CmdResult<Option<sf_core::PlacementResult>> {
+    let progress = state.progress.lock().expect("progress lock");
+    Ok(progress
+        .kv_get(PLACEMENT_KV_KEY)?
+        .and_then(|raw| serde_json::from_str(&raw).ok()))
+}
+
 // ------------------------------------------------------------- collections
 
 #[tauri::command]

@@ -177,6 +177,34 @@ export interface BenchScore {
   latency_ms: number;
 }
 
+/* ---------- 定级测试 (sf-core placement,方案 §3.3) ---------- */
+
+export type PlacementItem =
+  | { kind: "vocab"; word: string }
+  | { kind: "sentence"; sentence: Sentence; mode: Mode }
+  | { kind: "grammar"; topic_zh: string; prompt_zh: string; stem: string; options: string[] };
+
+export type PlacementAnswer =
+  | { kind: "vocab"; known: boolean }
+  | { kind: "sentence"; word_errors: number; seen_answer: boolean; dur_ms: number; wpm: number }
+  | { kind: "grammar"; choice: number };
+
+export interface PlacementResult {
+  level: LevelId;
+  vocab_est: number;
+  sentence_accuracy: number;
+  false_alarm_rate: number;
+  low_confidence: boolean;
+  grammar_notes: string[];
+  taken_at: number;
+}
+
+export interface PlacementStep {
+  item: PlacementItem | null;
+  progress: number;
+  result: PlacementResult | null;
+}
+
 export interface CmdError {
   code: string;
   message: string;
@@ -213,6 +241,12 @@ export const ipc = {
   submitAttempt: (report: AttemptReport) => invoke<AttemptAck>("submit_attempt", { report }),
   judgeText: (sentenceId: number, input: string) =>
     invoke<Verdict>("judge_text", { sentenceId, input }),
+
+  placementStart: (allowListening: boolean) =>
+    invoke<PlacementStep>("placement_start", { allowListening }),
+  placementAnswer: (answer: PlacementAnswer) =>
+    invoke<PlacementStep>("placement_answer", { answer }),
+  placementLast: () => invoke<PlacementResult | null>("placement_last"),
 
   wrongbook: () => invoke<number[]>("wrongbook"),
   favorites: () => invoke<number[]>("favorites"),

@@ -11,6 +11,7 @@
 //! no per-level hardcoding.
 
 pub mod judge;
+pub mod placement;
 pub mod rng;
 pub mod sentence;
 pub mod session;
@@ -19,6 +20,10 @@ pub mod srs;
 pub mod stats;
 
 pub use judge::{JudgePolicy, Verdict, WordVerdict, judge};
+pub use placement::{
+    GrammarItem, PlacementAnswer, PlacementBank, PlacementConfig, PlacementItem, PlacementResult,
+    PlacementTest, VocabWord,
+};
 pub use sentence::{Chunk, LevelId, PosTag, RoleTag, Sentence, Word};
 pub use session::{Session, SessionItem, build_session};
 pub use spec::{FlowKind, HintVisibility, LevelSpec, PracticeSpec, SrsSpec};

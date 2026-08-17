@@ -73,6 +73,12 @@ impl Lexicon {
         self.entries.len()
     }
 
+    /// 遍历全部词条(顺序不保证——HashMap 底层;需要确定性的消费方
+    /// 自行排序,如定级测试的分层抽样)。
+    pub fn entries(&self) -> impl Iterator<Item = &LexEntry> {
+        self.entries.values()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
