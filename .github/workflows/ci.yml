@@ -31,6 +31,10 @@ jobs:
         run: cargo fmt --check
       - name: Clippy (core crates)
         run: cargo clippy -p sf-core -p sf-license -p sf-pipeline -p sf-llm --all-features -- -D warnings
+      # content/build/ 是构建产物不入库,但 tauri-build 会在编译期校验
+      # bundle.resources 里的 content.db 路径 —— 测试前先从种子库产出它。
+      - name: Build bundled content.db (from seeds)
+        run: cargo run -p sf-pipeline --features factory --bin sf -- factory build
       - name: Tests
         run: cargo test --workspace --all-features
       - name: sf-wasm compiles for wasm32
@@ -46,7 +50,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
       - run: npm ci
+      # 试用站的 wasm 引擎不入库(避免与 sf-core 悄悄漂移),CI 现场构建。
+      - name: Build sf-wasm engine
+        run: npm run build:wasm
       - name: Typecheck
         run: npx tsc --noEmit -p packages/ui && npx tsc --noEmit -p apps/web-trial && npx tsc --noEmit -p apps/desktop
       - name: Build web trial

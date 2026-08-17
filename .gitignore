@@ -12,9 +12,10 @@ dist/
 apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/target/
 
-# wasm build output consumed by the web trial
+# wasm build output consumed by the web trial (CI/本地经 npm run build:wasm 生成)
 crates/sf-wasm/pkg/
 apps/web-trial/src/wasm/pkg/
+apps/web-trial/public/wasm/
 
 # Content build artifacts (source YAML stays in git; compiled DBs do not)
 content/build/
