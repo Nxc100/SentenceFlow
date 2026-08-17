@@ -17,6 +17,7 @@ import {
   ReorderBoard,
   TypingBoard,
   WebAudioSounds,
+  levelName,
   useToast,
 } from "@sentenceflow/ui";
 import type {
@@ -212,7 +213,7 @@ export function PracticeScreen({
         .then(() => {
           if (kind === "mark_mastered") {
             sounds.master();
-            toast.show("已标记为掌握,直入盒 5");
+            toast.show("已标记为掌握,之后只做偶尔抽查");
           } else {
             toast.show("已收录错题本");
           }
@@ -366,7 +367,8 @@ export function PracticeScreen({
     <div className="practice-screen">
       {topBar(
         <>
-          {sentence?.level} · {sentence?.scene ?? "…"} ({index + 1}/{items.length})
+          {sentence ? levelName(sentence.level) : ""} · {sentence?.scene ?? "…"} ({index + 1}/
+          {items.length})
           {item.is_review && <span className="practice-review-dot" title="复习句" />}
           <span className="practice-mode-chip">{MODE_LABEL[item.mode]}</span>
         </>,

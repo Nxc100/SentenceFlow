@@ -156,6 +156,9 @@ pub struct AiSettings {
     pub channel: Option<ChannelId>,
     /// 所选模型 id.
     pub model: Option<String>,
+    /// 所选模型的展示名(选择时随手记下,供工坊顶栏等处显示;
+    /// 面向小白用户不露 `opencode/hy3-free` 这类原始 id)。
+    pub model_label: Option<String>,
     /// 单次预算上限,默认 ¥1 (§4.7).
     pub per_run_budget_cny: f64,
     /// 月度提醒阈值(None = 关).
@@ -174,6 +177,7 @@ impl Default for AiSettings {
         Self {
             channel: None,
             model: None,
+            model_label: None,
             per_run_budget_cny: 1.0,
             monthly_reminder_cny: None,
             price_override: None,

@@ -422,7 +422,9 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                         CardEvent::Discarded {
                                             job_id,
                                             en: String::new(),
-                                            reason: format!("JSON 解析失败: {e}"),
+                                            reason: format!(
+                                                "AI 返回的格式有误,已跳过这条(不影响其他句子)。技术细节:{e}"
+                                            ),
                                             recoverable: false,
                                         },
                                     );
@@ -588,7 +590,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
     // 拿满未遂时诚实收尾:说明原因并给出可行动的建议(§6.1 不甩锅给用户)。
     let summary = if job.state == JobState::Completed && job.shortfall() > 0 {
         format!(
-            "目标 {} · 通过 {} · 丢弃 {}。已自动补生成 {} 轮仍未拿满——该场景的常用词超出当前等级词表,建议提高等级或换个更日常的场景说法",
+            "目标 {} · 通过 {} · 丢弃 {}。已自动补生成 {} 轮仍未凑满——这个场景的常用说法超出了当前等级范围,建议提高等级或换个更日常的场景描述",
             job.params.total_sentences,
             job.produced,
             discarded_total,

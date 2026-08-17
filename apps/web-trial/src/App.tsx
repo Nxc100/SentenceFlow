@@ -12,6 +12,7 @@ import {
   ReorderBoard,
   TypingBoard,
   WebAudioSounds,
+  levelName,
 } from "@sentenceflow/ui";
 import type {
   CoreEngine,
@@ -164,8 +165,8 @@ export function App() {
               onClick={() => startSection(section)}
               disabled={!engine}
             >
-              <span className="trial-section-level">{section.level}</span>
-              <span className="trial-section-title">{section.title}</span>
+              <span className="trial-section-level">{levelName(section.level)}</span>
+              <span className="trial-section-title">{levelName(section.level)}体验节</span>
               <span className="trial-section-cando">
                 {section.spec.can_do.join(" · ")} · {section.sentences.length} 句
               </span>
@@ -186,7 +187,7 @@ export function App() {
     return (
       <div className="trial-shell">
         <CompletionPage
-          title={`${screen.section.title} · 完成!`}
+          title={`${levelName(screen.section.level)}体验节 · 完成!`}
           stats={{ sentences: total, accuracy, avgWpm, durMs: tally.durMs }}
           actions={
             <>
@@ -247,7 +248,7 @@ export function App() {
           ‹
         </button>
         <span className="trial-practice-title">
-          {section.level} · {sentence.scene} ({index + 1}/{section.sentences.length})
+          {levelName(section.level)} · {sentence.scene} ({index + 1}/{section.sentences.length})
         </span>
       </header>
       <ProgressBar value={progress} aria-label="本节进度" />

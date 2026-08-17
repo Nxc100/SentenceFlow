@@ -35,7 +35,7 @@ export function CompletionPage({ title = "本节完成", stats, actions, childre
       <div className="sf-completion__grid">
         <StatCard value={String(stats.sentences)} label="句子" />
         <StatCard value={`${Math.round(stats.accuracy * 100)}%`} label="正确率" />
-        <StatCard value={stats.avgWpm > 0 ? stats.avgWpm.toFixed(0) : "–"} label="WPM" />
+        <StatCard value={stats.avgWpm > 0 ? stats.avgWpm.toFixed(0) : "–"} label="速度(词/分)" />
         <StatCard value={formatDuration(stats.durMs)} label="用时" />
       </div>
       {children}

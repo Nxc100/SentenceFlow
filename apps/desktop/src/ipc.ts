@@ -51,6 +51,8 @@ export interface Settings {
   ai: {
     channel: ChannelId | null;
     model: string | null;
+    /** 所选模型的展示名(界面显示用,不露原始 id) */
+    model_label: string | null;
     per_run_budget_cny: number;
     monthly_reminder_cny: number | null;
     price_override: { prompt_per_m: number; completion_per_m: number } | null;

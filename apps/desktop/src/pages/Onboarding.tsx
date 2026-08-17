@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import { Button } from "@sentenceflow/ui";
+import { Button, levelCanDo, levelName } from "@sentenceflow/ui";
 import type { LevelId } from "@sentenceflow/ui";
 import { useApp } from "../appState";
 
@@ -62,9 +62,8 @@ export function Onboarding() {
             className="onboarding__card"
             onClick={() => void setLevel(spec.id)}
           >
-            <span className="onboarding__level">{spec.id}</span>
-            <span className="onboarding__cefr">≈{spec.cefr}</span>
-            <span className="onboarding__cando">{spec.can_do.join(" · ")}</span>
+            <span className="onboarding__level">{levelName(spec.id)}</span>
+            <span className="onboarding__cando">能做到:{levelCanDo(spec.id, spec)}</span>
           </button>
         ))}
       </div>

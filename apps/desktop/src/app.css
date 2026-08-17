@@ -230,11 +230,6 @@ select {
   color: var(--sf-primary);
 }
 
-.onboarding__cefr {
-  font-size: 12px;
-  color: var(--sf-text-placeholder);
-}
-
 .onboarding__cando {
   font-size: 13px;
   color: var(--sf-text-2);

@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Button, StatCard } from "@sentenceflow/ui";
+import { Button, StatCard, levelOptionLabel } from "@sentenceflow/ui";
 import { useApp } from "../appState";
 import type { TodayOverview } from "../ipc";
 import { ipc } from "../ipc";
@@ -30,7 +30,7 @@ export function TodayPage({ onStart }: { onStart: (launch: PracticeLaunch) => vo
         >
           {specs.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.id} · {s.cefr}
+              {levelOptionLabel(s.id, s)}
             </option>
           ))}
         </select>

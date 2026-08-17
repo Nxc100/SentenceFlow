@@ -212,10 +212,27 @@ function AiSection() {
     for (const c of CHANNELS) void probe(c.id);
   }, [probe]);
 
-  const select = (id: ChannelId, model?: string) =>
+  // 旧版本存的设置没有 model_label:探测到模型列表后自动补写展示名。
+  useEffect(() => {
+    const status = settings.ai.channel ? statuses[settings.ai.channel] : undefined;
+    if (!settings.ai.model || settings.ai.model_label || status?.state !== "ready") return;
+    const name = status.models.find((m) => m.id === settings.ai.model)?.display_name;
+    if (name) {
+      void updateSettings((s) => {
+        s.ai.model_label = name;
+        return s;
+      });
+    }
+  }, [statuses, settings.ai.channel, settings.ai.model, settings.ai.model_label, updateSettings]);
+
+  /** 选通道/模型;顺手记下模型展示名,界面各处显示友好名而非原始 id */
+  const select = (id: ChannelId, model?: string, models?: ModelInfo[]) =>
     void updateSettings((s) => {
       s.ai.channel = id;
-      if (model !== undefined) s.ai.model = model;
+      if (model !== undefined) {
+        s.ai.model = model;
+        s.ai.model_label = models?.find((m) => m.id === model)?.display_name ?? null;
+      }
       return s;
     });
 
@@ -257,7 +274,7 @@ function AiSection() {
                   name="channel"
                   checked={selected}
                   disabled={status?.state !== "ready"}
-                  onChange={() => select(c.id, defaultModel(models))}
+                  onChange={() => select(c.id, defaultModel(models), models)}
                 />
                 <span className="channel-card__name">{c.name}</span>
                 {dot(status)}
@@ -323,7 +340,7 @@ function AiSection() {
                 return (
                   <>
                     <div className="channel-card__models">
-                      <select value={currentId} onChange={(e) => select(c.id, e.target.value)}>
+                      <select value={currentId} onChange={(e) => select(c.id, e.target.value, models)}>
                         {models.map((m) => (
                           <option key={m.id} value={m.id}>
                             {m.display_name}
@@ -335,7 +352,7 @@ function AiSection() {
                         <span className="channel-card__terms">{current.terms_note}</span>
                       )}
                       {(c.id === "opencode" || c.id === "zen") && (
-                        <BenchButton onPicked={(m) => select(c.id, m)} />
+                        <BenchButton onPicked={(m) => select(c.id, m, models)} />
                       )}
                     </div>
                     {current?.needs_proxy && !hasProxy && (
@@ -410,15 +427,15 @@ function BenchButton({ onPicked }: { onPicked: (model: string) => void }) {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        toast.show("正在为你挑选最合适的免费模型,约 30 秒,仅一次");
+        toast.show("正在为你试用各个模型并挑最合适的,约 30 秒,只需一次");
         try {
           const ranking = await ipc.runBench();
           const best = ranking[0];
           if (best) {
             onPicked(best.model);
-            toast.show(`已选 ${best.model}(得分 ${best.score.toFixed(0)})`);
+            toast.show("已为你选好效果最好的模型");
           } else {
-            toast.show("没有可评测的模型");
+            toast.show("暂时没有可试用的模型");
           }
         } catch (e) {
           toast.show(String((e as { message?: string }).message ?? e));
@@ -427,7 +444,7 @@ function BenchButton({ onPicked }: { onPicked: (model: string) => void }) {
         }
       }}
     >
-      {busy ? "评测中…" : "微基准择优"}
+      {busy ? "挑选中…" : "帮我选模型"}
     </Button>
   );
 }
@@ -578,7 +595,7 @@ function DataSection() {
               toast.show("恢复完成");
             }}
           >
-            确认恢复(按 last_at 取新)
+            确认恢复(重复的进度保留较新一条)
           </Button>
         </div>
       )}

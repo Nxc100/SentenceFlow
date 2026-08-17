@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Markdown, ProgressBar, useToast } from "@sentenceflow/ui";
+import { Button, Markdown, ProgressBar, levelOptionLabel, useToast } from "@sentenceflow/ui";
 import type { LevelId, Sentence } from "@sentenceflow/ui";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { useApp } from "../appState";
@@ -23,7 +23,7 @@ export function WorkshopPage({
   prefillScene: string | null;
   onConsumedPrefill: () => void;
 }) {
-  const { level, settings } = useApp();
+  const { level, specs, settings } = useApp();
   const toast = useToast();
   const channel = settings.ai.channel;
   const [scene, setScene] = useState("");
@@ -156,7 +156,7 @@ export function WorkshopPage({
       <header className="page__header">
         <h1>生成工坊</h1>
         <span className="workshop-channel">
-          通道:{settings.ai.model ?? channel}
+          AI:{settings.ai.model_label ?? settings.ai.model?.split("/").pop() ?? channel}
         </span>
       </header>
 
@@ -171,9 +171,9 @@ export function WorkshopPage({
           }}
         />
         <select value={genLevel} onChange={(e) => setGenLevel(e.target.value as LevelId)}>
-          {(["L1", "L2", "L3", "L4", "L5", "L6"] as const).map((l) => (
-            <option key={l} value={l}>
-              {l}
+          {specs.map((s) => (
+            <option key={s.id} value={s.id}>
+              {levelOptionLabel(s.id, s)}
             </option>
           ))}
         </select>

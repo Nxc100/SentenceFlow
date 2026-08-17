@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, ParseView, useToast } from "@sentenceflow/ui";
+import { Button, ParseView, levelOptionLabel, useToast } from "@sentenceflow/ui";
 import type { LevelId, Sentence } from "@sentenceflow/ui";
 import { useApp } from "../appState";
 import { ipc } from "../ipc";
@@ -70,7 +70,7 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
         >
           {specs.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.id}
+              {levelOptionLabel(s.id, s)}
             </option>
           ))}
         </select>

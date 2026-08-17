@@ -53,7 +53,10 @@ export function ReportPage({ onDrill }: { onDrill: (scene: string) => void }) {
           value={today ? `${Math.round(today.accuracy * 100)}%` : "–"}
           label="今日正确率"
         />
-        <StatCard value={today && today.avg_wpm > 0 ? today.avg_wpm.toFixed(0) : "–"} label="今日 WPM" />
+        <StatCard
+          value={today && today.avg_wpm > 0 ? today.avg_wpm.toFixed(0) : "–"}
+          label="打字速度(词/分)"
+        />
         <StatCard value={`${stats.streak_days} 天`} label="连续打卡 🔥" />
       </div>
 
@@ -69,7 +72,7 @@ export function ReportPage({ onDrill }: { onDrill: (scene: string) => void }) {
         <section className="report-section">
           <h2>近 30 天曲线</h2>
           <Sparkline
-            label="WPM"
+            label="打字速度"
             values={curve.map((c) => c.avg_wpm)}
             color="var(--sf-blue-500)"
           />

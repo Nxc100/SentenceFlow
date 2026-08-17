@@ -8,6 +8,7 @@ import "./components.css";
 import "./practice.css";
 
 export * from "./types";
+export * from "./levels";
 export * from "./engine";
 export * from "./grammar";
 export * from "./confetti";
