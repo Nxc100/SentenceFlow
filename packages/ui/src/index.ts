@@ -14,6 +14,7 @@ export * from "./confetti";
 export * from "./sounds";
 
 export * from "./components/Button";
+export * from "./components/Markdown";
 export * from "./components/Switch";
 export * from "./components/Modal";
 export * from "./components/Toast";

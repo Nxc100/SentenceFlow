@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, ProgressBar, useToast } from "@sentenceflow/ui";
+import { Button, Markdown, ProgressBar, useToast } from "@sentenceflow/ui";
 import type { LevelId, Sentence } from "@sentenceflow/ui";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { useApp } from "../appState";
@@ -328,7 +328,11 @@ function WeeklyReview() {
       >
         {busy ? "生成中…" : "生成本周 AI 点评"}
       </Button>
-      {text && <div className="workshop-weekly__text">{text}</div>}
+      {text && (
+        <div className="workshop-weekly__text">
+          <Markdown text={text} />
+        </div>
+      )}
     </div>
   );
 }

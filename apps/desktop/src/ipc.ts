@@ -229,8 +229,8 @@ export const ipc = {
   workshopJobs: () => invoke<GenJob[]>("workshop_jobs"),
   workshopRecover: (sentence: Sentence) => invoke<number>("workshop_recover", { sentence }),
 
-  askAi: (sentenceId: number, question: string) =>
-    invoke<void>("ask_ai", { sentenceId, question }),
+  askAi: (sentenceId: number, question: string, history: Array<{ q: string; a: string }>) =>
+    invoke<void>("ask_ai", { sentenceId, question, history }),
   weeklyReview: () => invoke<string>("weekly_review", { tzOffsetSecs: tzOffsetSecs() }),
 
   backupExport: (dest: string) => invoke<string>("backup_export", { dest }),

@@ -226,7 +226,9 @@ export function PracticeScreen({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setPaused((p) => !p);
+        // 抽屉打开时 Esc 先关抽屉,再谈暂停
+        if (askOpen) setAskOpen(false);
+        else setPaused((p) => !p);
         return;
       }
       if (askOpen || paused) return;

@@ -665,12 +665,20 @@ pub fn workshop_recover(state: S<'_>, sentence: Sentence) -> CmdResult<i64> {
 
 // ------------------------------------------------------------- ask AI / weekly
 
+/// 一轮已完成的问答(前端随新问题回传,用于多轮上下文)。
+#[derive(Debug, Deserialize)]
+pub struct AskTurn {
+    pub q: String,
+    pub a: String,
+}
+
 #[tauri::command]
 pub async fn ask_ai(
     app: AppHandle,
     state: S<'_>,
     sentence_id: i64,
     question: String,
+    history: Vec<AskTurn>,
 ) -> CmdResult<()> {
     let (channel, model) = {
         let settings = state.settings.lock().expect("settings lock");
@@ -689,14 +697,18 @@ pub async fn ask_ai(
             .ok_or_else(|| CmdError::new("content", "句子不存在"))?
     };
     let adapter = channels::make_adapter(&state, channel, None)?;
+    // 近 3 轮上下文随问题送出(限量控 token,§1.4 花钱必透明)
+    let mut user = format!("句子:{}\n中文:{}\n", sentence.en, sentence.zh);
+    for turn in history.iter().rev().take(3).rev() {
+        user.push_str(&format!("此前问:{}\n此前答:{}\n", turn.q, turn.a));
+    }
+    user.push_str(&format!("问题:{question}"));
     let req = sf_llm::types::GenRequest {
         model,
-        system: "你是英语老师,用简体中文简明回答学习者针对给定英文句子的问题。不超过 200 字。"
+        system: "你是英语老师,用简体中文简明回答学习者针对给定英文句子的问题。\
+                 可用 Markdown(加粗、列表)组织要点。不超过 200 字。"
             .into(),
-        user: format!(
-            "句子:{}\n中文:{}\n问题:{}",
-            sentence.en, sentence.zh, question
-        ),
+        user,
         max_tokens: Some(1024),
         temperature: Some(0.3),
     };

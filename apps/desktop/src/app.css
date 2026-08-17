@@ -480,22 +480,82 @@ select {
   color: var(--sf-error);
 }
 
-/* AI 答疑抽屉(§6.3:高 40%,不遮句子本体) */
+/* AI 答疑抽屉(§6.3:默认高 40%,顶部拖拽条可调,不遮句子本体) */
 .ask-drawer {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 40vh;
   background: var(--sf-card);
   border-top: 1px solid var(--sf-border);
   box-shadow: var(--sf-shadow-3);
   border-radius: var(--sf-radius-xl) var(--sf-radius-xl) 0 0;
   display: flex;
   flex-direction: column;
-  padding: 16px 24px;
-  gap: 12px;
+  padding: 0 24px 16px;
+  gap: 10px;
   z-index: 30;
+}
+
+.ask-drawer__grip {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 2px;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.ask-drawer__gripbar {
+  width: 44px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--sf-slot-underline);
+  transition: background var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.ask-drawer__grip:hover .ask-drawer__gripbar {
+  background: var(--sf-primary);
+}
+
+/* 会话气泡 */
+.ask-msg {
+  max-width: 72%;
+  border-radius: var(--sf-radius-md);
+  padding: 8px 14px;
+  animation: sf-fade-in var(--sf-dur-fast) var(--sf-ease-out);
+}
+
+.ask-msg--user {
+  align-self: flex-end;
+  background: var(--sf-primary-soft);
+  color: var(--sf-text);
+  font-size: 14px;
+}
+
+.ask-msg--ai {
+  align-self: flex-start;
+  background: var(--sf-panel);
+  position: relative;
+}
+
+.ask-drawer__empty {
+  align-self: center;
+  margin: auto;
+  font-size: 13px;
+  color: var(--sf-text-placeholder);
+}
+
+/* 打字机光标 */
+.ask-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--sf-primary);
+  animation: sf-breathe 0.9s ease-in-out infinite;
 }
 
 .ask-drawer__head {
@@ -522,7 +582,10 @@ select {
 .ask-drawer__body {
   flex: 1;
   overflow-y: auto;
-  white-space: pre-wrap;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
 }
 
 .ask-drawer__error {

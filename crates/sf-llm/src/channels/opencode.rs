@@ -98,7 +98,8 @@ impl OpencodeChannel {
     }
 
     async fn run_capture(&self, bin: &Path, args: &[&str]) -> Result<String, ChannelError> {
-        let fut = Command::new(bin)
+        let mut cmd = hidden_command(bin);
+        let fut = cmd
             .args(args)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
@@ -110,6 +111,15 @@ impl OpencodeChannel {
             .map_err(|e| ChannelError::Process(e.to_string()))?;
         Ok(String::from_utf8_lossy(&out.stdout).into_owned())
     }
+}
+
+/// Windows 下 GUI 进程 spawn `.cmd`(经 cmd.exe)会弹出黑色控制台窗口;
+/// `CREATE_NO_WINDOW` 让子进程静默运行。其余平台为普通 Command。
+fn hidden_command(bin: &Path) -> Command {
+    let mut cmd = Command::new(bin);
+    #[cfg(windows)]
+    cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    cmd
 }
 
 #[async_trait::async_trait]
@@ -172,7 +182,7 @@ impl ChannelAdapter for OpencodeChannel {
 
         // Standalone run per request — see module docs for why --attach is
         // deliberately not used.
-        let mut child = Command::new(&bin)
+        let mut child = hidden_command(&bin)
             .args(["run", "-m", &req.model, "--format", "json"])
             .current_dir(&self.cfg.sandbox_dir)
             .stdin(Stdio::piped())

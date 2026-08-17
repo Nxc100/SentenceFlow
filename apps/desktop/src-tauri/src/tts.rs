@@ -60,7 +60,10 @@ impl PiperTts {
         }
         // piper reads text on stdin; --length_scale is inverse speed.
         let length_scale = (1.0 / rate.clamp(0.6, 1.4)).to_string();
-        let mut child = tokio::process::Command::new(&self.bin)
+        let mut cmd = tokio::process::Command::new(&self.bin);
+        #[cfg(windows)]
+        cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW:GUI 进程不弹终端
+        let mut child = cmd
             .args([
                 "--model",
                 &voice.to_string_lossy(),
