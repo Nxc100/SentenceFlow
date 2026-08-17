@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="logo/sentenceflow-logo.png" alt="句流 SentenceFlow logo" width="110" />
+<img src="doc/assets/logo.png" alt="句流 SentenceFlow logo" width="110" />
 
 # 句流 SentenceFlow
 
