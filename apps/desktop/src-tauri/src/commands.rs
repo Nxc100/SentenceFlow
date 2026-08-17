@@ -504,18 +504,37 @@ pub async fn run_bench(app: AppHandle, state: S<'_>) -> CmdResult<Vec<sf_llm::be
     use sf_llm::types::GenChunk;
     use sf_pipeline::validate::{DedupeIndex, Validator, VerdictKind};
 
-    let channel = {
+    let (channel, has_proxy) = {
         let settings = state.settings.lock().expect("settings lock");
-        settings
-            .ai
-            .channel
-            .ok_or_else(|| CmdError::new("no_channel", "未配置 AI 通道"))?
+        (
+            settings
+                .ai
+                .channel
+                .ok_or_else(|| CmdError::new("no_channel", "未配置 AI 通道"))?,
+            settings
+                .ai
+                .proxy_url
+                .as_deref()
+                .is_some_and(|p| !p.trim().is_empty()),
+        )
     };
     let adapter = channels::make_adapter(&state, channel, None)?;
-    let ChannelStatus::Ready { models } = adapter.probe().await else {
+    let ChannelStatus::Ready { models } = channels::probe(&state, channel).await else {
         return Err(CmdError::new("channel", "通道未就绪,无法运行微基准"));
     };
-    let candidates: Vec<_> = models.into_iter().take(6).collect();
+    // 未配代理时跳过"需代理"模型:直连必失败,评测既浪费额度又拉低体验
+    // (名单见 channels.json proxy_required_models,面向国内用户)。
+    let candidates: Vec<_> = models
+        .into_iter()
+        .filter(|m| has_proxy || !m.needs_proxy)
+        .take(6)
+        .collect();
+    if candidates.is_empty() {
+        return Err(CmdError::new(
+            "channel",
+            "没有可评测的模型(需代理的模型已跳过)",
+        ));
+    }
     let fingerprint = sf_pipeline::simhash::fingerprint16(sf_pipeline::simhash::simhash64(
         &candidates
             .iter()

@@ -219,6 +219,10 @@ function AiSection() {
       return s;
     });
 
+  /** 默认模型:优先直连可用的第一个(面向国内用户;需代理模型仍可手选) */
+  const defaultModel = (models: ModelInfo[]) =>
+    (models.find((m) => !m.needs_proxy) ?? models[0])?.id;
+
   const dot = (status: ChannelStatus | undefined) => {
     if (!status) return <span className="ch-dot ch-dot--probing" title="检测中" />;
     switch (status.state) {
@@ -253,7 +257,7 @@ function AiSection() {
                   name="channel"
                   checked={selected}
                   disabled={status?.state !== "ready"}
-                  onChange={() => select(c.id, models[0]?.id)}
+                  onChange={() => select(c.id, defaultModel(models))}
                 />
                 <span className="channel-card__name">{c.name}</span>
                 {dot(status)}
@@ -310,26 +314,39 @@ function AiSection() {
               </div>
             )}
 
-            {selected && models.length > 0 && (
-              <div className="channel-card__models">
-                <select
-                  value={settings.ai.model ?? models[0]?.id}
-                  onChange={(e) => select(c.id, e.target.value)}
-                >
-                  {models.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.display_name}
-                    </option>
-                  ))}
-                </select>
-                {models.find((m) => m.id === (settings.ai.model ?? models[0]?.id))?.terms_note && (
-                  <span className="channel-card__terms">
-                    {models.find((m) => m.id === (settings.ai.model ?? models[0]?.id))?.terms_note}
-                  </span>
-                )}
-                {(c.id === "opencode" || c.id === "zen") && <BenchButton onPicked={(m) => select(c.id, m)} />}
-              </div>
-            )}
+            {selected &&
+              models.length > 0 &&
+              (() => {
+                const currentId = settings.ai.model ?? defaultModel(models);
+                const current = models.find((m) => m.id === currentId);
+                const hasProxy = !!settings.ai.proxy_url?.trim();
+                return (
+                  <>
+                    <div className="channel-card__models">
+                      <select value={currentId} onChange={(e) => select(c.id, e.target.value)}>
+                        {models.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.display_name}
+                            {m.needs_proxy ? " 🔒 需代理" : " · 直连可用"}
+                          </option>
+                        ))}
+                      </select>
+                      {current?.terms_note && (
+                        <span className="channel-card__terms">{current.terms_note}</span>
+                      )}
+                      {(c.id === "opencode" || c.id === "zen") && (
+                        <BenchButton onPicked={(m) => select(c.id, m)} />
+                      )}
+                    </div>
+                    {current?.needs_proxy && !hasProxy && (
+                      <p className="channel-card__err">
+                        该模型国内直连不可用 —— 请换选标注「直连可用」的模型,或在下方
+                        「网络」区填写本机代理端口。
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
 
             {c.id === "opencode" && (
               <p className="channel-card__fineprint">

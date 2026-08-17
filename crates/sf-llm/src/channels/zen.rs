@@ -47,6 +47,7 @@ impl ChannelAdapter for ZenChannel {
                         display_name: id.strip_prefix("opencode/").unwrap_or(&id).to_string(),
                         id,
                         terms_note: FREE_TERMS_NOTE.to_string(),
+                        needs_proxy: false,
                     })
                     .collect(),
             },

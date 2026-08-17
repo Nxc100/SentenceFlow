@@ -308,6 +308,7 @@ pub fn parse_models_output(out: &str) -> Vec<ModelInfo> {
             display_name: id.strip_prefix("opencode/").unwrap_or(id).to_string(),
             id: id.to_string(),
             terms_note: crate::channels::zen::FREE_TERMS_NOTE.to_string(),
+            needs_proxy: false,
         })
         .collect()
 }

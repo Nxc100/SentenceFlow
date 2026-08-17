@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rev": 1,
+  "rev": 2,
   "enabled": {
     "opencode": true,
     "deepseek": true,
@@ -9,6 +9,7 @@
   },
   "notices": {},
   "opencode_known_bad": [],
+  "proxy_required_models": ["deepseek-v4-flash"],
   "free_list_fingerprint": "",
   "deepseek_prices": {
     "prompt_per_m": 2.0,

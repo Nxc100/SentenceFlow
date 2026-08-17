@@ -26,6 +26,11 @@ pub struct ChannelPolicy {
     /// opencode versions with known breakage (substring match).
     #[serde(default)]
     pub opencode_known_bad: Vec<String>,
+    /// 国内直连不可用、需代理的免费模型(id 子串匹配,大小写不敏感)。
+    /// 面向国内用户的可达性标注 —— 上游路由会变,随内容包更新(§3.6)。
+    /// 数据来源:真机直连实测(2026-08-17:仅 deepseek-v4-flash 系需代理)。
+    #[serde(default)]
+    pub proxy_required_models: Vec<String>,
     /// Fingerprint of the free-model list — change triggers re-benchmark
     /// (§3.5 名单变化自动重测).
     #[serde(default)]
@@ -59,6 +64,14 @@ impl ChannelPolicy {
     pub fn price_age_days(&self, now: i64) -> i64 {
         ((now - self.prices_updated_at).max(0)) / 86_400
     }
+
+    /// 该模型在国内直连网络下是否需要代理(id 子串匹配,大小写不敏感)。
+    pub fn model_needs_proxy(&self, model_id: &str) -> bool {
+        let id = model_id.to_lowercase();
+        self.proxy_required_models
+            .iter()
+            .any(|m| !m.is_empty() && id.contains(&m.to_lowercase()))
+    }
 }
 
 impl Default for ChannelPolicy {
@@ -71,6 +84,8 @@ impl Default for ChannelPolicy {
             enabled: HashMap::new(),
             notices: HashMap::new(),
             opencode_known_bad: Vec::new(),
+            // 内置兜底与随包 channels.json 保持一致(实测 2026-08-17)
+            proxy_required_models: vec!["deepseek-v4-flash".into()],
             free_list_fingerprint: String::new(),
             deepseek_prices: PriceTable {
                 prompt_per_m: 2.0,
@@ -123,5 +138,17 @@ mod tests {
         let p = ChannelPolicy::default();
         assert!(p.is_enabled(ChannelId::Deepseek));
         assert_eq!(p.default_microbatch, 20);
+    }
+
+    #[test]
+    fn proxy_required_matches_by_substring_case_insensitive() {
+        let p = ChannelPolicy::default();
+        assert!(p.model_needs_proxy("opencode/deepseek-v4-flash-free"));
+        assert!(p.model_needs_proxy("opencode/DeepSeek-V4-Flash"));
+        // Zen 其余免费模型直连可用(用户真机实测)
+        assert!(!p.model_needs_proxy("opencode/hy3-free"));
+        assert!(!p.model_needs_proxy("opencode/big-pickle"));
+        // DeepSeek 官方渠道自家模型不受此名单影响
+        assert!(!p.model_needs_proxy("deepseek-chat"));
     }
 }

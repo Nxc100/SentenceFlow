@@ -38,6 +38,11 @@ pub struct ModelInfo {
     /// 免费模型条款标注 (§4.7): e.g. "限时免费 · 数据或用于训练".
     #[serde(default)]
     pub terms_note: String,
+    /// 国内直连不可用、需代理(channels.json 名单标注,面向国内用户)。
+    /// 适配器产出时恒为 false,由编排层按 [`crate::policy::ChannelPolicy`]
+    /// 回填 —— 可达性是策略,不是传输属性。
+    #[serde(default)]
+    pub needs_proxy: bool,
 }
 
 /// Result of probing a channel (通道卡三态 + 错误, §4.7).

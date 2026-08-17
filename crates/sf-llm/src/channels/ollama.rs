@@ -75,6 +75,7 @@ impl ChannelAdapter for OllamaChannel {
                             display_name: t.name.clone(),
                             id: t.name,
                             terms_note: String::new(),
+                            needs_proxy: false,
                         })
                         .collect(),
                 },

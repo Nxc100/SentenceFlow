@@ -39,6 +39,7 @@ impl AppState {
         let paths = AppPaths::new(data_root)?;
         let progress = ProgressDb::open(&paths.progress_db())?;
         let tts = crate::tts::PiperTts::detect(resource_dir.clone(), paths.root.join("tts-cache"));
+        let bundled_channels_json = resource_dir.as_ref().map(|r| r.join("channels.json"));
 
         let content_path = AppPaths::bundled_content_db(resource_dir).ok_or_else(|| {
             CmdError::new(
@@ -71,11 +72,17 @@ impl AppState {
             .and_then(|raw| serde_json::from_str(&raw).ok())
             .unwrap_or_default();
 
-        // channels.json: app-data copy (content-pack refreshed) wins over the
-        // built-in default (§3.6).
-        let policy = std::fs::read_to_string(paths.channels_json())
-            .ok()
-            .and_then(|raw| sf_llm::policy::ChannelPolicy::from_json(&raw).ok())
+        // channels.json 三级回退(§3.6):app-data 副本(内容包热更新)→
+        // 随包资源 → 内置默认。此前漏掉了随包资源一级,策略更新只能靠
+        // 热更新才生效 —— 现在装包即带最新策略。
+        let policy = [Some(paths.channels_json()), bundled_channels_json]
+            .into_iter()
+            .flatten()
+            .find_map(|p| {
+                std::fs::read_to_string(p)
+                    .ok()
+                    .and_then(|raw| sf_llm::policy::ChannelPolicy::from_json(&raw).ok())
+            })
             .unwrap_or_default();
 
         Ok(Self {

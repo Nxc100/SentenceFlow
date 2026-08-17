@@ -73,6 +73,8 @@ export interface ModelInfo {
   id: string;
   display_name: string;
   terms_note: string;
+  /** 国内直连不可用、需代理(channels.json 名单标注) */
+  needs_proxy: boolean;
 }
 
 export type ChannelStatus =

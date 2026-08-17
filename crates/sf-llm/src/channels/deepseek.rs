@@ -44,6 +44,7 @@ impl ChannelAdapter for DeepseekChannel {
                         display_name: id.clone(),
                         id,
                         terms_note: String::new(),
+                        needs_proxy: false,
                     })
                     .collect(),
             },

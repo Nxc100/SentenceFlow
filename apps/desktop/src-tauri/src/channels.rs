@@ -74,12 +74,26 @@ pub fn make_adapter(
 }
 
 /// Probe one channel; missing keys map to `NotAuthed` (通道卡黄点) instead of
-/// an error.
+/// an error. Ready 时按 channels.json 名单回填每个模型的国内直连可达性
+/// (需代理标注,面向国内用户 —— 可达性是策略,适配器不感知)。
 pub async fn probe(state: &AppState, channel: ChannelId) -> ChannelStatus {
-    match make_adapter(state, channel, None) {
+    let status = match make_adapter(state, channel, None) {
         Ok(adapter) => adapter.probe().await,
-        Err(e) if e.code == "no_key" => ChannelStatus::NotAuthed,
-        Err(e) => ChannelStatus::Error { message: e.message },
+        Err(e) if e.code == "no_key" => return ChannelStatus::NotAuthed,
+        Err(e) => return ChannelStatus::Error { message: e.message },
+    };
+    match status {
+        // 名单只描述 Zen 网关背后的免费模型(opencode/Zen 两条通道);
+        // DeepSeek 官方与 Ollama 本地天然直连可用。
+        ChannelStatus::Ready { mut models }
+            if matches!(channel, ChannelId::Opencode | ChannelId::Zen) =>
+        {
+            for m in &mut models {
+                m.needs_proxy = state.policy.model_needs_proxy(&m.id);
+            }
+            ChannelStatus::Ready { models }
+        }
+        other => other,
     }
 }
 
