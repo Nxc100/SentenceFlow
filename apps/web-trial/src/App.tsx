@@ -149,6 +149,7 @@ export function App() {
     return (
       <div className="trial-shell">
         <header className="trial-hero">
+          <img src="/logo.png" alt="句流 SentenceFlow" className="trial-hero__logo" />
           <h1>句流 SentenceFlow</h1>
           <p className="trial-tagline">
             看中文、打英文 —— 答对瞬间,句子自动展开成

@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
+import logoUrl from "./assets/logo.png";
 import type { Bootstrap } from "./ipc";
 import { ipc } from "./ipc";
 import { AppStateProvider, useApp } from "./appState";
@@ -49,7 +50,11 @@ export function App() {
     );
   }
   if (!bootstrap) {
-    return <div className="app-boot" aria-busy="true" />;
+    return (
+      <div className="app-boot" aria-busy="true">
+        <img src={logoUrl} alt="" className="app-boot__logo" />
+      </div>
+    );
   }
   return (
     <AppStateProvider bootstrap={bootstrap}>
@@ -114,7 +119,9 @@ function Shell() {
   return (
     <div className="app-shell">
       <nav className="app-nav">
-        <div className="app-nav__brand" title="句流 SentenceFlow">句</div>
+        <div className="app-nav__brand" title="句流 SentenceFlow">
+          <img src={logoUrl} alt="句流 SentenceFlow" className="app-nav__brand-img" />
+        </div>
         {NAV.map((item) => (
           <button
             key={item.key}

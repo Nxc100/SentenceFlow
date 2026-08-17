@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="logo/sentenceflow-logo.png" alt="句流 SentenceFlow logo" width="110" />
+
 # 句流 SentenceFlow
 
 **看中文、打英文 —— 答对瞬间，句子自动展开成「音标 + 词性 + 句子成分」的彩色解析。**

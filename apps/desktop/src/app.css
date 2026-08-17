@@ -29,6 +29,25 @@ body {
   gap: 8px;
 }
 
+.app-boot__logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  animation: sf-boot-breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes sf-boot-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.96); }
+}
+
+.onboarding__logo {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+}
+
 /* ---- 外壳:左侧窄栏(§2.2) ---- */
 .app-shell {
   display: flex;
@@ -47,16 +66,19 @@ body {
 }
 
 .app-nav__brand {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--sf-primary);
-  color: #fff;
-  font-weight: 800;
-  font-size: 20px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   margin-bottom: 16px;
+}
+
+.app-nav__brand-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  /* 液态高光 logo 在深浅底上都成立,轻投影增加贴合感 */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
 }
 
 .app-nav__item {

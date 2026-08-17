@@ -6,6 +6,7 @@
  */
 
 import { Button, levelCanDo, levelName } from "@sentenceflow/ui";
+import logoUrl from "../assets/logo.png";
 import { useApp } from "../appState";
 
 export function Onboarding({ onStartTest }: { onStartTest: () => void }) {
@@ -13,6 +14,7 @@ export function Onboarding({ onStartTest }: { onStartTest: () => void }) {
 
   return (
     <div className="onboarding">
+      <img src={logoUrl} alt="句流 SentenceFlow" className="onboarding__logo" />
       <h1>选择你的起点</h1>
       <p className="onboarding__sub">随时可在设置里调整;30 秒后你就会打出第一句。</p>
       <div className="onboarding__grid">

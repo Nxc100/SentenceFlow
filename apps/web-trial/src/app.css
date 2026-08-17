@@ -26,6 +26,14 @@ body {
 }
 
 /* ---- 首页 ---- */
+.trial-hero__logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+  margin-bottom: 8px;
+}
+
 .trial-hero h1 {
   font-size: var(--sf-h1-size, 28px);
   line-height: 36px;
