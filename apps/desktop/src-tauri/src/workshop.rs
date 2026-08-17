@@ -18,12 +18,13 @@ use sf_core::sentence::LevelId;
 use sf_llm::backoff::{BackoffPolicy, BackoffState};
 use sf_llm::estimate::estimate_tokens;
 use sf_llm::meter::{BudgetVerdict, MoneyMeter};
-use sf_llm::queue::{GenJob, JobParams, JobState};
+use sf_llm::queue::{GenJob, JobParams, JobState, MAX_TOPUP_BATCHES};
 use sf_llm::types::{ChannelError, ChannelId, GenChunk, GenRequest};
 use sf_pipeline::parse::StreamScanner;
 use sf_pipeline::prompt::build_prompt;
 use sf_pipeline::triage::{GenProfile, TriageOutcome, triage};
-use sf_pipeline::validate::{DedupeIndex, Validator};
+use sf_pipeline::validate::{DedupeIndex, ValidationIssue, Validator};
+use std::collections::BTreeSet;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 
@@ -74,6 +75,23 @@ pub struct DoneEvent {
 
 fn emit<T: Serialize + Clone>(app: &AppHandle, event: &str, payload: T) {
     let _ = app.emit(event, payload);
+}
+
+/// 精确查重护栏:入库前跨出厂库 + 用户库再查一次完全同文。simhash 近重
+/// (阈值 16)已挡住绝大多数重复,这里保证"每个场景中的句子不重复"的
+/// 硬承诺不受阈值校准影响。
+pub(crate) fn exists_by_en(content: &sf_pipeline::store::ContentIndex, en: &str) -> bool {
+    content
+        .factory
+        .sentence_id_by_en(en)
+        .ok()
+        .flatten()
+        .is_some()
+        || content
+            .user
+            .as_ref()
+            .and_then(|u| u.sentence_id_by_en(en).ok().flatten())
+            .is_some()
 }
 
 /// Single-shot repair call (§7.4 修补调用,仅传差异): asks the model to re-emit
@@ -182,222 +200,49 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
     let mut backoff = BackoffState::default();
     let backoff_policy = BackoffPolicy::default();
     let mut discarded_total = 0u32;
+    // 失败样本回灌(§8 运行时形态):本任务中被词表校验拒绝过的单词,
+    // 回灌进后续批次的 prompt 显式禁用,提高补足批通过率。
+    let mut banned_words: BTreeSet<String> = BTreeSet::new();
 
-    'batches: while let Some(batch_idx) = job.next_pending() {
-        if state.gen_cancelled() {
-            job.pause();
-            break;
-        }
-        job.start_batch(batch_idx);
-        emit(
-            &app,
-            "workshop://progress",
-            ProgressEvent {
-                job_id,
-                batches: job.batches.clone(),
-                produced: job.produced,
-                state: job.state.clone(),
-            },
-        );
-
-        let batch_size = job.batch_size(batch_idx);
-        let avoid: Vec<u64> = dedupe.recent(16).collect();
-        let parts = build_prompt(&spec, &job.params.scene, batch_size, &avoid);
-        if let Some(m) = &mut money {
-            m.est_prompt_tokens = estimate_tokens(&parts.system) + estimate_tokens(&parts.user);
-        }
-        let req = GenRequest {
-            model: job.params.model.clone(),
-            system: parts.system,
-            user: parts.user,
-            max_tokens: Some(8192),
-            temperature: Some(0.7),
-        };
-
-        let adapter = make_adapter(&state, channel, None)?;
-        let mut stream = match adapter.complete_stream(req).await {
-            Ok(s) => {
-                backoff.on_success();
-                s
-            }
-            Err(ChannelError::RateLimited { retry_after_secs }) => {
-                let decision = backoff.on_rate_limited(&backoff_policy, Some(retry_after_secs));
-                emit(
-                    &app,
-                    "workshop://backoff",
-                    serde_json::json!({
-                        "job_id": job_id,
-                        "wait_secs": decision.wait_secs,
-                        "suggest_switch": decision.suggest_channel_switch,
-                    }),
-                );
-                job.fail_batch(batch_idx);
-                tokio::time::sleep(std::time::Duration::from_secs(decision.wait_secs)).await;
-                job.resume();
-                continue 'batches;
-            }
-            Err(e) => {
-                emit(
-                    &app,
-                    "workshop://error",
-                    serde_json::json!({
-                        "job_id": job_id, "message": e.zh_message(),
-                    }),
-                );
-                job.fail_batch(batch_idx);
-                break 'batches;
-            }
-        };
-
-        let validator = Validator::new(&spec, &state.lexicon);
-        let mut scanner = StreamScanner::new();
-        let mut accepted_in_batch = 0u32;
-        let mut batch_failed = false;
-        // 修补队列:流结束后统一发修补调用(仅传差异,§7.4)。
-        let mut pending_repairs: Vec<(sf_core::Sentence, Vec<String>)> = Vec::new();
-
-        while let Some(chunk) = stream.next().await {
+    'job: loop {
+        'batches: while let Some(batch_idx) = job.next_pending() {
             if state.gen_cancelled() {
-                drop(stream);
-                job.finish_batch(batch_idx, accepted_in_batch);
                 job.pause();
-                break 'batches;
+                break;
             }
-            match chunk {
-                Ok(GenChunk::Text { text }) => {
-                    if let Some(m) = &mut money {
-                        let verdict = m.add_completion_tokens(estimate_tokens(&text));
-                        emit(
-                            &app,
-                            "workshop://meter",
-                            MeterEvent {
-                                job_id,
-                                cost_cny: Some(m.current_cost()),
-                                today_requests: 0,
-                                warning: verdict != BudgetVerdict::Ok,
-                            },
-                        );
-                        if verdict == BudgetVerdict::Exhausted {
-                            // 触顶硬拦截,优雅收尾:保留已产出 (§6.3).
-                            drop(stream);
-                            job.finish_batch(batch_idx, accepted_in_batch);
-                            job.pause();
-                            emit(
-                                &app,
-                                "workshop://error",
-                                serde_json::json!({
-                                    "job_id": job_id,
-                                    "message": "已达单次预算上限,已入库完成部分",
-                                    "budget_stop": true,
-                                }),
-                            );
-                            break 'batches;
-                        }
-                    }
-                    for draft in scanner.push(&text) {
-                        match draft {
-                            Ok(d) => {
-                                let report = validator.validate(&d, &job.params.scene, "", &dedupe);
-                                let hash = report.simhash;
-                                match triage(report, GenProfile::User, &all_specs) {
-                                    TriageOutcome::Accept { mut sentence } => {
-                                        dedupe.add(hash);
-                                        let content = state.content.lock().expect("content lock");
-                                        if let Some(user) = &content.user {
-                                            let rid = user.insert_sentence(&sentence, "", 1)?;
-                                            sentence.id =
-                                                sf_pipeline::store::ContentIndex::USER_ID_OFFSET
-                                                    + rid;
-                                        }
-                                        drop(content);
-                                        accepted_in_batch += 1;
-                                        emit(
-                                            &app,
-                                            "workshop://card",
-                                            CardEvent::Accepted { job_id, sentence },
-                                        );
-                                    }
-                                    TriageOutcome::Repair { sentence, issues } => {
-                                        emit(
-                                            &app,
-                                            "workshop://card",
-                                            CardEvent::Repairing {
-                                                job_id,
-                                                en: sentence.en.clone(),
-                                            },
-                                        );
-                                        let reasons =
-                                            issues.iter().map(|i| i.zh_reason()).collect();
-                                        pending_repairs.push((sentence, reasons));
-                                    }
-                                    TriageOutcome::Relevel { sentence, .. }
-                                    | TriageOutcome::Discard {
-                                        recoverable: Some(sentence),
-                                        ..
-                                    } => {
-                                        discarded_total += 1;
-                                        emit(
-                                            &app,
-                                            "workshop://card",
-                                            CardEvent::Discarded {
-                                                job_id,
-                                                en: sentence.en.clone(),
-                                                reason: "超出当前等级或与已有句重复".into(),
-                                                recoverable: true,
-                                            },
-                                        );
-                                    }
-                                    TriageOutcome::Discard {
-                                        recoverable: None,
-                                        reason,
-                                    } => {
-                                        discarded_total += 1;
-                                        emit(
-                                            &app,
-                                            "workshop://card",
-                                            CardEvent::Discarded {
-                                                job_id,
-                                                en: String::new(),
-                                                reason,
-                                                recoverable: false,
-                                            },
-                                        );
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                discarded_total += 1;
-                                emit(
-                                    &app,
-                                    "workshop://card",
-                                    CardEvent::Discarded {
-                                        job_id,
-                                        en: String::new(),
-                                        reason: format!("JSON 解析失败: {e}"),
-                                        recoverable: false,
-                                    },
-                                );
-                            }
-                        }
-                    }
+            job.start_batch(batch_idx);
+            emit(
+                &app,
+                "workshop://progress",
+                ProgressEvent {
+                    job_id,
+                    batches: job.batches.clone(),
+                    produced: job.produced,
+                    state: job.state.clone(),
+                },
+            );
+
+            let batch_size = job.request_size(batch_idx);
+            let avoid: Vec<u64> = dedupe.recent(16).collect();
+            let banned: Vec<String> = banned_words.iter().cloned().collect();
+            let parts = build_prompt(&spec, &job.params.scene, batch_size, &avoid, &banned);
+            if let Some(m) = &mut money {
+                m.est_prompt_tokens = estimate_tokens(&parts.system) + estimate_tokens(&parts.user);
+            }
+            let req = GenRequest {
+                model: job.params.model.clone(),
+                system: parts.system,
+                user: parts.user,
+                max_tokens: Some(8192),
+                temperature: Some(0.7),
+            };
+
+            let adapter = make_adapter(&state, channel, None)?;
+            let mut stream = match adapter.complete_stream(req).await {
+                Ok(s) => {
+                    backoff.on_success();
+                    s
                 }
-                Ok(GenChunk::Usage {
-                    prompt_tokens,
-                    completion_tokens,
-                }) => {
-                    if let Some(m) = &mut money {
-                        m.report_usage(prompt_tokens, completion_tokens);
-                    }
-                    let progress = state.progress.lock().expect("progress lock");
-                    progress.spend_add(
-                        now_unix(),
-                        &job.params.channel,
-                        prompt_tokens,
-                        completion_tokens,
-                        money.as_ref().map(|m| m.current_cost()).unwrap_or(0.0),
-                    )?;
-                }
-                Ok(GenChunk::Done) => break,
                 Err(ChannelError::RateLimited { retry_after_secs }) => {
                     let decision = backoff.on_rate_limited(&backoff_policy, Some(retry_after_secs));
                     emit(
@@ -409,7 +254,10 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                             "suggest_switch": decision.suggest_channel_switch,
                         }),
                     );
+                    job.fail_batch(batch_idx);
                     tokio::time::sleep(std::time::Duration::from_secs(decision.wait_secs)).await;
+                    job.resume();
+                    continue 'batches;
                 }
                 Err(e) => {
                     emit(
@@ -419,91 +267,336 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                             "job_id": job_id, "message": e.zh_message(),
                         }),
                     );
-                    batch_failed = true;
-                    break;
+                    job.fail_batch(batch_idx);
+                    break 'batches;
                 }
-            }
-        }
+            };
 
-        if batch_failed {
-            // Keep what landed, return the batch for retry (§6.3 断点续跑).
-            job.finish_batch(batch_idx, accepted_in_batch);
-            job.pause();
-            break 'batches;
-        }
+            let validator = Validator::new(&spec, &state.lexicon);
+            let mut scanner = StreamScanner::new();
+            let mut accepted_in_batch = 0u32;
+            let mut batch_failed = false;
+            // 修补队列:流结束后统一发修补调用(仅传差异,§7.4)。
+            let mut pending_repairs: Vec<(sf_core::Sentence, Vec<String>)> = Vec::new();
 
-        // 修补调用:一句一发,单次尝试;修不好 → 丢弃可捞回 (§7.4).
-        for (broken, reasons) in pending_repairs.drain(..) {
-            if state.gen_cancelled() {
-                break;
-            }
-            match run_repair(
-                &state,
-                channel,
-                &job.params.model,
-                &broken,
-                &reasons,
-                &validator,
-                &dedupe,
-            )
-            .await
-            {
-                Some(mut fixed) => {
-                    dedupe.add(fixed.simhash);
-                    {
-                        let content = state.content.lock().expect("content lock");
-                        if let Some(user) = &content.user {
-                            let rid = user.insert_sentence(&fixed, "", 1)?;
-                            fixed.id = sf_pipeline::store::ContentIndex::USER_ID_OFFSET + rid;
+            while let Some(chunk) = stream.next().await {
+                if state.gen_cancelled() {
+                    drop(stream);
+                    job.finish_batch(batch_idx, accepted_in_batch);
+                    job.pause();
+                    break 'batches;
+                }
+                match chunk {
+                    Ok(GenChunk::Text { text }) => {
+                        if let Some(m) = &mut money {
+                            let verdict = m.add_completion_tokens(estimate_tokens(&text));
+                            emit(
+                                &app,
+                                "workshop://meter",
+                                MeterEvent {
+                                    job_id,
+                                    cost_cny: Some(m.current_cost()),
+                                    today_requests: 0,
+                                    warning: verdict != BudgetVerdict::Ok,
+                                },
+                            );
+                            if verdict == BudgetVerdict::Exhausted {
+                                // 触顶硬拦截,优雅收尾:保留已产出 (§6.3).
+                                drop(stream);
+                                job.finish_batch(batch_idx, accepted_in_batch);
+                                job.pause();
+                                emit(
+                                    &app,
+                                    "workshop://error",
+                                    serde_json::json!({
+                                        "job_id": job_id,
+                                        "message": "已达单次预算上限,已入库完成部分",
+                                        "budget_stop": true,
+                                    }),
+                                );
+                                break 'batches;
+                            }
+                        }
+                        for draft in scanner.push(&text) {
+                            match draft {
+                                Ok(d) => {
+                                    let report =
+                                        validator.validate(&d, &job.params.scene, "", &dedupe);
+                                    for issue in &report.issues {
+                                        if let ValidationIssue::OverLevel { word, .. }
+                                        | ValidationIssue::UnknownWord { word } = issue
+                                        {
+                                            banned_words.insert(word.to_lowercase());
+                                        }
+                                    }
+                                    let hash = report.simhash;
+                                    match triage(report, GenProfile::User, &all_specs) {
+                                        TriageOutcome::Accept { mut sentence } => {
+                                            let content =
+                                                state.content.lock().expect("content lock");
+                                            // 精确查重护栏:simhash 近重之外再挡一次
+                                            // 完全同文(保证场景内不重复)。
+                                            if exists_by_en(&content, &sentence.en) {
+                                                drop(content);
+                                                discarded_total += 1;
+                                                emit(
+                                                    &app,
+                                                    "workshop://card",
+                                                    CardEvent::Discarded {
+                                                        job_id,
+                                                        en: sentence.en.clone(),
+                                                        reason: "与句库已有句完全相同".into(),
+                                                        recoverable: false,
+                                                    },
+                                                );
+                                                continue;
+                                            }
+                                            dedupe.add(hash);
+                                            if let Some(user) = &content.user {
+                                                let rid = user.insert_sentence(&sentence, "", 1)?;
+                                                sentence.id =
+                                                    sf_pipeline::store::ContentIndex::USER_ID_OFFSET
+                                                        + rid;
+                                            }
+                                            drop(content);
+                                            accepted_in_batch += 1;
+                                            emit(
+                                                &app,
+                                                "workshop://card",
+                                                CardEvent::Accepted { job_id, sentence },
+                                            );
+                                        }
+                                        TriageOutcome::Repair { sentence, issues } => {
+                                            emit(
+                                                &app,
+                                                "workshop://card",
+                                                CardEvent::Repairing {
+                                                    job_id,
+                                                    en: sentence.en.clone(),
+                                                },
+                                            );
+                                            let reasons =
+                                                issues.iter().map(|i| i.zh_reason()).collect();
+                                            pending_repairs.push((sentence, reasons));
+                                        }
+                                        TriageOutcome::Relevel { sentence, .. }
+                                        | TriageOutcome::Discard {
+                                            recoverable: Some(sentence),
+                                            ..
+                                        } => {
+                                            discarded_total += 1;
+                                            emit(
+                                                &app,
+                                                "workshop://card",
+                                                CardEvent::Discarded {
+                                                    job_id,
+                                                    en: sentence.en.clone(),
+                                                    reason: "超出当前等级或与已有句重复".into(),
+                                                    recoverable: true,
+                                                },
+                                            );
+                                        }
+                                        TriageOutcome::Discard {
+                                            recoverable: None,
+                                            reason,
+                                        } => {
+                                            discarded_total += 1;
+                                            emit(
+                                                &app,
+                                                "workshop://card",
+                                                CardEvent::Discarded {
+                                                    job_id,
+                                                    en: String::new(),
+                                                    reason,
+                                                    recoverable: false,
+                                                },
+                                            );
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    discarded_total += 1;
+                                    emit(
+                                        &app,
+                                        "workshop://card",
+                                        CardEvent::Discarded {
+                                            job_id,
+                                            en: String::new(),
+                                            reason: format!("JSON 解析失败: {e}"),
+                                            recoverable: false,
+                                        },
+                                    );
+                                }
+                            }
                         }
                     }
-                    accepted_in_batch += 1;
-                    emit(
-                        &app,
-                        "workshop://card",
-                        CardEvent::Accepted {
-                            job_id,
-                            sentence: fixed,
-                        },
-                    );
-                }
-                None => {
-                    discarded_total += 1;
-                    emit(
-                        &app,
-                        "workshop://card",
-                        CardEvent::Discarded {
-                            job_id,
-                            en: broken.en.clone(),
-                            reason: format!("修补未通过:{}", reasons.join("；")),
-                            recoverable: true,
-                        },
-                    );
+                    Ok(GenChunk::Usage {
+                        prompt_tokens,
+                        completion_tokens,
+                    }) => {
+                        if let Some(m) = &mut money {
+                            m.report_usage(prompt_tokens, completion_tokens);
+                        }
+                        let progress = state.progress.lock().expect("progress lock");
+                        progress.spend_add(
+                            now_unix(),
+                            &job.params.channel,
+                            prompt_tokens,
+                            completion_tokens,
+                            money.as_ref().map(|m| m.current_cost()).unwrap_or(0.0),
+                        )?;
+                    }
+                    Ok(GenChunk::Done) => break,
+                    Err(ChannelError::RateLimited { retry_after_secs }) => {
+                        let decision =
+                            backoff.on_rate_limited(&backoff_policy, Some(retry_after_secs));
+                        emit(
+                            &app,
+                            "workshop://backoff",
+                            serde_json::json!({
+                                "job_id": job_id,
+                                "wait_secs": decision.wait_secs,
+                                "suggest_switch": decision.suggest_channel_switch,
+                            }),
+                        );
+                        tokio::time::sleep(std::time::Duration::from_secs(decision.wait_secs))
+                            .await;
+                    }
+                    Err(e) => {
+                        emit(
+                            &app,
+                            "workshop://error",
+                            serde_json::json!({
+                                "job_id": job_id, "message": e.zh_message(),
+                            }),
+                        );
+                        batch_failed = true;
+                        break;
+                    }
                 }
             }
+
+            if batch_failed {
+                // Keep what landed, return the batch for retry (§6.3 断点续跑).
+                job.finish_batch(batch_idx, accepted_in_batch);
+                job.pause();
+                break 'batches;
+            }
+
+            // 修补调用:一句一发,单次尝试;修不好 → 丢弃可捞回 (§7.4).
+            for (broken, reasons) in pending_repairs.drain(..) {
+                if state.gen_cancelled() {
+                    break;
+                }
+                match run_repair(
+                    &state,
+                    channel,
+                    &job.params.model,
+                    &broken,
+                    &reasons,
+                    &validator,
+                    &dedupe,
+                )
+                .await
+                {
+                    Some(mut fixed) => {
+                        {
+                            let content = state.content.lock().expect("content lock");
+                            if exists_by_en(&content, &fixed.en) {
+                                drop(content);
+                                discarded_total += 1;
+                                emit(
+                                    &app,
+                                    "workshop://card",
+                                    CardEvent::Discarded {
+                                        job_id,
+                                        en: fixed.en.clone(),
+                                        reason: "与句库已有句完全相同".into(),
+                                        recoverable: false,
+                                    },
+                                );
+                                continue;
+                            }
+                            dedupe.add(fixed.simhash);
+                            if let Some(user) = &content.user {
+                                let rid = user.insert_sentence(&fixed, "", 1)?;
+                                fixed.id = sf_pipeline::store::ContentIndex::USER_ID_OFFSET + rid;
+                            }
+                        }
+                        accepted_in_batch += 1;
+                        emit(
+                            &app,
+                            "workshop://card",
+                            CardEvent::Accepted {
+                                job_id,
+                                sentence: fixed,
+                            },
+                        );
+                    }
+                    None => {
+                        discarded_total += 1;
+                        emit(
+                            &app,
+                            "workshop://card",
+                            CardEvent::Discarded {
+                                job_id,
+                                en: broken.en.clone(),
+                                reason: format!("修补未通过:{}", reasons.join("；")),
+                                recoverable: true,
+                            },
+                        );
+                    }
+                }
+            }
+
+            job.finish_batch(batch_idx, accepted_in_batch);
+            {
+                let progress = state.progress.lock().expect("progress lock");
+                progress.save_job(&job)?;
+            }
+            emit(
+                &app,
+                "workshop://progress",
+                ProgressEvent {
+                    job_id,
+                    batches: job.batches.clone(),
+                    produced: job.produced,
+                    state: job.state.clone(),
+                },
+            );
         }
 
-        job.finish_batch(batch_idx, accepted_in_batch);
+        // 拿满机制:规划批全部完成但未达到用户指定句数 → 追加补足批继续,
+        // 有限次触顶后诚实收尾(不达标场景见 done summary 的引导文案)。
+        if job.state == JobState::Completed
+            && job.shortfall() > 0
+            && job.topup_count() < MAX_TOPUP_BATCHES
+            && !state.gen_cancelled()
         {
+            job.push_topup_batch();
             let progress = state.progress.lock().expect("progress lock");
             progress.save_job(&job)?;
+            continue 'job;
         }
-        emit(
-            &app,
-            "workshop://progress",
-            ProgressEvent {
-                job_id,
-                batches: job.batches.clone(),
-                produced: job.produced,
-                state: job.state.clone(),
-            },
-        );
+        break 'job;
     }
 
     {
         let progress = state.progress.lock().expect("progress lock");
         progress.save_job(&job)?;
     }
+    // 拿满未遂时诚实收尾:说明原因并给出可行动的建议(§6.1 不甩锅给用户)。
+    let summary = if job.state == JobState::Completed && job.shortfall() > 0 {
+        format!(
+            "目标 {} · 通过 {} · 丢弃 {}。已自动补生成 {} 轮仍未拿满——该场景的常用词超出当前等级词表,建议提高等级或换个更日常的场景说法",
+            job.params.total_sentences,
+            job.produced,
+            discarded_total,
+            job.topup_count()
+        )
+    } else {
+        format!("{} 通过 · {} 丢弃", job.produced, discarded_total)
+    };
     emit(
         &app,
         "workshop://done",
@@ -512,7 +605,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
             state: job.state.clone(),
             produced: job.produced,
             discarded: discarded_total,
-            summary: format!("{} 通过 · {} 丢弃", job.produced, discarded_total),
+            summary,
         },
     );
     Ok(job_id)

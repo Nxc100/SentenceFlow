@@ -36,13 +36,25 @@ pub struct PromptParts {
     pub user: String,
 }
 
+/// Cap on banned words carried in the tail — beyond this the list stops
+/// teaching the model anything and just burns tokens.
+const MAX_BANNED_WORDS: usize = 30;
+
 /// Build the full prompt for a generation request.
 ///
 /// * `spec` — target level (its YAML re-serialization is embedded verbatim).
 /// * `scene` — 用户场景描述 (自由文本) or factory scene tag.
 /// * `count` — 句数.
 /// * `avoid` — simhash fingerprints of already-accepted sentences.
-pub fn build_prompt(spec: &LevelSpec, scene: &str, count: u32, avoid: &[u64]) -> PromptParts {
+/// * `banned` — 失败样本回灌 (§8 的运行时形态):本次任务里已被词表校验拒绝的
+///   单词,显式禁用以提高补足批通过率。空则不出现在 prompt 中。
+pub fn build_prompt(
+    spec: &LevelSpec,
+    scene: &str,
+    count: u32,
+    avoid: &[u64],
+    banned: &[String],
+) -> PromptParts {
     let spec_yaml = serde_yaml::to_string(spec).expect("spec serialization cannot fail");
     let system = format!(
         "你是英语教研内容生成器,只输出 JSON 数组,不输出任何其他文字。\n\
@@ -62,6 +74,17 @@ pub fn build_prompt(spec: &LevelSpec, scene: &str, count: u32, avoid: &[u64]) ->
     if !avoid.is_empty() {
         let fps: Vec<String> = avoid.iter().map(|h| fingerprint16(*h)).collect();
         user.push_str(&format!("\n避开与以下指纹相似的句子:{}", fps.join(",")));
+    }
+    if !banned.is_empty() {
+        let words: Vec<&str> = banned
+            .iter()
+            .take(MAX_BANNED_WORDS)
+            .map(String::as_str)
+            .collect();
+        user.push_str(&format!(
+            "\n以下单词超出该等级词表,禁止使用(换用词表内的常见词表达):{}",
+            words.join(", ")
+        ));
     }
     PromptParts { system, user }
 }
@@ -114,18 +137,29 @@ practice:
     #[test]
     fn prefix_is_stable_across_requests() {
         let s = spec();
-        let a = build_prompt(&s, "机场值机", 10, &[1, 2]);
-        let b = build_prompt(&s, "餐厅点餐", 30, &[9]);
+        let a = build_prompt(&s, "机场值机", 10, &[1, 2], &[]);
+        let b = build_prompt(&s, "餐厅点餐", 30, &[9], &["burger".into()]);
         assert_eq!(a.system, b.system, "prefix must be byte-stable for caching");
         assert_ne!(a.user, b.user);
     }
 
     #[test]
     fn tail_carries_scene_count_and_fingerprints() {
-        let p = build_prompt(&spec(), "机场值机", 10, &[0xABCD]);
+        let p = build_prompt(&spec(), "机场值机", 10, &[0xABCD], &[]);
         assert!(p.user.contains("机场值机"));
         assert!(p.user.contains("10"));
         assert!(p.user.contains("000000000000abcd"));
+        assert!(!p.user.contains("禁止使用"), "无禁用词时不出现该段");
+    }
+
+    #[test]
+    fn tail_carries_banned_words_capped() {
+        let banned: Vec<String> = (0..40).map(|i| format!("word{i}")).collect();
+        let p = build_prompt(&spec(), "肯德基点餐", 10, &[], &banned);
+        assert!(p.user.contains("禁止使用"));
+        assert!(p.user.contains("word0"));
+        assert!(p.user.contains("word29"));
+        assert!(!p.user.contains("word30"), "超过上限的禁用词被截断");
     }
 
     #[test]

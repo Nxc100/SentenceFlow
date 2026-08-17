@@ -32,20 +32,19 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
     const favs = new Set(await ipc.favorites());
     setFavorites(favs);
     if (tab === "factory" || tab === "mine") {
+      // 场景签按当前页取对应来源:出厂库固定场景,我的句集用生成工坊的任务场景。
+      setScenes(await ipc.listScenes(level, tab === "mine" ? "user" : "factory"));
       const all = await ipc.listSentences(level, scene ?? undefined);
       setSentences(
         all.filter((s) => (tab === "mine" ? s.id >= USER_ID_OFFSET : s.id < USER_ID_OFFSET)),
       );
     } else {
+      setScenes([]);
       const ids = tab === "wrongbook" ? await ipc.wrongbook() : [...favs];
       const loaded = await Promise.all(ids.map((id) => ipc.getSentence(id)));
       setSentences(loaded.filter((s): s is Sentence => s !== null));
     }
   }, [tab, level, scene]);
-
-  useEffect(() => {
-    void ipc.listScenes(level).then(setScenes);
-  }, [level]);
 
   useEffect(() => {
     void refresh();
@@ -133,7 +132,7 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
         </div>
       )}
 
-      {tab === "factory" && (
+      {(tab === "factory" || tab === "mine") && scenes.length > 0 && (
         <div className="library-scenes">
           <button
             type="button"

@@ -481,7 +481,7 @@ fn gen_cmd(
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(async {
         let avoid: Vec<u64> = dedupe.recent(16).collect();
-        let parts = build_prompt(spec, scene, count, &avoid);
+        let parts = build_prompt(spec, scene, count, &avoid, &[]);
         let req = sf_llm::types::GenRequest {
             model: model.to_string(),
             system: parts.system,

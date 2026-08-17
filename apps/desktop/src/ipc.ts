@@ -193,7 +193,9 @@ export const ipc = {
   activateLicense: (sflic: string) => invoke<LicenseState>("activate_license", { sflic }),
   exportLicense: () => invoke<string>("export_license"),
 
-  listScenes: (level: LevelId) => invoke<string[]>("list_scenes", { level }),
+  /** origin: "factory" 出厂库 / "user" 用户句集,缺省两库并集 */
+  listScenes: (level: LevelId, origin?: "factory" | "user") =>
+    invoke<string[]>("list_scenes", { level, origin: origin ?? null }),
   listSentences: (level: LevelId, scene?: string) =>
     invoke<Sentence[]>("list_sentences", { level, scene: scene ?? null }),
   getSentence: (id: number) => invoke<Sentence | null>("get_sentence", { id }),

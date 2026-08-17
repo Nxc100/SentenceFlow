@@ -8,6 +8,11 @@
 
 use serde::{Deserialize, Serialize};
 
+/// 拿满机制:补足批的最大追加次数。规划批全部跑完仍未达到用户指定句数时,
+/// 逐批追加补足批直到拿满或触顶;上限防止在词表覆盖不了的场景
+/// (如 L1 写快餐食物词)无限烧额度。
+pub const MAX_TOPUP_BATCHES: usize = 4;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BatchState {
@@ -75,6 +80,52 @@ impl GenJob {
         } else {
             let rem = self.params.total_sentences % mb;
             if rem == 0 { mb } else { rem }
+        }
+    }
+
+    /// Batches planned by the original `total/microbatch` split; batches at or
+    /// beyond this index are top-up batches appended by [`push_topup_batch`].
+    ///
+    /// [`push_topup_batch`]: Self::push_topup_batch
+    pub fn planned_batches(&self) -> usize {
+        (self
+            .params
+            .total_sentences
+            .div_ceil(self.params.microbatch.max(1)) as usize)
+            .max(1)
+    }
+
+    /// How many sentences are still missing to reach the user's target.
+    pub fn shortfall(&self) -> u32 {
+        self.params.total_sentences.saturating_sub(self.produced)
+    }
+
+    /// Top-up batches appended so far.
+    pub fn topup_count(&self) -> usize {
+        self.batches.len().saturating_sub(self.planned_batches())
+    }
+
+    /// 拿满:append one top-up batch to cover the shortfall. A job that had
+    /// already completed goes back to Running so [`next_pending`] hands the
+    /// new batch out.
+    ///
+    /// [`next_pending`]: Self::next_pending
+    pub fn push_topup_batch(&mut self) {
+        self.batches.push(BatchState::Pending);
+        if self.state == JobState::Completed {
+            self.state = JobState::Running;
+        }
+    }
+
+    /// Sentences to *ask the model for* in batch `idx`. Planned batches follow
+    /// the original split; top-up batches ask for the current shortfall plus
+    /// 50% headroom (the discard rate is unknown), clamped to the microbatch.
+    pub fn request_size(&self, idx: usize) -> u32 {
+        if idx < self.planned_batches() {
+            self.batch_size(idx)
+        } else {
+            let want = self.shortfall();
+            (want + want.div_ceil(2)).clamp(2, self.params.microbatch.max(2))
         }
     }
 
@@ -212,6 +263,50 @@ mod tests {
         assert_eq!(job.batches[idx], BatchState::Pending);
         job.resume();
         assert_eq!(job.next_pending(), Some(idx));
+    }
+
+    #[test]
+    fn topup_batch_reopens_completed_job_until_target_met() {
+        // 10 句 1 批,只通过 2 句 → 缺口 8,追加补足批继续拿满。
+        let mut job = GenJob::new(1, params(10, 10), 0);
+        job.start_batch(0);
+        job.finish_batch(0, 2);
+        assert_eq!(job.state, JobState::Completed);
+        assert_eq!(job.shortfall(), 8);
+        assert_eq!(job.planned_batches(), 1);
+
+        job.push_topup_batch();
+        assert_eq!(job.state, JobState::Running);
+        assert_eq!(job.topup_count(), 1);
+        assert_eq!(job.next_pending(), Some(1));
+        // 补足批按缺口 + 50% 超量索要,夹在 microbatch 内:8+4=12 → 10。
+        assert_eq!(job.request_size(1), 10);
+
+        job.start_batch(1);
+        job.finish_batch(1, 7);
+        assert_eq!(job.shortfall(), 1);
+        job.push_topup_batch();
+        // 缺 1 句时至少要 2 句,留丢弃余量。
+        assert_eq!(job.request_size(2), 2);
+        job.start_batch(2);
+        job.finish_batch(2, 1);
+        assert_eq!(job.shortfall(), 0);
+        assert_eq!(job.state, JobState::Completed);
+    }
+
+    #[test]
+    fn topup_batch_survives_pause_resume() {
+        let mut job = GenJob::new(1, params(10, 10), 0);
+        job.start_batch(0);
+        job.finish_batch(0, 3);
+        job.push_topup_batch();
+        let idx = job.next_pending().unwrap();
+        job.start_batch(idx);
+        job.pause();
+        assert_eq!(job.state, JobState::Paused);
+        job.resume();
+        assert_eq!(job.next_pending(), Some(idx), "补足批断点续跑");
+        assert_eq!(job.topup_count(), 1);
     }
 
     #[test]

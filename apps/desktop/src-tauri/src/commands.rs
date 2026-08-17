@@ -80,10 +80,29 @@ pub fn export_license(state: S<'_>) -> CmdResult<String> {
 
 // ------------------------------------------------------------- content
 
+/// 场景列表(§4.3 场景分组)。`origin`:`"factory"` 出厂库 / `"user"` 用户句集 /
+/// 缺省两库并集——生成工坊产出的句子按任务场景归档在用户库,内容库据此分组。
 #[tauri::command]
-pub fn list_scenes(state: S<'_>, level: LevelId) -> CmdResult<Vec<String>> {
+pub fn list_scenes(state: S<'_>, level: LevelId, origin: Option<String>) -> CmdResult<Vec<String>> {
     let content = state.content.lock().expect("content lock");
-    Ok(content.factory.scenes(level)?)
+    let mut scenes = match origin.as_deref() {
+        Some("factory") => content.factory.scenes(level)?,
+        Some("user") => match &content.user {
+            Some(user) => user.scenes(level)?,
+            None => Vec::new(),
+        },
+        _ => {
+            let mut all = content.factory.scenes(level)?;
+            if let Some(user) = &content.user {
+                all.extend(user.scenes(level)?);
+            }
+            all
+        }
+    };
+    scenes.retain(|s| !s.trim().is_empty()); // Tab 导入句无场景,不出分组签
+    scenes.sort();
+    scenes.dedup();
+    Ok(scenes)
 }
 
 #[tauri::command]
@@ -548,7 +567,7 @@ pub async fn run_bench(app: AppHandle, state: S<'_>) -> CmdResult<Vec<sf_llm::be
         settings.level.unwrap_or(LevelId::L3)
     };
     let spec = state.spec_for(level)?.clone();
-    let prompt = sf_pipeline::prompt::build_prompt(&spec, "日常寒暄与自我介绍", 6, &[]);
+    let prompt = sf_pipeline::prompt::build_prompt(&spec, "日常寒暄与自我介绍", 6, &[], &[]);
 
     let mut samples = Vec::new();
     for m in &candidates {
@@ -678,6 +697,10 @@ pub fn workshop_recover(state: S<'_>, sentence: Sentence) -> CmdResult<i64> {
     let Some(user) = &content.user else {
         return Err(CmdError::new("content", "用户句库未初始化"));
     };
+    // 捞回同样过精确查重:已有同文句直接复用其 id,不产生重复条目。
+    if let Some(existing) = user.sentence_id_by_en(&sentence.en)? {
+        return Ok(sf_pipeline::store::ContentIndex::USER_ID_OFFSET + existing);
+    }
     let rid = user.insert_sentence(&sentence, "", 1)?;
     Ok(sf_pipeline::store::ContentIndex::USER_ID_OFFSET + rid)
 }
