@@ -30,8 +30,15 @@ export const silentSounds: SoundPlayer = {
   master() {},
 };
 
-/** −14dB ≈ 0.2 线性增益(§6.2 正确音基准) */
-const DING_GAIN = 0.2;
+/**
+ * 增益基准。早期版本按 −14dB(0.2)直译规范导致整体听感过小
+ * (用户反馈),现整体提升并保持规范的相对关系:错误音刻意比正确音轻,
+ * 按键音最轻但清晰可闻;系统/应用音量在此之上自然叠加。
+ */
+const DING_GAIN = 0.5;
+const KEY_GAIN = 0.28;
+const ERROR_GAIN = 0.3;
+const MASTER_GAIN = 0.42;
 
 export class WebAudioSounds implements SoundPlayer {
   private ctx: AudioContext | null = null;
@@ -87,33 +94,34 @@ export class WebAudioSounds implements SoundPlayer {
     if (cutPrevious) this.active.fx = gain;
   }
 
-  /** 按键音:随机 ±3% 音高防机械重复感 */
+  /** 按键音:随机 ±3% 音高防机械重复感;双振荡叠加增加厚度 */
   key() {
     const kind = this.settings.keySound;
     if (kind === "off") return;
     const pitch = 1 + (Math.random() * 0.06 - 0.03);
     if (kind === "soft") {
-      this.tone(1750 * pitch, 28, 0.05 * this.volume(), "sine");
+      this.tone(1500 * pitch, 34, KEY_GAIN * this.volume(), "sine");
+      this.tone(750 * pitch, 40, KEY_GAIN * 0.5 * this.volume(), "triangle");
     } else {
       // 机械:亮起振 + 短促底噪感(方波泛音自带"咔")
-      this.tone(2300 * pitch, 22, 0.045 * this.volume(), "square");
-      this.tone(920 * pitch, 30, 0.03 * this.volume(), "triangle");
+      this.tone(2300 * pitch, 26, KEY_GAIN * 0.9 * this.volume(), "square");
+      this.tone(900 * pitch, 36, KEY_GAIN * 0.7 * this.volume(), "triangle");
     }
   }
 
-  /** 错误低音:比正确音刻意更轻(§6.5) */
+  /** 错误低音:比正确音刻意更轻(§6.5 相对关系) */
   error() {
-    this.tone(220, 90, 0.09 * this.volume(), "sine", 0, true);
+    this.tone(220, 110, ERROR_GAIN * this.volume(), "sine", 0, true);
   }
 
-  /** 正确"叮":880Hz · 90ms · −14dB 基准(§6.2) */
+  /** 正确"叮":880Hz · 90ms(§6.2) */
   correct() {
     this.tone(880, 90, DING_GAIN * this.volume(), "sine", 0, true);
   }
 
   /** 掌握上行双音(§6.5) */
   master() {
-    this.tone(660, 80, 0.15 * this.volume(), "sine", 0, true);
-    this.tone(880, 110, 0.15 * this.volume(), "sine", 90);
+    this.tone(660, 80, MASTER_GAIN * this.volume(), "sine", 0, true);
+    this.tone(880, 110, MASTER_GAIN * this.volume(), "sine", 90);
   }
 }

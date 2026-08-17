@@ -169,6 +169,43 @@
   animation: sf-chip-land var(--sf-dur-base) var(--sf-ease-spring);
 }
 .sf-chip--shake { animation: sf-shake 240ms var(--sf-ease-standard); }
+/* 键盘高亮:←→ 移动焦点,空格/Enter 选中 */
+.sf-chip--focus {
+  border-color: var(--sf-primary);
+  box-shadow: 0 0 0 2px var(--sf-primary-soft), var(--sf-shadow-1);
+}
+/* 数字角标:1–9/0 直选(重组全键盘操作) */
+.sf-chip {
+  position: relative;
+}
+.sf-chip__num {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--sf-panel);
+  border: 1px solid var(--sf-border);
+  color: var(--sf-text-3);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  font-family: var(--sf-font-ui);
+  pointer-events: none;
+}
+.sf-chip--focus .sf-chip__num {
+  background: var(--sf-primary);
+  border-color: var(--sf-primary);
+  color: #fff;
+}
+.sf-reorder__hint {
+  margin-top: 28px;
+  font-family: var(--sf-font-zh);
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-placeholder);
+}
 @keyframes sf-chip-land {
   0% { transform: translateY(-8px) scale(0.9); opacity: 0.6; }
   70% { transform: translateY(2px) scale(1.02); }

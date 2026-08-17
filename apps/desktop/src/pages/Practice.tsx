@@ -473,7 +473,9 @@ export function PracticeScreen({
         <span className="practice-shortcuts">
           {phase === "parse"
             ? "空格 / Enter 下一题 · ←→ 朗读 · Ctrl+M 掌握 · Ctrl+Q 不熟悉 · Esc 暂停"
-            : "空格 跳格 · Enter 提交 · ↓↑ 答案 · Ctrl 朗读 · Ctrl+M 掌握 · Ctrl+Q 不熟悉 · Esc 暂停"}
+            : phase === "reorder"
+              ? "数字键 选词 · ←→ 移动 · 空格 选中 · Ctrl 朗读 · Esc 暂停"
+              : "空格 跳格 · Enter 提交 · ↓↑ 答案 · Ctrl 朗读 · Ctrl+M 掌握 · Ctrl+Q 不熟悉 · Esc 暂停"}
         </span>
         <button type="button" className="practice-nav practice-nav--primary" onClick={advance}>
           {index + 1 >= items.length ? "完成 ›" : "下一题 ›"}
