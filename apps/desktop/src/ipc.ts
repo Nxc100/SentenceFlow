@@ -55,6 +55,7 @@ export interface Settings {
     monthly_reminder_cny: number | null;
     price_override: { prompt_per_m: number; completion_per_m: number } | null;
     opencode_bin: string | null;
+    proxy_url: string | null;
   };
   level: LevelId | null;
 }

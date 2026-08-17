@@ -98,6 +98,12 @@ pub struct OpenAiCompatClient {
     pub api_key: Option<SecretString>,
     pub connect_timeout: Duration,
     pub request_timeout: Duration,
+    /// 显式 HTTP(S) 代理(如 `http://127.0.0.1:7890`)。None = 跟随系统/
+    /// 环境代理(reqwest 默认行为)。直连网络访问境外端点时由用户在
+    /// AI 接入页配置(§4.7 网络区)。
+    pub proxy: Option<String>,
+    /// 强制直连(localhost 服务如 Ollama:环境代理开着也不受影响)。
+    pub never_proxy: bool,
 }
 
 impl OpenAiCompatClient {
@@ -107,13 +113,33 @@ impl OpenAiCompatClient {
             api_key,
             connect_timeout: Duration::from_secs(5),
             request_timeout: Duration::from_secs(300),
+            proxy: None,
+            never_proxy: false,
         }
     }
 
+    pub fn with_proxy(mut self, proxy: Option<String>) -> Self {
+        self.proxy = proxy.filter(|p| !p.trim().is_empty());
+        self
+    }
+
+    pub fn without_proxy(mut self) -> Self {
+        self.never_proxy = true;
+        self
+    }
+
     fn http(&self) -> Result<reqwest::Client, ChannelError> {
-        reqwest::Client::builder()
+        let mut builder = reqwest::Client::builder()
             .connect_timeout(self.connect_timeout)
-            .timeout(self.request_timeout)
+            .timeout(self.request_timeout);
+        if self.never_proxy {
+            builder = builder.no_proxy();
+        } else if let Some(proxy) = &self.proxy {
+            let proxy = reqwest::Proxy::all(proxy.trim())
+                .map_err(|e| ChannelError::Network(format!("代理地址无效: {e}")))?;
+            builder = builder.proxy(proxy);
+        }
+        builder
             .build()
             .map_err(|e| ChannelError::Network(e.to_string()))
     }

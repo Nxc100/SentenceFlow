@@ -42,6 +42,16 @@ pub fn make_adapter(
                 .map_err(|_| CmdError::new("no_key", "尚未配置 Key,请先在 AI 接入页填写")),
         }
     };
+    // 用户配置的 AI 代理(§4.7 网络区):opencode 子进程经环境变量、HTTP
+    // 通道经 reqwest Proxy;Ollama 本地永不代理。
+    let proxy = {
+        let settings = state.settings.lock().expect("settings lock");
+        settings
+            .ai
+            .proxy_url
+            .clone()
+            .filter(|p| !p.trim().is_empty())
+    };
     Ok(match channel {
         ChannelId::Opencode => {
             let settings = state.settings.lock().expect("settings lock");
@@ -50,13 +60,15 @@ pub fn make_adapter(
                 sandbox_dir: state.paths.agent_sandbox(),
                 known_bad_versions: state.policy.opencode_known_bad.clone(),
                 rpm_estimate: 10,
+                proxy_url: proxy,
             }))
         }
         ChannelId::Deepseek => Box::new(DeepseekChannel::new(
             stored_key(ChannelId::Deepseek)?,
             effective_prices(state),
+            proxy,
         )),
-        ChannelId::Zen => Box::new(ZenChannel::new(stored_key(ChannelId::Zen)?, 10)),
+        ChannelId::Zen => Box::new(ZenChannel::new(stored_key(ChannelId::Zen)?, 10, proxy)),
         ChannelId::Ollama => Box::new(OllamaChannel::default()),
     })
 }

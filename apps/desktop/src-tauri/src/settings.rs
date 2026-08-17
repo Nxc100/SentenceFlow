@@ -164,6 +164,9 @@ pub struct AiSettings {
     pub price_override: Option<sf_llm::meter::PriceTable>,
     /// opencode 手动指定路径 (§6.4).
     pub opencode_bin: Option<String>,
+    /// AI 通道 HTTP(S) 代理(如 `http://127.0.0.1:7890`)。直连网络访问
+    /// opencode/Zen 境外端点时配置;DeepSeek 官方与 Ollama 本地不受影响。
+    pub proxy_url: Option<String>,
 }
 
 impl Default for AiSettings {
@@ -175,6 +178,7 @@ impl Default for AiSettings {
             monthly_reminder_cny: None,
             price_override: None,
             opencode_bin: None,
+            proxy_url: None,
         }
     }
 }

@@ -356,14 +356,12 @@ export function TypingBoard({
                     key={li}
                     className={`sf-typing__slot${isCursor ? " sf-typing__slot--cursor" : ""}`}
                   >
-                    {typedCh !== undefined ? (
+                    {typedCh !== undefined && (
                       <span
                         className={`sf-typing__letter${wrong ? " sf-typing__letter--wrong" : ""}`}
                       >
                         {typedCh}
                       </span>
-                    ) : (
-                      revealed && <span className="sf-typing__reveal">{expected}</span>
                     )}
                     {ghost && ghost.wordIdx === wi && ghost.slotIdx === li && (
                       <span key={ghost.key} className="sf-typing__ghost">
@@ -378,6 +376,11 @@ export function TypingBoard({
         })}
         {sentence.punct && <span className="sf-typing__punct">{sentence.punct}</span>}
       </div>
+      {revealed && (
+        <div className="sf-typing__answer" aria-label="答案">
+          {sentence.en}
+        </div>
+      )}
       <div className="sf-typing__hint">
         {revealed ? "↑ 收起答案 · 已记为看过答案" : "直接敲键盘输入 · 大小写不限 · ↓ 显示答案"}
       </div>

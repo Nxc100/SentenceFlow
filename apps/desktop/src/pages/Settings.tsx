@@ -340,6 +340,28 @@ function AiSection() {
         );
       })}
 
+      <h2>网络</h2>
+      <Row label="AI 代理(可选)">
+        <input
+          className="settings-path"
+          style={{ maxWidth: 260 }}
+          placeholder="http://127.0.0.1:7890"
+          defaultValue={settings.ai.proxy_url ?? ""}
+          onBlur={(e) =>
+            void updateSettings((s) => {
+              const v = e.target.value.trim();
+              s.ai.proxy_url = v === "" ? null : v;
+              return s;
+            })
+          }
+        />
+      </Row>
+      <p className="settings-hint">
+        直连网络无法访问 opencode / Zen 境外端点时,填写本机代理客户端的 HTTP
+        端口(无需开全局代理);仅 AI 请求走此代理。DeepSeek 官方与 Ollama
+        本地直连可用,不受影响。改完点[重新检测]生效。
+      </p>
+
       <h2>预算</h2>
       <Row label="单次生成上限(¥)">
         <input

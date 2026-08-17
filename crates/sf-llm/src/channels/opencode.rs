@@ -58,6 +58,9 @@ pub struct OpencodeConfig {
     pub known_bad_versions: Vec<String>,
     /// RPM estimate for the free-form CostBar.
     pub rpm_estimate: u32,
+    /// HTTP(S) 代理传给 CLI 子进程(HTTP_PROXY/HTTPS_PROXY 环境变量;
+    /// Bun/Node 的 fetch 均遵守)。直连网络访问 Zen 端点需要它(§4.7 网络区)。
+    pub proxy_url: Option<String>,
 }
 
 pub struct OpencodeChannel {
@@ -97,8 +100,20 @@ impl OpencodeChannel {
         None
     }
 
+    /// 把用户配置的代理注入 CLI 子进程环境(localhost 排除)。
+    fn apply_proxy(&self, cmd: &mut Command) {
+        if let Some(proxy) = self.cfg.proxy_url.as_deref().map(str::trim)
+            && !proxy.is_empty()
+        {
+            cmd.env("HTTP_PROXY", proxy)
+                .env("HTTPS_PROXY", proxy)
+                .env("NO_PROXY", "localhost,127.0.0.1");
+        }
+    }
+
     async fn run_capture(&self, bin: &Path, args: &[&str]) -> Result<String, ChannelError> {
         let mut cmd = hidden_command(bin);
+        self.apply_proxy(&mut cmd);
         let fut = cmd
             .args(args)
             .stdin(Stdio::null())
@@ -182,7 +197,9 @@ impl ChannelAdapter for OpencodeChannel {
 
         // Standalone run per request — see module docs for why --attach is
         // deliberately not used.
-        let mut child = hidden_command(&bin)
+        let mut cmd = hidden_command(&bin);
+        self.apply_proxy(&mut cmd);
+        let mut child = cmd
             .args(["run", "-m", &req.model, "--format", "json"])
             .current_dir(&self.cfg.sandbox_dir)
             .stdin(Stdio::piped())

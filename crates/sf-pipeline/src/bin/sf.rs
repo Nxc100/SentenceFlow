@@ -445,6 +445,10 @@ fn gen_cmd(
     );
 
     let key = api_key.or_else(|| std::env::var("SF_API_KEY").ok());
+    // CLI 的 AI 代理经 SF_PROXY 环境变量(桌面端对应设置项 proxy_url)。
+    let proxy = std::env::var("SF_PROXY")
+        .ok()
+        .filter(|p| !p.trim().is_empty());
     let adapter: Box<dyn ChannelAdapter> = match channel {
         "opencode" => Box::new(OpencodeChannel::new(
             sf_llm::channels::opencode::OpencodeConfig {
@@ -452,6 +456,7 @@ fn gen_cmd(
                 sandbox_dir: std::env::temp_dir().join("sf-agent-sandbox"),
                 known_bad_versions: vec![],
                 rpm_estimate: 10,
+                proxy_url: proxy,
             },
         )),
         "deepseek" => Box::new(DeepseekChannel::new(
@@ -461,11 +466,13 @@ fn gen_cmd(
                 prompt_per_m: 2.0,
                 completion_per_m: 8.0,
             },
+            proxy,
         )),
         "zen" => Box::new(ZenChannel::new(
             key.context("--api-key or SF_API_KEY required for zen")?
                 .into(),
             10,
+            proxy,
         )),
         "ollama" => Box::new(OllamaChannel::default()),
         other => bail!("unknown channel: {other}"),

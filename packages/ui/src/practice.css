@@ -86,11 +86,14 @@
   font-size: var(--sf-fs-caption);
   color: var(--sf-text-placeholder);
 }
-/* ↓ 答案揭示:直接在格内以浅灰显示目标字母(参照原型 .lt.reveal) */
-.sf-typing__reveal {
-  display: inline-block;
-  color: var(--sf-text-placeholder);
-  line-height: 1.1;
+/* ↓ 答案揭示:底部一行小字,用主色区分于题面与提示(记 seen_answer) */
+.sf-typing__answer {
+  margin-top: 24px;
+  font-family: var(--sf-font-en);
+  font-size: var(--sf-fs-caption, 13px);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--sf-primary);
   animation: sf-fade-in var(--sf-dur-fast) var(--sf-ease-out);
 }
 

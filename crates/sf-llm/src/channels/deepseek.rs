@@ -15,8 +15,8 @@ pub struct DeepseekChannel {
 }
 
 impl DeepseekChannel {
-    pub fn new(api_key: SecretString, prices: PriceTable) -> Self {
-        Self::with_base_url(DEFAULT_BASE_URL, api_key, prices)
+    pub fn new(api_key: SecretString, prices: PriceTable, proxy: Option<String>) -> Self {
+        Self::with_base_url(DEFAULT_BASE_URL, api_key, prices, proxy)
     }
 
     /// Base URL override — used by tests and by channels.json migrations.
@@ -24,9 +24,10 @@ impl DeepseekChannel {
         base_url: impl Into<String>,
         api_key: SecretString,
         prices: PriceTable,
+        proxy: Option<String>,
     ) -> Self {
         Self {
-            client: OpenAiCompatClient::new(base_url, Some(api_key)),
+            client: OpenAiCompatClient::new(base_url, Some(api_key)).with_proxy(proxy),
             prices,
         }
     }

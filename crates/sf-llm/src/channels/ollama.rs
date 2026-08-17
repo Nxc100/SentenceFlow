@@ -30,7 +30,8 @@ impl OllamaChannel {
     }
 
     fn compat(&self) -> OpenAiCompatClient {
-        OpenAiCompatClient::new(format!("{}/v1", self.base_url), None)
+        // localhost 永不走代理:环境/系统代理开着也不受影响
+        OpenAiCompatClient::new(format!("{}/v1", self.base_url), None).without_proxy()
     }
 }
 
@@ -49,6 +50,8 @@ impl ChannelAdapter for OllamaChannel {
         let client = match reqwest::Client::builder()
             .connect_timeout(Duration::from_secs(2))
             .timeout(Duration::from_secs(3))
+            // localhost 探测不经任何代理(环境代理开着也不受影响)
+            .no_proxy()
             .build()
         {
             Ok(c) => c,

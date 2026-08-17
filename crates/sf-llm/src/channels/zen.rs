@@ -19,17 +19,18 @@ pub struct ZenChannel {
 }
 
 impl ZenChannel {
-    pub fn new(api_key: SecretString, rpm_estimate: u32) -> Self {
-        Self::with_base_url(DEFAULT_BASE_URL, api_key, rpm_estimate)
+    pub fn new(api_key: SecretString, rpm_estimate: u32, proxy: Option<String>) -> Self {
+        Self::with_base_url(DEFAULT_BASE_URL, api_key, rpm_estimate, proxy)
     }
 
     pub fn with_base_url(
         base_url: impl Into<String>,
         api_key: SecretString,
         rpm_estimate: u32,
+        proxy: Option<String>,
     ) -> Self {
         Self {
-            client: OpenAiCompatClient::new(base_url, Some(api_key)),
+            client: OpenAiCompatClient::new(base_url, Some(api_key)).with_proxy(proxy),
             rpm_estimate,
         }
     }
