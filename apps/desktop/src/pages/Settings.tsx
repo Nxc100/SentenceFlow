@@ -4,14 +4,14 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, Switch, levelName, useToast } from "@sentenceflow/ui";
+import { Button, Switch, useToast } from "@sentenceflow/ui";
 import { useApp } from "../appState";
-import type { ChannelId, ChannelStatus, ModelInfo, PlacementResult, Settings } from "../ipc";
+import type { ChannelId, ChannelStatus, ModelInfo, Settings } from "../ipc";
 import { ipc } from "../ipc";
 
 type Section = "general" | "ai" | "license" | "data";
 
-export function SettingsPage({ onPlacement }: { onPlacement?: () => void }) {
+export function SettingsPage() {
   const [section, setSection] = useState<Section>("general");
   return (
     <div className="page page--settings">
@@ -39,7 +39,7 @@ export function SettingsPage({ onPlacement }: { onPlacement?: () => void }) {
           ))}
         </nav>
         <div className="settings-body">
-          {section === "general" && <GeneralSection onPlacement={onPlacement} />}
+          {section === "general" && <GeneralSection />}
           {section === "ai" && <AiSection />}
           {section === "license" && <LicenseSection />}
           {section === "data" && <DataSection />}
@@ -60,34 +60,16 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function GeneralSection({ onPlacement }: { onPlacement?: () => void }) {
-  const { settings, updateSettings, specFor, level } = useApp();
-  const [lastPlacement, setLastPlacement] = useState<PlacementResult | null>(null);
+function GeneralSection() {
+  const { settings, updateSettings } = useApp();
   const set = (patch: (s: Settings) => void) =>
     void updateSettings((s) => {
       patch(s);
       return s;
     });
 
-  useEffect(() => {
-    void ipc.placementLast().then(setLastPlacement);
-  }, []);
-
   return (
     <>
-      <h2>我的水平</h2>
-      <Row label={`当前等级:${levelName(level)}`}>
-        <Button variant="secondary" onClick={() => onPlacement?.()}>
-          重新测一下我的水平
-        </Button>
-      </Row>
-      <p className="settings-hint">
-        {lastPlacement
-          ? `上次测试:推荐「${levelName(lastPlacement.level)}」· 词汇量约 ${lastPlacement.vocab_est} 词`
-          : "约 3 分钟:认词 + 打整句 + 选语法,测完给出适合你的起点。"}
-        {specFor(level) ? ` · 当前等级能做到:${specFor(level)?.can_do.join("、")}` : ""}
-      </p>
-
       <h2>练习</h2>
       <Row label="严格打字(错字不上屏)">
         <Switch

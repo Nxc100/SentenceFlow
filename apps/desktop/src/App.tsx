@@ -16,14 +16,16 @@ import { WorkshopPage } from "./pages/Workshop";
 import { ReportPage } from "./pages/Report";
 import { SettingsPage } from "./pages/Settings";
 import { PlacementTestScreen } from "./pages/PlacementTest";
+import { MyLevelPage } from "./pages/MyLevel";
 
-export type NavKey = "today" | "library" | "workshop" | "report" | "settings";
+export type NavKey = "today" | "library" | "workshop" | "report" | "mylevel" | "settings";
 
 const NAV: Array<{ key: NavKey; label: string; icon: string }> = [
   { key: "today", label: "今日", icon: "☀" },
   { key: "library", label: "内容库", icon: "▤" },
   { key: "workshop", label: "生成工坊", icon: "✦" },
   { key: "report", label: "报告", icon: "▦" },
+  { key: "mylevel", label: "水平", icon: "◎" },
   { key: "settings", label: "设置", icon: "⚙" },
 ];
 
@@ -147,7 +149,8 @@ function Shell() {
             }}
           />
         )}
-        {nav === "settings" && <SettingsPage onPlacement={() => setPlacementOpen(true)} />}
+        {nav === "mylevel" && <MyLevelPage onStartTest={() => setPlacementOpen(true)} />}
+        {nav === "settings" && <SettingsPage />}
       </div>
     </div>
   );

@@ -1466,3 +1466,89 @@ select {
   text-align: center;
   margin-top: 14px;
 }
+
+/* ================= 我的水平(MyLevel,左侧栏一级入口) ================= */
+
+.mylevel-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px;
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  box-shadow: var(--sf-shadow-1);
+}
+
+.mylevel-current__eyebrow {
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-3);
+  margin: 0 0 4px;
+}
+
+.mylevel-current__name {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--sf-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.mylevel-current__cando {
+  font-size: var(--sf-fs-body);
+  color: var(--sf-text-2);
+  margin: 6px 0 0;
+}
+
+.mylevel-current__action {
+  text-align: center;
+  flex: none;
+}
+
+.mylevel-current__hint {
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-placeholder);
+  margin: 8px 0 0;
+}
+
+.mylevel-last h2,
+.mylevel-grid__title {
+  font-size: 17px;
+  margin: 0 0 12px;
+}
+
+.mylevel-last__line {
+  color: var(--sf-text-2);
+  font-size: var(--sf-fs-body);
+  margin: 0 0 10px;
+}
+
+.mylevel-last__note {
+  color: var(--sf-text-3);
+  font-size: var(--sf-fs-caption);
+  margin: 0 0 10px;
+}
+
+.mylevel-grid .onboarding__card {
+  position: relative;
+  text-align: left;
+}
+
+.onboarding__card--on {
+  border-color: var(--sf-primary);
+  background: var(--sf-primary-soft);
+}
+
+.mylevel-card__badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sf-primary);
+  background: var(--sf-card);
+  border: 1px solid var(--sf-primary);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
