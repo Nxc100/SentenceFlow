@@ -39,3 +39,6 @@ Thumbs.db
 
 # Logs / scratch
 *.log
+
+# 本地问题截图工作目录
+fix/

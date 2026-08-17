@@ -1,13 +1,19 @@
 /**
  * ParseView — 签名时刻(§6.2,产品灵魂):
  * t0 下划线淡出 → +160 成分聚拢 → +300 词性胶囊 stagger → +380 音标
- * → +420 撒花 → +500 朗读 → +700 中文与解析入口。任意按键跳终态。
+ * → +420 撒花 + 正确音"叮" → +500 朗读 → +700 中文与解析入口。
+ * 任意按键跳终态;跳过动效的那一次按键不向页面层透传(stopPropagation),
+ * 因此"空格进下一题"永远作用于已定格的画面。
+ * 动效自然结束或被跳过时触发 onSettled(页面层据此启用空格/Enter 下一题)。
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type * as React from "react";
 import { playConfetti } from "../confetti";
 import type { ConfettiHandle } from "../confetti";
 import type { SpeechService } from "../engine";
+import { silentSounds } from "../sounds";
+import type { SoundPlayer } from "../sounds";
 import { ROLE_ZH, roleVars } from "../grammar";
 import { PosCapsule } from "../components/PosCapsule";
 import type { Sentence } from "../types";
@@ -15,8 +21,11 @@ import type { Sentence } from "../types";
 export interface ParseViewProps {
   sentence: Sentence;
   speech?: SpeechService;
-  /** 撒花开关(签名时刻专属;重组通过等场景传 false) */
+  sounds?: SoundPlayer;
+  /** 撒花与正确音开关(签名时刻专属;库内浏览等场景传 false) */
   celebrate?: boolean;
+  /** 动效自然完成或被按键跳过后回调(仅一次) */
+  onSettled?: () => void;
   /** 展开"句子解析"抽屉的回调(句型公式 + note) */
   onExpandExplain?: () => void;
 }
@@ -37,13 +46,21 @@ function reducedMotion(): boolean {
   );
 }
 
-export function ParseView({ sentence, speech, celebrate = true, onExpandExplain }: ParseViewProps) {
+export function ParseView({
+  sentence,
+  speech,
+  sounds = silentSounds,
+  celebrate = true,
+  onSettled,
+  onExpandExplain,
+}: ParseViewProps) {
   const [stage, setStage] = useState<Stage>("start");
   const [showNote, setShowNote] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const confettiRef = useRef<ConfettiHandle | null>(null);
   const timersRef = useRef<number[]>([]);
   const doneRef = useRef(false);
+  const settledRef = useRef(false);
 
   const stageIdx = (s: Stage) =>
     s === "start" ? 0 : STAGE_TIMES.findIndex(([name]) => name === s) + 1;
@@ -51,15 +68,24 @@ export function ParseView({ sentence, speech, celebrate = true, onExpandExplain 
 
   useEffect(() => {
     doneRef.current = false;
+    settledRef.current = false;
     setStage("start");
     setShowNote(false);
     const reduced = reducedMotion();
 
+    const settle = () => {
+      if (settledRef.current) return;
+      settledRef.current = true;
+      onSettled?.();
+    };
+
     if (reduced) {
       // 降级:直接终态,无撒花 (§6.1)
       setStage("footer");
+      if (celebrate) sounds.correct();
       speech?.speak(sentence.en);
       doneRef.current = true;
+      settle();
       return;
     }
 
@@ -69,6 +95,7 @@ export function ParseView({ sentence, speech, celebrate = true, onExpandExplain 
     if (celebrate) {
       timersRef.current.push(
         window.setTimeout(() => {
+          sounds.correct();
           if (canvasRef.current) confettiRef.current = playConfetti(canvasRef.current);
         }, 420),
       );
@@ -78,14 +105,22 @@ export function ParseView({ sentence, speech, celebrate = true, onExpandExplain 
         speech?.speak(sentence.en);
       }, 500),
     );
-    timersRef.current.push(window.setTimeout(() => (doneRef.current = true), 720));
+    timersRef.current.push(
+      window.setTimeout(() => {
+        doneRef.current = true;
+        settle();
+      }, 720),
+    );
 
-    const skip = () => {
+    const skip = (e: KeyboardEvent) => {
       if (doneRef.current) return;
       doneRef.current = true;
+      // 这次按键只负责"跳到终态",不再向页面层冒泡(否则会立刻切题)
+      e.stopPropagation();
       timersRef.current.forEach(clearTimeout);
       confettiRef.current?.cancel();
       setStage("footer");
+      settle();
     };
     window.addEventListener("keydown", skip, { capture: true });
 
@@ -126,7 +161,7 @@ export function ParseView({ sentence, speech, celebrate = true, onExpandExplain 
             <div className="sf-parse__words">
               {chunk.words.map((word) => (
                 <div key={word.idx} className="sf-parse__wordcol">
-                  <span className="sf-parse__ipa">{word.ipa}</span>
+                  <span className="sf-parse__ipa">{word.ipa ? `/${word.ipa}/` : ""}</span>
                   <span
                     className="sf-parse__word"
                     onClick={() => speech?.speak(word.w)}
@@ -162,6 +197,18 @@ export function ParseView({ sentence, speech, celebrate = true, onExpandExplain 
         </button>
         {showNote && (
           <div className="sf-parse__note">
+            {sentence.chunks.length > 0 && (
+              <div className="sf-parse__pattern">
+                {sentence.chunks.map((c, i) => (
+                  <span key={i} className="sf-parse__patwrap">
+                    {i > 0 && <span className="sf-parse__patplus">+</span>}
+                    <span className="sf-parse__patchip" style={roleVars(c.r)}>
+                      {ROLE_ZH[c.r]}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
             {sentence.pattern && <div>句型:{sentence.pattern}</div>}
             {sentence.note && <div>{sentence.note}</div>}
           </div>
@@ -172,5 +219,3 @@ export function ParseView({ sentence, speech, celebrate = true, onExpandExplain 
     </div>
   );
 }
-
-import type * as React from "react";

@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>句子打字 · 英语句型练习</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F7F9; --panel:#FFFFFF; --ink:#23262D; --sub:#7A8089; --faint:#9AA0A9;
+  --line:#E7E9ED; --accent:#2E63E7; --accent-soft:#E4ECFD; --good:#17864B; --good-bg:#E5F6EC; --good-line:#BFE7CF;
+  --bad:#E5484D; --slot:#D8DBE1; --ghost:#C2C7CF;
+  --en:"Nunito", ui-rounded, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ui:-apple-system, "SF Pro Text", "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--ui); background:var(--paper); color:var(--ink);
+  display:flex; flex-direction:column; overflow:hidden; -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+button:focus-visible, .switch input:focus-visible + .track{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px}
+
+/* ---------- 顶栏 ---------- */
+header{
+  flex:none; display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px 8px; background:var(--panel); border-bottom:1px solid var(--line);
+}
+.h-left{display:flex; align-items:center; gap:6px; min-width:0}
+.back{display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; color:var(--sub); font-size:18px}
+.back:hover{background:var(--paper)}
+.sec-title{font-weight:700; color:var(--accent); font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.sec-title .cnt{font-weight:800}
+.h-right{display:flex; align-items:center; gap:8px}
+.hbtn{
+  display:flex; align-items:center; gap:5px; padding:5px 10px; border-radius:9px;
+  border:1px solid var(--line); background:var(--panel); color:#565C66; font-size:12.5px;
+}
+.hbtn:hover{background:var(--paper); border-color:#D8DCE3}
+.hbtn svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+
+/* ---------- 次级栏:计时 + 拆句重组开关 ---------- */
+.subbar{flex:none; display:flex; align-items:center; gap:12px; padding:8px 16px 0}
+.timer{
+  font-variant-numeric:tabular-nums; font-size:12.5px; color:var(--sub);
+  background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:4px 9px;
+  display:flex; align-items:center; gap:5px;
+}
+.timer svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+.switch{display:flex; align-items:center; gap:7px; font-size:12.5px; color:#565C66; cursor:pointer; user-select:none;
+  background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:4px 10px}
+.switch input{position:absolute; opacity:0; width:0; height:0}
+.track{width:30px; height:17px; border-radius:99px; background:#D6DAE0; position:relative; transition:background .18s; flex:none}
+.track::after{content:""; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%; background:#fff; transition:transform .18s; box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.switch input:checked + .track{background:var(--accent)}
+.switch input:checked + .track::after{transform:translateX(13px)}
+
+/* ---------- 主舞台 ---------- */
+main{flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:18px 20px}
+.stage{width:min(880px,100%); display:flex; flex-direction:column; align-items:center; text-align:center}
+
+/* 打字视图 */
+.zh{font-size:clamp(17px,2.4vw,21px); color:#3B4048; margin-bottom:clamp(24px,5vh,44px); letter-spacing:.02em}
+.line{display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; column-gap:clamp(14px,2.4vw,26px); row-gap:26px; font-family:var(--en)}
+.slot{display:inline-flex; border-bottom:3px solid var(--slot); padding:0 2px 5px; transition:border-color .15s; border-radius:1px}
+.slot.cur{border-color:var(--accent)}
+.slot.err{animation:shake .28s}
+.lt{font-size:clamp(26px,4.6vw,38px); font-weight:700; line-height:1.1; color:transparent; padding:0 .5px; min-width:.34em; text-align:center}
+.lt.typed{color:var(--ink)}
+.lt.typed.wrong{color:var(--bad)}
+.lt.reveal{color:var(--ghost)}
+.lt.flash{color:var(--bad); animation:flashout .35s forwards}
+.punct{font-family:var(--en); font-size:clamp(26px,4.6vw,38px); font-weight:700; color:#575D66; line-height:1.1; padding-bottom:8px}
+.type-tip{margin-top:34px; font-size:12px; color:var(--faint)}
+
+/* 解析视图 */
+.chunks{display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; column-gap:10px; row-gap:22px}
+.chunk{position:relative; display:flex; flex-direction:column; align-items:center; animation:rise .45s both}
+.cbg{position:absolute; left:0; right:0; top:46px; bottom:0; border-radius:13px; background:var(--c-bg); border:1px solid var(--c-line)}
+.cw{position:relative; z-index:1; display:flex; align-items:flex-end; column-gap:clamp(10px,1.6vw,18px); padding:0 clamp(10px,1.6vw,16px)}
+.wcol{display:flex; flex-direction:column; align-items:center}
+.ipa{font-size:12px; color:#98A0AB; height:16px; white-space:nowrap; font-family:var(--ui)}
+.pos{font-size:11px; font-weight:600; border-radius:99px; padding:2.5px 8px; margin-top:3px; white-space:nowrap; animation:pop .3s both}
+.w{font-family:var(--en); font-size:clamp(24px,4.2vw,36px); font-weight:800; line-height:1.15; color:var(--ink); margin-top:7px; padding-bottom:2px; cursor:pointer; white-space:nowrap}
+.w:hover{color:var(--accent)}
+.crole{position:relative; z-index:1; font-size:14px; font-weight:600; color:var(--c-ink); padding:3px 8px 9px}
+.chunk.punct-chunk .cw{padding:0}
+.chunk.punct-chunk .w{cursor:default; color:#575D66}
+.chunk.punct-chunk .w:hover{color:#575D66}
+.a-zh{margin-top:26px; font-size:15px; color:#3B4048}
+.parse-btn{
+  margin-top:12px; display:inline-flex; align-items:center; gap:5px;
+  font-size:12px; font-weight:600; color:var(--good); background:var(--good-bg);
+  border:1px solid var(--good-line); border-radius:99px; padding:4px 12px;
+}
+.parse-btn:hover{filter:brightness(.97)}
+.parse-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.notebox{
+  margin-top:14px; max-width:560px; font-size:13.5px; line-height:1.75; color:#4A5058; text-align:left;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 16px; display:none; animation:fadein .25s;
+}
+.notebox.show{display:block}
+.notebox b{color:var(--ink)}
+.pattern{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px}
+.pat-chip{font-size:12px; font-weight:600; border-radius:7px; padding:2px 8px}
+
+/* 拆句重组视图 */
+.placedline{display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; column-gap:14px; row-gap:18px; min-height:56px; font-family:var(--en)}
+.pslot{border-bottom:3px solid var(--slot); padding:0 6px 5px; font-size:clamp(24px,4.2vw,34px); font-weight:700; color:transparent; line-height:1.1; border-radius:1px}
+.pslot.filled{color:var(--ink); animation:pop .25s}
+.pslot.next{border-color:var(--accent)}
+.pool{display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:clamp(28px,6vh,52px)}
+.wchip{
+  font-family:var(--en); font-size:clamp(17px,2.6vw,22px); font-weight:700; color:var(--ink);
+  background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 16px;
+  box-shadow:0 1px 3px rgba(20,25,35,.06); transition:transform .12s, opacity .2s, border-color .12s;
+}
+.wchip:hover{transform:translateY(-2px); border-color:var(--accent)}
+.wchip.gone{opacity:0; pointer-events:none; transform:scale(.6)}
+.wchip.err{animation:shake .28s; border-color:var(--bad); color:var(--bad)}
+
+/* 完成视图 */
+.finish{display:flex; flex-direction:column; align-items:center; gap:6px; animation:rise .4s}
+.finish .big{font-size:clamp(26px,4vw,34px); font-weight:800; font-family:var(--en)}
+.finish .stats{display:flex; gap:22px; margin:18px 0 26px}
+.finish .st{display:flex; flex-direction:column; align-items:center; gap:3px}
+.finish .st b{font-size:22px; font-variant-numeric:tabular-nums}
+.finish .st span{font-size:12px; color:var(--sub)}
+.finish .row{display:flex; gap:10px}
+
+/* ---------- 底部 ---------- */
+footer{flex:none; padding:0 16px 12px}
+.progress{height:3px; background:#E3E6EB; border-radius:99px; overflow:hidden; margin:0 4px 10px}
+.progress i{display:block; height:100%; background:var(--accent); border-radius:99px; width:0; transition:width .3s}
+.hints{display:flex; align-items:center; justify-content:center; gap:7px; flex-wrap:wrap}
+.chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:#8A9099;
+  background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:4px 8px; white-space:nowrap;
+}
+.chip kbd{font-family:var(--ui); font-size:11.5px; font-weight:700; color:#565C66}
+.chip.click{cursor:pointer}
+.chip.click:hover{border-color:#CBD1DA; color:#565C66}
+.navbtn{
+  display:inline-flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600;
+  border-radius:9px; padding:5px 12px; border:1px solid var(--line); background:var(--panel); color:#565C66;
+}
+.navbtn:hover{background:var(--paper)}
+.navbtn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.navbtn.primary:hover{filter:brightness(1.06)}
+.navbtn:disabled{opacity:.4; cursor:default}
+
+/* ---------- 弹窗 ---------- */
+.overlay{position:fixed; inset:0; background:rgba(28,32,40,.35); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
+.overlay.open{display:flex; animation:fadein .18s}
+.modal{background:var(--panel); border-radius:16px; width:min(520px,100%); max-height:min(640px,90vh); display:flex; flex-direction:column; box-shadow:0 18px 50px rgba(15,20,30,.22); animation:pop .22s}
+.m-head{display:flex; align-items:center; justify-content:space-between; padding:15px 18px 12px; border-bottom:1px solid var(--line)}
+.m-head b{font-size:15px}
+.m-close{width:26px;height:26px;border-radius:8px;color:var(--sub);font-size:16px;display:flex;align-items:center;justify-content:center}
+.m-close:hover{background:var(--paper)}
+.m-body{padding:8px 18px 18px; overflow:auto}
+.srow{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 2px; border-bottom:1px solid var(--paper)}
+.srow:last-child{border-bottom:none}
+.srow .lab{font-size:13.5px}
+.srow .lab small{display:block; color:var(--faint); font-size:11.5px; margin-top:2px}
+.seg{display:flex; background:var(--paper); border-radius:9px; padding:3px; gap:3px}
+.seg button{font-size:12px; padding:4px 12px; border-radius:7px; color:var(--sub); font-weight:600}
+.seg button.on{background:var(--panel); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.1)}
+input[type=range]{accent-color:var(--accent); width:130px}
+.tabs{display:flex; gap:6px; padding:12px 18px 0}
+.tab{font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:8px; color:var(--sub); background:var(--paper)}
+.tab.on{background:var(--accent-soft); color:var(--accent)}
+.qlist{list-style:none}
+.qitem{display:flex; align-items:center; gap:10px; padding:9px 6px; border-radius:10px; cursor:pointer}
+.qitem:hover{background:var(--paper)}
+.qitem.cur{background:var(--accent-soft)}
+.qitem .no{font-size:11px; color:var(--faint); width:20px; text-align:right; font-variant-numeric:tabular-nums; flex:none}
+.qitem .en{font-family:var(--en); font-weight:700; font-size:14px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.qitem .zh2{font-size:12px; color:var(--sub); max-width:38%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tag{font-size:10.5px; font-weight:700; border-radius:6px; padding:1.5px 6px; flex:none}
+.tag.done{background:var(--good-bg); color:var(--good)}
+.tag.master{background:#FFF3CD; color:#9C6E00}
+.tag.weak{background:#FDE7E7; color:var(--bad)}
+.m-foot{padding:10px 18px 14px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px}
+.mode-cards{display:flex; gap:12px; padding:4px 0}
+.mcard{flex:1; text-align:left; border:1.5px solid var(--line); border-radius:14px; padding:14px; transition:border-color .15s}
+.mcard:hover{border-color:#CBD1DA}
+.mcard.on{border-color:var(--accent); background:var(--accent-soft)}
+.mcard b{font-size:14px; display:block; margin-bottom:4px}
+.mcard span{font-size:12px; color:var(--sub); line-height:1.5; display:block}
+
+/* 暂停 & 提示 */
+#pauseOv{position:fixed; inset:0; background:rgba(246,247,249,.94); z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer}
+#pauseOv.open{display:flex; animation:fadein .18s}
+#pauseOv .pi{font-size:44px}
+#pauseOv b{font-size:19px}
+#pauseOv span{font-size:13px; color:var(--sub)}
+#toast{
+  position:fixed; bottom:74px; left:50%; transform:translateX(-50%) translateY(8px);
+  background:#2A2E36; color:#fff; font-size:12.5px; border-radius:99px; padding:7px 16px;
+  opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:70; white-space:nowrap;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+#confetti{position:fixed; inset:0; pointer-events:none; z-index:40}
+
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@keyframes pop{from{transform:scale(.55); opacity:0}to{transform:scale(1); opacity:1}}
+@keyframes rise{from{transform:translateY(14px); opacity:0}to{transform:translateY(0); opacity:1}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes flashout{to{color:transparent}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+@media (max-width:680px){
+  .hide-sm{display:none}
+  .sec-title .nm{display:none}
+  .hbtn .bt{display:none}
+  .hbtn{padding:6px}
+  .qitem .zh2{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <button class="back" id="btnBack" title="学习内容">‹</button>
+    <div class="sec-title" id="secTitle">Section A · 自我介绍 <span class="cnt">(1/16)</span></div>
+  </div>
+  <div class="h-right">
+    <button class="hbtn" id="btnSettings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h0a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h0a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v0a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg><span class="bt">设置</span></button>
+    <button class="hbtn" id="btnContent"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="bt">学习内容</span></button>
+    <button class="hbtn" id="btnMode"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="bt">练习模式</span></button>
+    <button class="hbtn" id="btnPause"><svg viewBox="0 0 24 24"><line x1="10" y1="5" x2="10" y2="19"/><line x1="14" y1="5" x2="14" y2="19"/></svg><span class="bt">暂停练习</span></button>
+  </div>
+</header>
+
+<div class="subbar">
+  <div class="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg><span id="clock">00:00</span></div>
+  <label class="switch"><input type="checkbox" id="swRebuild"><span class="track"></span>拆句重组</label>
+</div>
+
+<main><div class="stage" id="stage"></div></main>
+
+<footer>
+  <div class="progress"><i id="progBar"></i></div>
+  <div class="hints" id="hints"></div>
+</footer>
+
+<!-- 设置 -->
+<div class="overlay" id="ovSettings">
+  <div class="modal" role="dialog" aria-label="设置">
+    <div class="m-head"><b>设置</b><button class="m-close" data-close>✕</button></div>
+    <div class="m-body">
+      <div class="srow"><div class="lab">自动朗读答案<small>答对后自动朗读整句英文</small></div>
+        <label class="switch" style="border:none;padding:0;background:none"><input type="checkbox" id="setAuto" checked><span class="track"></span></label></div>
+      <div class="srow"><div class="lab">严格打字<small>打错的字母不会上屏,轻微抖动提示</small></div>
+        <label class="switch" style="border:none;padding:0;background:none"><input type="checkbox" id="setStrict" checked><span class="track"></span></label></div>
+      <div class="srow"><div class="lab">显示中文提示<small>关闭后打字时隐藏中文,仅凭听力/记忆</small></div>
+        <label class="switch" style="border:none;padding:0;background:none"><input type="checkbox" id="setZh" checked><span class="track"></span></label></div>
+      <div class="srow"><div class="lab">朗读语速</div><input type="range" id="setRate" min="0.6" max="1.3" step="0.05" value="0.95"></div>
+      <div class="srow"><div class="lab">发音偏好</div>
+        <div class="seg"><button id="segGB" class="on">英音</button><button id="segUS">美音</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 学习内容 -->
+<div class="overlay" id="ovContent">
+  <div class="modal" role="dialog" aria-label="学习内容">
+    <div class="m-head"><b>学习内容</b><button class="m-close" data-close>✕</button></div>
+    <div class="tabs" id="secTabs"></div>
+    <div class="m-body"><ul class="qlist" id="qList"></ul></div>
+    <div class="m-foot"><button class="navbtn" id="btnResetSec">重置本节进度</button></div>
+  </div>
+</div>
+
+<!-- 练习模式 -->
+<div class="overlay" id="ovMode">
+  <div class="modal" style="width:min(440px,100%)" role="dialog" aria-label="练习模式">
+    <div class="m-head"><b>练习模式</b><button class="m-close" data-close>✕</button></div>
+    <div class="m-body">
+      <div class="mode-cards">
+        <button class="mcard on" id="mcType"><b>⌨️ 打字练习</b><span>看中文,把英文整句逐词打出来,答对自动进入句子解析。</span></button>
+        <button class="mcard" id="mcRebuild"><b>🧩 拆句重组</b><span>单词被打乱,按正确语序点选,重新拼回完整句子。</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pauseOv"><div class="pi">⏸️</div><b>已暂停</b><span>按空格或点击任意处继续</span></div>
+<div id="toast"></div>
+<canvas id="confetti"></canvas>
+<input id="mobKbd" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-hidden="true"
+  style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:none;padding:0;pointer-events:none">
+
+<script>
+/* ==================== 数据:词性/成分配色 ==================== */
+const POS = {
+  '代词':['#FFE3EE','#C2255C'],'名词':['#FFE2DC','#C43A2B'],'动词':['#FCE0F3','#B02890'],
+  'be动词':['#EBE3FC','#6B3FD1'],'助动词':['#EBE3FC','#6B3FD1'],'情态动词':['#E6DEFA','#5F3DC4'],
+  '形容词':['#F0E4FB','#8A3FC7'],'副词':['#DFF3E3','#1F8A4C'],'介词':['#FFEDD5','#C46A0C'],
+  '冠词':['#D9F2EF','#0B7F73'],'连词':['#DBF0FA','#0B6E99'],'数词':['#FFF3CD','#A67C00'],
+  '专有名词':['#FCEFC7','#9C6E00'],'疑问词':['#E1EBFF','#2B5BD7'],'不定式':['#E9EDF2','#5A6472'],
+  '引导词':['#E9EDF2','#5A6472']
+};
+const ROLE = { // [背景, 文字, 边框]
+  '主语':['#FBE3E9','#B3536E','#F2C4D0'],'谓语':['#E9E3FA','#6D51B8','#CDBEF0'],
+  '系动词':['#E7E9F8','#5B62A8','#C3C8EC'],'宾语':['#DEEBFB','#3D6BB3','#B7D0F1'],
+  '表语':['#E2E7FB','#4A5AB8','#BFC8F0'],'状语':['#FBF1D3','#9A7A17','#EBD9A0'],
+  '时间状语':['#FBF1D3','#9A7A17','#EBD9A0'],'地点状语':['#FBF1D3','#9A7A17','#EBD9A0'],
+  '方式状语':['#FBF1D3','#9A7A17','#EBD9A0'],'宾语补足语':['#FCE8DB','#B0642B','#F0CBA8'],
+  '助动词':['#EFE8FA','#6D51B8','#D6C7F1'],'引导词':['#EDEFF3','#5A6472','#D5D9E0'],
+  '固定表达':['#EDEFF3','#5A6472','#D5D9E0']
+};
+
+/* ==================== 数据:句子库 ====================
+   w=单词 ipa=音标 pos=词性 tail=词后标点(不用打)
+   chunks: r=句子成分 i=对应单词下标  punct=句末标点 note=句子解析 */
+const SECTIONS = [
+{ id:'A', name:'自我介绍', items:[
+ {zh:'我是一名学生。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'am',ipa:'æm',pos:'be动词'},{w:'a',ipa:'ə',pos:'冠词'},{w:'student',ipa:'ˈstjuːdənt',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3]}],note:'be 动词 <b>am</b> 把主语和身份连接起来,a student 说明"我"是谁。'},
+ {zh:'我的名字叫汤姆。',punct:'.',words:[{w:'My',ipa:'maɪ',pos:'代词'},{w:'name',ipa:'neɪm',pos:'名词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'Tom',ipa:'tɒm',pos:'专有名词'}],chunks:[{r:'主语',i:[0,1]},{r:'系动词',i:[2]},{r:'表语',i:[3]}],note:'<b>My name</b> 是主语,is 后面接名字作表语。人名首字母要大写。'},
+ {zh:'我九岁了。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'am',ipa:'æm',pos:'be动词'},{w:'nine',ipa:'naɪn',pos:'数词'},{w:'years',ipa:'jɪəz',pos:'名词'},{w:'old',ipa:'əʊld',pos:'形容词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3,4]}],note:'表达年龄的固定说法:<b>数字 + years old</b>。'},
+ {zh:'这是我的朋友。',punct:'.',words:[{w:'This',ipa:'ðɪs',pos:'代词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'my',ipa:'maɪ',pos:'代词'},{w:'friend',ipa:'frend',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3]}],note:'介绍别人用 <b>This is...</b>,不说 He is 或 She is 开头。'},
+ {zh:'她是一名老师。',punct:'.',words:[{w:'She',ipa:'ʃiː',pos:'代词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'a',ipa:'ə',pos:'冠词'},{w:'teacher',ipa:'ˈtiːtʃə',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3]}],note:'职业前要加冠词 <b>a</b>:a teacher、a doctor。'},
+ {zh:'他是我的哥哥。',punct:'.',words:[{w:'He',ipa:'hiː',pos:'代词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'my',ipa:'maɪ',pos:'代词'},{w:'brother',ipa:'ˈbrʌðə',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3]}],note:'my 是形容词性物主代词,后面必须接名词:<b>my brother</b>。'},
+ {zh:'我们是好朋友。',punct:'.',words:[{w:'We',ipa:'wiː',pos:'代词'},{w:'are',ipa:'ɑː',pos:'be动词'},{w:'good',ipa:'ɡʊd',pos:'形容词'},{w:'friends',ipa:'frendz',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3]}],note:'主语 We 是复数,be 动词用 <b>are</b>,friend 也要加 s。'},
+ {zh:'我来自中国。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'come',ipa:'kʌm',pos:'动词'},{w:'from',ipa:'frɒm',pos:'介词'},{w:'China',ipa:'ˈtʃaɪnə',pos:'专有名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'状语',i:[2,3]}],note:'<b>come from</b> 来自;国家名 China 首字母大写。'},
+ {zh:'我住在北京。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'live',ipa:'lɪv',pos:'动词'},{w:'in',ipa:'ɪn',pos:'介词'},{w:'Beijing',ipa:'ˌbeɪˈdʒɪŋ',pos:'专有名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'地点状语',i:[2,3]}],note:'<b>live in + 城市</b>,介词短语说明居住的地点。'},
+ {zh:'我有一个幸福的家庭。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'have',ipa:'hæv',pos:'动词'},{w:'a',ipa:'ə',pos:'冠词'},{w:'happy',ipa:'ˈhæpi',pos:'形容词'},{w:'family',ipa:'ˈfæməli',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'宾语',i:[2,3,4]}],note:'主谓宾结构;形容词 happy 放在名词 family 前面作修饰。'},
+ {zh:'我的爸爸是一名医生。',punct:'.',words:[{w:'My',ipa:'maɪ',pos:'代词'},{w:'father',ipa:'ˈfɑːðə',pos:'名词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'a',ipa:'ə',pos:'冠词'},{w:'doctor',ipa:'ˈdɒktə',pos:'名词'}],chunks:[{r:'主语',i:[0,1]},{r:'系动词',i:[2]},{r:'表语',i:[3,4]}],note:'第三人称单数主语 My father,be 动词用 <b>is</b>。'},
+ {zh:'我的妈妈喜欢做饭。',punct:'.',words:[{w:'My',ipa:'maɪ',pos:'代词'},{w:'mother',ipa:'ˈmʌðə',pos:'名词'},{w:'likes',ipa:'laɪks',pos:'动词'},{w:'cooking',ipa:'ˈkʊkɪŋ',pos:'名词'}],chunks:[{r:'主语',i:[0,1]},{r:'谓语',i:[2]},{r:'宾语',i:[3]}],note:'三单主语动词加 s:<b>likes</b>;like 后接动名词 cooking 表示爱好。'},
+ {zh:'我爱我的家。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'love',ipa:'lʌv',pos:'动词'},{w:'my',ipa:'maɪ',pos:'代词'},{w:'family',ipa:'ˈfæməli',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'宾语',i:[2,3]}],note:'最基础的<b>主 + 谓 + 宾</b>结构。'},
+ {zh:'你几岁了?',punct:'?',words:[{w:'How',ipa:'haʊ',pos:'疑问词'},{w:'old',ipa:'əʊld',pos:'形容词'},{w:'are',ipa:'ɑː',pos:'be动词'},{w:'you',ipa:'juː',pos:'代词'}],chunks:[{r:'表语',i:[0,1]},{r:'系动词',i:[2]},{r:'主语',i:[3]}],note:'疑问句语序:表语 <b>How old</b> 提到句首,be 动词放在主语前。'},
+ {zh:'你叫什么名字?',punct:'?',words:[{w:'What',ipa:'wɒt',pos:'疑问词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'your',ipa:'jɔː',pos:'代词'},{w:'name',ipa:'neɪm',pos:'名词'}],chunks:[{r:'表语',i:[0]},{r:'系动词',i:[1]},{r:'主语',i:[2,3]}],note:'疑问词 <b>What</b> 提前;真正的主语是 your name。'},
+ {zh:'很高兴认识你。',punct:'.',words:[{w:'Nice',ipa:'naɪs',pos:'形容词'},{w:'to',ipa:'tə',pos:'不定式'},{w:'meet',ipa:'miːt',pos:'动词'},{w:'you',ipa:'juː',pos:'代词'}],chunks:[{r:'固定表达',i:[0,1,2,3]}],note:'常用寒暄语,完整形式是 <b>It is nice to meet you</b>,口语中省略了 It is。'}
+]},
+{ id:'B', name:'校园与爱好', items:[
+ {zh:'我喜欢游泳。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'like',ipa:'laɪk',pos:'动词'},{w:'swimming',ipa:'ˈswɪmɪŋ',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'宾语',i:[2]}],note:'<b>like + 动名词(doing)</b>表示喜欢做某事,swimming 在这里当名词用。'},
+ {zh:'我最喜欢的食物是面条。',punct:'.',words:[{w:'My',ipa:'maɪ',pos:'代词'},{w:'favourite',ipa:'ˈfeɪvərɪt',pos:'形容词'},{w:'food',ipa:'fuːd',pos:'名词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'noodles',ipa:'ˈnuːdlz',pos:'名词'}],chunks:[{r:'主语',i:[0,1,2]},{r:'系动词',i:[3]},{r:'表语',i:[4]}],note:'主系表结构;<b>favourite</b> 是英式拼写,美式写作 favorite。'},
+ {zh:'你想和我一起玩吗?',punct:'?',words:[{w:'Do',ipa:'duː',pos:'助动词'},{w:'you',ipa:'juː',pos:'代词'},{w:'want',ipa:'wɒnt',pos:'动词'},{w:'to',ipa:'tə',pos:'不定式'},{w:'play',ipa:'pleɪ',pos:'动词'},{w:'with',ipa:'wɪð',pos:'介词'},{w:'me',ipa:'miː',pos:'代词'}],chunks:[{r:'助动词',i:[0]},{r:'主语',i:[1]},{r:'谓语',i:[2]},{r:'宾语',i:[3,4]},{r:'状语',i:[5,6]}],note:'一般疑问句:助动词 <b>Do</b> 提到句首;<b>want to do</b> 想做某事。'},
+ {zh:'她是我新朋友。',punct:'.',words:[{w:'She',ipa:'ʃiː',pos:'代词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'my',ipa:'maɪ',pos:'代词'},{w:'new',ipa:'njuː',pos:'形容词'},{w:'friend',ipa:'frend',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3,4]}],note:'词序:<b>my(谁的) + new(什么样) + friend(名词)</b>。'},
+ {zh:'他来自美国。',punct:'.',words:[{w:'He',ipa:'hiː',pos:'代词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'from',ipa:'frɒm',pos:'介词'},{w:'the',ipa:'ðə',pos:'冠词'},{w:'US',ipa:'ˌjuːˈes',pos:'专有名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3,4]}],note:'<b>be from</b> = come from 来自;美国要说 <b>the US</b>,别忘了 the。'},
+ {zh:'他们是我的同学。',punct:'.',words:[{w:'They',ipa:'ðeɪ',pos:'代词'},{w:'are',ipa:'ɑː',pos:'be动词'},{w:'my',ipa:'maɪ',pos:'代词'},{w:'classmates',ipa:'ˈklɑːsmeɪts',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'系动词',i:[1]},{r:'表语',i:[2,3]}],note:'They 是复数,be 动词用 are,classmate 也要加 <b>s</b>。'},
+ {zh:'我们在同一个年级。',punct:'.',words:[{w:'We',ipa:'wiː',pos:'代词'},{w:'are',ipa:'ɑː',pos:'be动词'},{w:'in',ipa:'ɪn',pos:'介词'},{w:'the',ipa:'ðə',pos:'冠词'},{w:'same',ipa:'seɪm',pos:'形容词'},{w:'grade',ipa:'ɡreɪd',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'地点状语',i:[2,3,4,5]}],note:'介词短语 <b>in the same grade</b> 说明所处位置;same 前面习惯加 the。'},
+ {zh:'我骑自行车去上学。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'go',ipa:'ɡəʊ',pos:'动词'},{w:'to',ipa:'tə',pos:'介词'},{w:'school',ipa:'skuːl',pos:'名词'},{w:'by',ipa:'baɪ',pos:'介词'},{w:'bike',ipa:'baɪk',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'地点状语',i:[2,3]},{r:'方式状语',i:[4,5]}],note:'<b>by + 交通工具</b>表示出行方式:by bike / by bus / by car。'},
+ {zh:'我最喜欢的科目是英语。',punct:'.',words:[{w:'My',ipa:'maɪ',pos:'代词'},{w:'favourite',ipa:'ˈfeɪvərɪt',pos:'形容词'},{w:'subject',ipa:'ˈsʌbdʒɪkt',pos:'名词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'English',ipa:'ˈɪŋɡlɪʃ',pos:'专有名词'}],chunks:[{r:'主语',i:[0,1,2]},{r:'系动词',i:[3]},{r:'表语',i:[4]}],note:'学科名 <b>English</b> 首字母大写。'},
+ {zh:'我下课后打篮球。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'play',ipa:'pleɪ',pos:'动词'},{w:'basketball',ipa:'ˈbɑːskɪtbɔːl',pos:'名词'},{w:'after',ipa:'ˈɑːftə',pos:'介词'},{w:'class',ipa:'klɑːs',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'宾语',i:[2]},{r:'时间状语',i:[3,4]}],note:'球类运动前<b>不加 the</b>:play basketball / play football。'},
+ {zh:'她唱歌唱得很好。',punct:'.',words:[{w:'She',ipa:'ʃiː',pos:'代词'},{w:'sings',ipa:'sɪŋz',pos:'动词'},{w:'very',ipa:'ˈveri',pos:'副词'},{w:'well',ipa:'wel',pos:'副词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'状语',i:[2,3]}],note:'副词 <b>well</b> 修饰动词 sings;三单主语动词加 s。'},
+ {zh:'我们上午有四节课。',punct:'.',words:[{w:'We',ipa:'wiː',pos:'代词'},{w:'have',ipa:'hæv',pos:'动词'},{w:'four',ipa:'fɔː',pos:'数词'},{w:'classes',ipa:'ˈklɑːsɪz',pos:'名词'},{w:'in',ipa:'ɪn',pos:'介词'},{w:'the',ipa:'ðə',pos:'冠词'},{w:'morning',ipa:'ˈmɔːnɪŋ',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'宾语',i:[2,3]},{r:'时间状语',i:[4,5,6]}],note:'class 以 s 结尾,复数加 <b>es</b>;固定搭配 in the morning。'},
+ {zh:'我的学校又大又漂亮。',punct:'.',words:[{w:'My',ipa:'maɪ',pos:'代词'},{w:'school',ipa:'skuːl',pos:'名词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'big',ipa:'bɪɡ',pos:'形容词'},{w:'and',ipa:'ənd',pos:'连词'},{w:'beautiful',ipa:'ˈbjuːtɪfl',pos:'形容词'}],chunks:[{r:'主语',i:[0,1]},{r:'系动词',i:[2]},{r:'表语',i:[3,4,5]}],note:'两个形容词用连词 <b>and</b> 连接,一起作表语。'},
+ {zh:'我每天做作业。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'do',ipa:'duː',pos:'动词'},{w:'my',ipa:'maɪ',pos:'代词'},{w:'homework',ipa:'ˈhəʊmwɜːk',pos:'名词'},{w:'every',ipa:'ˈevri',pos:'形容词'},{w:'day',ipa:'deɪ',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'宾语',i:[2,3]},{r:'时间状语',i:[4,5]}],note:'<b>do homework</b> 做作业;homework 不可数,不加 s。'},
+ {zh:'他会弹钢琴。',punct:'.',words:[{w:'He',ipa:'hiː',pos:'代词'},{w:'can',ipa:'kæn',pos:'情态动词'},{w:'play',ipa:'pleɪ',pos:'动词'},{w:'the',ipa:'ðə',pos:'冠词'},{w:'piano',ipa:'piˈænəʊ',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1,2]},{r:'宾语',i:[3,4]}],note:'情态动词 <b>can + 动词原形</b>;乐器前要加 the:play the piano。'},
+ {zh:'阅读让我快乐。',punct:'.',words:[{w:'Reading',ipa:'ˈriːdɪŋ',pos:'名词'},{w:'makes',ipa:'meɪks',pos:'动词'},{w:'me',ipa:'miː',pos:'代词'},{w:'happy',ipa:'ˈhæpi',pos:'形容词'}],chunks:[{r:'主语',i:[0]},{r:'谓语',i:[1]},{r:'宾语',i:[2]},{r:'宾语补足语',i:[3]}],note:'<b>make sb. + 形容词</b>:使某人…;动名词 Reading 作主语,谓语用三单 makes。'},
+ {zh:'图书馆里有很多书。',punct:'.',words:[{w:'There',ipa:'ðeə',pos:'引导词'},{w:'are',ipa:'ɑː',pos:'be动词'},{w:'many',ipa:'ˈmeni',pos:'形容词'},{w:'books',ipa:'bʊks',pos:'名词'},{w:'in',ipa:'ɪn',pos:'介词'},{w:'the',ipa:'ðə',pos:'冠词'},{w:'library',ipa:'ˈlaɪbrəri',pos:'名词'}],chunks:[{r:'引导词',i:[0]},{r:'谓语',i:[1]},{r:'主语',i:[2,3]},{r:'地点状语',i:[4,5,6]}],note:'<b>There be</b> 句型表示"某地有某物";真正的主语 many books 在 be 后面,所以用 are。'},
+ {zh:'你周末做什么?',punct:'?',words:[{w:'What',ipa:'wɒt',pos:'疑问词'},{w:'do',ipa:'duː',pos:'助动词'},{w:'you',ipa:'juː',pos:'代词'},{w:'do',ipa:'duː',pos:'动词'},{w:'at',ipa:'ət',pos:'介词'},{w:'weekends',ipa:'ˌwiːkˈendz',pos:'名词'}],chunks:[{r:'宾语',i:[0]},{r:'助动词',i:[1]},{r:'主语',i:[2]},{r:'谓语',i:[3]},{r:'时间状语',i:[4,5]}],note:'特殊疑问句:疑问词 <b>What</b> 作宾语提到句首;第一个 do 是助动词,第二个 do 才是"做"。'},
+ {zh:'我经常和朋友们一起看电影。',punct:'.',words:[{w:'I',ipa:'aɪ',pos:'代词'},{w:'often',ipa:'ˈɒfn',pos:'副词'},{w:'watch',ipa:'wɒtʃ',pos:'动词'},{w:'movies',ipa:'ˈmuːviz',pos:'名词'},{w:'with',ipa:'wɪð',pos:'介词'},{w:'my',ipa:'maɪ',pos:'代词'},{w:'friends',ipa:'frendz',pos:'名词'}],chunks:[{r:'主语',i:[0]},{r:'状语',i:[1]},{r:'谓语',i:[2]},{r:'宾语',i:[3]},{r:'状语',i:[4,5,6]}],note:'频度副词 <b>often</b> 放在实义动词前面;with my friends 表示伴随。'},
+ {zh:'我的爱好是画画。',punct:'.',words:[{w:'My',ipa:'maɪ',pos:'代词'},{w:'hobby',ipa:'ˈhɒbi',pos:'名词'},{w:'is',ipa:'ɪz',pos:'be动词'},{w:'drawing',ipa:'ˈdrɔːɪŋ',pos:'名词'},{w:'pictures',ipa:'ˈpɪktʃəz',pos:'名词'}],chunks:[{r:'主语',i:[0,1]},{r:'系动词',i:[2]},{r:'表语',i:[3,4]}],note:'动名词短语 <b>drawing pictures</b> 作表语,说明爱好的内容。'}
+]}];
+/* ==================== 状态 ==================== */
+const $ = s => document.querySelector(s);
+const S = {
+  si:0, qi:0,                 // 当前节 / 题号
+  mode:'type',                // type | rebuild
+  view:'typing',              // typing | analysis | finish
+  typed:[], cw:0,             // 每个单词已输入的字母 / 当前词
+  revealed:false,
+  order:[], placed:0,         // 重组:乱序 / 已放置数
+  paused:false, secs:0,
+  marks:{},                   // key `${si}:${qi}` -> {done,master,weak}
+  set:{auto:true, strict:true, zh:true, rate:.95, voice:'gb'}
+};
+const sec  = () => SECTIONS[S.si];
+const item = () => sec().items[S.qi];
+const mkey = () => S.si+':'+S.qi;
+const mark = k => S.marks[k] || (S.marks[k]={});
+
+/* ==================== 计时器 ==================== */
+setInterval(()=>{ if(!S.paused){ S.secs++; $('#clock').textContent =
+  String(Math.floor(S.secs/60)).padStart(2,'0')+':'+String(S.secs%60).padStart(2,'0'); }},1000);
+
+/* ==================== 朗读 ==================== */
+const hasTTS = 'speechSynthesis' in window;
+let voices=[]; const loadV=()=>{ if(hasTTS) voices=speechSynthesis.getVoices(); };
+loadV(); if(hasTTS && speechSynthesis.onvoiceschanged!==undefined) speechSynthesis.onvoiceschanged=loadV;
+function pickVoice(){
+  const want = S.set.voice==='gb'?'en-GB':'en-US', alt = S.set.voice==='gb'?'en-US':'en-GB';
+  const score = v => (v.lang.replace('_','-').startsWith(want)?4:v.lang.replace('_','-').startsWith(alt)?2:v.lang.startsWith('en')?1:0)
+                   + (/google|natural|premium|samantha|daniel|libby|aria/i.test(v.name)?.5:0);
+  return voices.filter(v=>score(v)>0).sort((a,b)=>score(b)-score(a))[0]||null;
+}
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = pickVoice(); if(v) u.voice=v;
+  u.lang = S.set.voice==='gb'?'en-GB':'en-US'; u.rate = S.set.rate;
+  speechSynthesis.speak(u);
+}
+const sentenceText = it => it.words.map(w=>w.w+(w.tail||'')).join(' ')+(it.punct||'');
+
+/* ==================== 撒花 ==================== */
+const cvs=$('#confetti'), ctx=cvs.getContext('2d');
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  cvs.width=innerWidth; cvs.height=innerHeight;
+  const colors=['#F2A0B5','#B79CF0','#8FB6F2','#F2D480','#8FD9A8','#F2A986'];
+  const ps=Array.from({length:90},()=>({x:innerWidth/2+(Math.random()-.5)*260, y:innerHeight*.32,
+    vx:(Math.random()-.5)*7, vy:-Math.random()*7-3, g:.22+Math.random()*.12,
+    s:4+Math.random()*5, r:Math.random()*Math.PI, vr:(Math.random()-.5)*.3,
+    c:colors[Math.random()*colors.length|0], life:1}));
+  const t0=performance.now();
+  (function step(t){
+    const el=t-t0; ctx.clearRect(0,0,cvs.width,cvs.height);
+    for(const p of ps){ p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.r+=p.vr; p.life=1-el/1400;
+      ctx.save(); ctx.globalAlpha=Math.max(p.life,0); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.62); ctx.restore(); }
+    if(el<1400) requestAnimationFrame(step); else ctx.clearRect(0,0,cvs.width,cvs.height);
+  })(t0);
+}
+
+/* ==================== 提示条 ==================== */
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1600); }
+
+/* ==================== 渲染 ==================== */
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+function renderHeader(){
+  const n=sec().items.length;
+  $('#secTitle').innerHTML = `Section ${sec().id}<span class="nm"> · ${sec().name}</span> <span class="cnt">(${Math.min(S.qi+1,n)}/${n})</span>`;
+  const frac = S.view==='finish'?1:(S.qi+(S.view==='analysis'?1:0))/n;
+  $('#progBar').style.width=(frac*100)+'%';
+}
+
+function chipHtml(k,v,extra){return `<span class="chip${extra?' click':''}"${extra?` data-act="${extra}"`:''}><kbd>${k}</kbd>${v}</span>`}
+function renderHints(){
+  const h=$('#hints'); let mid='';
+  if(S.view==='typing' && S.mode==='type'){
+    mid = chipHtml('空格 / ← →','跳格')+chipHtml('Ctrl','朗读','speak')+
+          `<span class="hide-sm">${chipHtml('Ctrl M','掌握','master')}${chipHtml('Ctrl Q','不熟悉','weak')}</span>`+
+          chipHtml('Enter','提交')+chipHtml('↓ ↑','答案','reveal')+`<span class="hide-sm">${chipHtml('Shift ← →','切题')}</span>`;
+  }else if(S.view==='typing'){ // rebuild
+    mid = chipHtml('点击单词','按语序拼句')+chipHtml('Ctrl','朗读','speak')+
+          `<span class="hide-sm">${chipHtml('Ctrl M','掌握','master')}${chipHtml('Ctrl Q','不熟悉','weak')}</span>`+
+          `<span class="hide-sm">${chipHtml('Shift ← →','切题')}</span>`;
+  }else if(S.view==='analysis'){
+    mid = chipHtml('← →','朗读','speak')+chipHtml('Ctrl','朗读','speak')+
+          `<span class="hide-sm">${chipHtml('Ctrl M','掌握','master')}${chipHtml('Ctrl Q','不熟悉','weak')}</span>`+
+          chipHtml('Enter / 空格','下一题')+`<span class="hide-sm">${chipHtml('Shift ← →','切题')}</span>`;
+  }
+  h.innerHTML = `<button class="navbtn" id="btnPrev">‹ 上一题</button>${mid}<button class="navbtn primary" id="btnNext">下一题 ›</button>`;
+  $('#btnPrev').onclick=()=>nav(-1); $('#btnNext').onclick=()=>nav(1);
+  $('#btnPrev').disabled = S.qi===0 && S.view!=='finish';
+  h.querySelectorAll('[data-act]').forEach(c=>c.onclick=()=>{
+    const a=c.dataset.act;
+    if(a==='speak') speak(sentenceText(item()));
+    if(a==='master') markAs('master'); if(a==='weak') markAs('weak');
+    if(a==='reveal') setReveal(!S.revealed);
+  });
+}
+
+/* ---------- 打字视图 ---------- */
+function renderTyping(){
+  const it=item();
+  let line='';
+  it.words.forEach((w,wi)=>{
+    const lts=[...w.w].map((ch,li)=>{
+      const t=S.typed[wi][li];
+      const cls = t!=null ? 'typed'+(t.toLowerCase()!==ch.toLowerCase()?' wrong':'') : (S.revealed?'reveal':'');
+      return `<span class="lt ${cls}" data-ch="${esc(ch)}">${esc(t!=null?t:ch)}</span>`;
+    }).join('');
+    line += `<span class="slot${wi===S.cw?' cur':''}" data-wi="${wi}">${lts}</span>`;
+    if(w.tail) line+=`<span class="punct">${esc(w.tail)}</span>`;
+  });
+  if(it.punct) line+=`<span class="punct">${esc(it.punct)}</span>`;
+  $('#stage').innerHTML =
+    (S.set.zh?`<div class="zh">${esc(it.zh)}</div>`:'')+
+    `<div class="line">${line}</div>
+     <div class="type-tip">直接敲键盘输入 · 大小写不限</div>`;
+  $('#stage').querySelectorAll('.slot').forEach(sl=>sl.onclick=()=>{S.cw=+sl.dataset.wi; renderTyping();});
+}
+
+/* ---------- 重组视图 ---------- */
+function renderRebuild(){
+  const it=item();
+  const placedHtml = it.words.map((w,wi)=>{
+    const done = wi<S.placed;
+    return `<span class="pslot${done?' filled':''}${wi===S.placed?' next':''}">${esc(w.w)}${w.tail?esc(w.tail):''}</span>`;
+  }).join('')+(it.punct?`<span class="pslot" style="border-color:transparent;color:#575D66">${esc(it.punct)}</span>`:'');
+  const poolHtml = S.order.map((wi,k)=>{
+    const used = S.usedChips[k];
+    return `<button class="wchip${used?' gone':''}" data-k="${k}" data-wi="${wi}">${esc(it.words[wi].w)}</button>`;
+  }).join('');
+  $('#stage').innerHTML =
+    (S.set.zh?`<div class="zh">${esc(it.zh)}</div>`:'')+
+    `<div class="placedline">${placedHtml}</div><div class="pool">${poolHtml}</div>
+     <div class="type-tip">按正确语序点击单词,拼回完整句子</div>`;
+  $('#stage').querySelectorAll('.wchip:not(.gone)').forEach(ch=>ch.onclick=()=>{
+    const wi=+ch.dataset.wi, k=+ch.dataset.k;
+    const expect=it.words[S.placed].w.toLowerCase();
+    if(it.words[wi].w.toLowerCase()===expect){
+      S.usedChips[k]=true; S.placed++;
+      if(S.placed>=it.words.length) finishQuestion(); else renderRebuild();
+    }else{
+      ch.classList.remove('err'); void ch.offsetWidth; ch.classList.add('err');
+    }
+  });
+}
+
+/* ---------- 解析视图 ---------- */
+function renderAnalysis(){
+  const it=item();
+  const chunksHtml = it.chunks.map((c,ci)=>{
+    const rc=ROLE[c.r]||ROLE['固定表达'];
+    const cols=c.i.map(wi=>{
+      const w=it.words[wi], pc=POS[w.pos]||['#EEE','#555'];
+      return `<div class="wcol">
+        <div class="ipa">/${esc(w.ipa)}/</div>
+        <div class="pos" style="background:${pc[0]};color:${pc[1]}">${w.pos}</div>
+        <div class="w" data-say="${esc(w.w)}">${esc(w.w)}${w.tail?esc(w.tail):''}</div>
+      </div>`;
+    }).join('');
+    return `<div class="chunk" style="--c-bg:${rc[0]};--c-ink:${rc[1]};--c-line:${rc[2]};animation-delay:${ci*70}ms">
+      <div class="cbg"></div><div class="cw">${cols}</div><div class="crole">${c.r}</div></div>`;
+  }).join('');
+  const punctHtml = it.punct?`<div class="chunk punct-chunk" style="animation-delay:${it.chunks.length*70}ms">
+      <div class="cw"><div class="wcol"><div class="ipa"></div><div class="pos" style="visibility:hidden">·</div>
+      <div class="w">${esc(it.punct)}</div></div></div><div class="crole" style="visibility:hidden">·</div></div>`:'';
+  const patChips = it.chunks.map(c=>{const rc=ROLE[c.r]||ROLE['固定表达'];
+    return `<span class="pat-chip" style="background:${rc[0]};color:${rc[1]}">${c.r}</span>`}).join('<span style="color:#B7BDC6;font-size:12px;align-self:center">+</span>');
+  const mk=mark(mkey());
+  $('#stage').innerHTML =
+    `<div class="chunks">${chunksHtml}${punctHtml}</div>
+     <div class="a-zh">${esc(it.zh)}</div>
+     ${mk.master?'<div style="margin-top:8px"><span class="tag master">★ 已掌握</span></div>':mk.weak?'<div style="margin-top:8px"><span class="tag weak">⚑ 不熟悉</span></div>':''}
+     <button class="parse-btn" id="btnParse"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>句子解析</button>
+     <div class="notebox" id="noteBox"><div class="pattern">${patChips}</div>${it.note||''}</div>`;
+  $('#btnParse').onclick=()=>$('#noteBox').classList.toggle('show');
+  $('#stage').querySelectorAll('.w[data-say]').forEach(w=>w.onclick=()=>speak(w.dataset.say));
+}
+
+/* ---------- 完成视图 ---------- */
+function renderFinish(){
+  const n=sec().items.length;
+  let done=0,ms=0,wk=0;
+  sec().items.forEach((_,i)=>{const m=S.marks[S.si+':'+i]||{}; if(m.done)done++; if(m.master)ms++; if(m.weak)wk++;});
+  const other=(S.si+1)%SECTIONS.length;
+  $('#stage').innerHTML = `<div class="finish">
+    <div style="font-size:42px">🎉</div>
+    <div class="big">Section ${sec().id} 完成!</div>
+    <div class="stats">
+      <div class="st"><b>${done}/${n}</b><span>已完成</span></div>
+      <div class="st"><b>${ms}</b><span>已掌握</span></div>
+      <div class="st"><b>${wk}</b><span>待巩固</span></div>
+    </div>
+    <div class="row">
+      <button class="navbtn" id="fRedo">重练本节</button>
+      <button class="navbtn primary" id="fNext">去 Section ${SECTIONS[other].id} ›</button>
+    </div></div>`;
+  $('#fRedo').onclick=()=>{resetSection(S.si); goto(S.si,0);};
+  $('#fNext').onclick=()=>goto(other,0);
+}
+
+function render(){
+  renderHeader(); renderHints();
+  if(S.view==='finish') return renderFinish();
+  if(S.view==='analysis') return renderAnalysis();
+  S.mode==='rebuild'?renderRebuild():renderTyping();
+}
+
+/* ==================== 题目流转 ==================== */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function loadQuestion(){
+  const it=item();
+  S.view='typing'; S.revealed=false; S.cw=0;
+  S.typed=it.words.map(()=>[]);
+  S.order=shuffle(it.words.map((_,i)=>i));
+  if(S.order.length>2 && S.order.every((v,i)=>v===i)) [S.order[0],S.order[1]]=[S.order[1],S.order[0]];
+  S.usedChips=S.order.map(()=>false); S.placed=0;
+  render();
+}
+function goto(si,qi){ S.si=si; S.qi=qi; loadQuestion(); }
+function nav(d){
+  if(S.view==='finish'&&d<0){S.qi=sec().items.length-1;loadQuestion();return;}
+  const n=sec().items.length, t=S.qi+d;
+  if(t<0) return;
+  if(t>=n){ S.view='finish'; render(); return; }
+  S.qi=t; loadQuestion();
+}
+function finishQuestion(){
+  mark(mkey()).done=true;
+  S.view='analysis'; render(); confetti();
+  if(S.set.auto) setTimeout(()=>speak(sentenceText(item())),150);
+}
+function markAs(type){
+  if(S.view==='finish') return;
+  const m=mark(mkey());
+  if(type==='master'){ m.master=!m.master; if(m.master) m.weak=false;
+    toast(m.master?'已标记为掌握 ✓ 下一题':'已取消掌握标记');
+    if(m.master){ setTimeout(()=>nav(1),420); return; } }
+  else { m.weak=!m.weak; if(m.weak) m.master=false;
+    toast(m.weak?'已标记为不熟悉,可在「学习内容」中查看':'已取消标记'); }
+  if(S.view==='analysis') renderAnalysis();
+}
+function setReveal(on){ if(S.view!=='typing'||S.mode!=='type')return; S.revealed=on; renderTyping(); }
+function resetSection(si){ SECTIONS[si].items.forEach((_,i)=>delete S.marks[si+':'+i]); }
+
+/* ==================== 打字输入逻辑 ==================== */
+function wordFull(wi){ const it=item(); return S.typed[wi].length>=it.words[wi].w.length; }
+function wordRight(wi){ const it=item();
+  return wordFull(wi)&&S.typed[wi].every((t,li)=>t.toLowerCase()===it.words[wi].w[li].toLowerCase()); }
+function allRight(){ return item().words.every((_,wi)=>wordRight(wi)); }
+
+function flashWrong(wi,ch){
+  const slot=$(`.slot[data-wi="${wi}"]`); if(!slot)return;
+  slot.classList.remove('err'); void slot.offsetWidth; slot.classList.add('err');
+  const li=S.typed[wi].length, lt=slot.children[li];
+  if(lt){ lt.textContent=ch; lt.classList.remove('flash'); void lt.offsetWidth; lt.classList.add('flash');
+    setTimeout(()=>{ if(lt.classList.contains('flash')){lt.textContent=lt.dataset.ch; lt.classList.remove('flash');} },360); }
+}
+function typeChar(ch){
+  const it=item(), wi=S.cw, w=it.words[wi].w;
+  if(S.typed[wi].length>=w.length){ // 当前词已满:严格模式下自动跳到下一未满词再输入
+    const nx=nextIncomplete(wi); if(nx==null) return;
+    S.cw=nx; renderTyping(); return typeChar(ch);
+  }
+  const ok = ch.toLowerCase()===w[S.typed[wi].length].toLowerCase();
+  if(S.set.strict && !ok){ flashWrong(wi,ch); return; }
+  S.typed[wi].push(ch);
+  if(S.typed[wi].length>=w.length){ // 词完成 → 自动跳下一词
+    const nx=nextIncomplete(wi);
+    if(nx!=null) S.cw=nx;
+    else if(allRight()) return finishQuestion();
+  }
+  renderTyping();
+}
+function nextIncomplete(from){
+  const n=item().words.length;
+  for(let k=1;k<=n;k++){ const wi=(from+k)%n; if(!wordFull(wi)) return wi; }
+  return null;
+}
+function backspace(){
+  let wi=S.cw;
+  if(!S.typed[wi].length){ if(wi===0) return; wi=--S.cw; }
+  S.typed[wi].pop(); renderTyping();
+}
+function jumpWord(d){
+  const n=item().words.length;
+  S.cw=(S.cw+d+n)%n; renderTyping();
+}
+function spaceAction(){ // 词打完自动跳格,空格顺势敲下不会多跳
+  if(item().words.every((_,wi)=>wordFull(wi))) submit();
+  else if(S.typed[S.cw].length>0) jumpWord(1);
+}
+function submit(){
+  if(allRight()) return finishQuestion();
+  // 找到第一个错/未完成的词,抖动提示并定位
+  const it=item();
+  for(let wi=0;wi<it.words.length;wi++){
+    if(!wordRight(wi)){ S.cw=wi; renderTyping();
+      const slot=$(`.slot[data-wi="${wi}"]`);
+      if(slot){slot.classList.add('err'); setTimeout(()=>slot.classList.remove('err'),320);} 
+      toast('还有单词没写对,已定位到第一处'); return; }
+  }
+}
+
+/* ==================== 键盘 ==================== */
+let ctrlCombo=false;
+document.addEventListener('keydown',e=>{
+  const kbd=document.getElementById('mobKbd');
+  if(e.target===kbd && (/^[a-zA-Z]$/.test(e.key)||e.key===' '||e.key==='Backspace')) return; // 交给 beforeinput
+  const modalOpen=document.querySelector('.overlay.open');
+  if(e.key==='Escape'){ if(modalOpen) closeModals(); else if(S.paused) togglePause(false); return; }
+  if(modalOpen) return;
+  if(S.paused){ if(e.key===' '){e.preventDefault(); togglePause(false);} return; }
+
+  if(e.key==='Control'){ ctrlCombo=false; return; }
+  if(e.ctrlKey||e.metaKey){
+    ctrlCombo=true;
+    const k=e.key.toLowerCase();
+    if(k==='m'){ e.preventDefault(); markAs('master'); }
+    if(k==='q'){ e.preventDefault(); markAs('weak'); }
+    return;
+  }
+  if(e.shiftKey&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+    e.preventDefault(); nav(e.key==='ArrowRight'?1:-1); return;
+  }
+  if(S.view==='finish'){ if(e.key==='Enter'){$('#fNext')?.click()} return; }
+
+  if(S.view==='analysis'){
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); nav(1); }
+    else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){ e.preventDefault(); speak(sentenceText(item())); }
+    return;
+  }
+  // typing 视图
+  if(S.mode==='type'){
+    if(/^[a-zA-Z]$/.test(e.key)){ e.preventDefault(); typeChar(e.key); return; }
+    switch(e.key){
+      case 'Backspace': e.preventDefault(); backspace(); break;
+      case ' ': e.preventDefault(); spaceAction(); break;
+      case 'Enter': e.preventDefault(); submit(); break;
+      case 'ArrowRight': e.preventDefault(); jumpWord(1); break;
+      case 'ArrowLeft': e.preventDefault(); jumpWord(-1); break;
+      case 'ArrowDown': e.preventDefault(); setReveal(true); break;
+      case 'ArrowUp': e.preventDefault(); setReveal(false); break;
+    }
+  }
+});
+document.addEventListener('keyup',e=>{
+  if(e.key==='Control' && !ctrlCombo && !document.querySelector('.overlay.open') && !S.paused && S.view!=='finish')
+    speak(sentenceText(item()));
+});
+
+/* ==================== 移动端软键盘 ==================== */
+const mobKbd=$('#mobKbd');
+mobKbd.addEventListener('beforeinput',e=>{
+  if(S.view!=='typing'||S.mode!=='type'||S.paused) { e.preventDefault(); return; }
+  e.preventDefault();
+  if(e.inputType==='insertText'&&e.data){
+    for(const ch of e.data){ if(ch===' ') spaceAction(); else if(/[a-zA-Z]/.test(ch)) typeChar(ch); }
+  }else if(e.inputType==='deleteContentBackward'||e.inputType==='deleteWordBackward'){ backspace(); }
+});
+document.querySelector('main').addEventListener('click',e=>{
+  if(S.view==='typing'&&S.mode==='type'&&!e.target.closest('button'))
+    mobKbd.focus({preventScroll:true});
+});
+
+/* ==================== 暂停 ==================== */
+function togglePause(on){ S.paused=on; $('#pauseOv').classList.toggle('open',on); if(on&&hasTTS) speechSynthesis.cancel(); }
+$('#btnPause').onclick=()=>togglePause(true);
+$('#pauseOv').onclick=()=>togglePause(false);
+
+/* ==================== 弹窗 ==================== */
+function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'))}
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModals);
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeModals()}));
+
+$('#btnSettings').onclick=()=>$('#ovSettings').classList.add('open');
+$('#setAuto').onchange=e=>S.set.auto=e.target.checked;
+$('#setStrict').onchange=e=>S.set.strict=e.target.checked;
+$('#setZh').onchange=e=>{S.set.zh=e.target.checked; if(S.view==='typing')render();};
+$('#setRate').oninput=e=>S.set.rate=+e.target.value;
+$('#segGB').onclick=()=>{S.set.voice='gb';$('#segGB').classList.add('on');$('#segUS').classList.remove('on');};
+$('#segUS').onclick=()=>{S.set.voice='us';$('#segUS').classList.add('on');$('#segGB').classList.remove('on');};
+
+function openContent(){
+  const tabs=$('#secTabs');
+  tabs.innerHTML=SECTIONS.map((s,i)=>{
+    const done=s.items.filter((_,k)=>(S.marks[i+':'+k]||{}).done).length;
+    return `<button class="tab${i===S.si?' on':''}" data-si="${i}">Section ${s.id} · ${s.name} <span style="opacity:.65">${done}/${s.items.length}</span></button>`;
+  }).join('');
+  tabs.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{renderQList(+t.dataset.si);
+    tabs.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));});
+  renderQList(S.si);
+  $('#ovContent').classList.add('open');
+}
+let listSi=0;
+function renderQList(si){
+  listSi=si;
+  $('#qList').innerHTML=SECTIONS[si].items.map((it,k)=>{
+    const m=S.marks[si+':'+k]||{};
+    const tags=(m.master?'<span class="tag master">掌握</span>':'')+(m.weak?'<span class="tag weak">不熟悉</span>':'')+
+               (m.done&&!m.master&&!m.weak?'<span class="tag done">✓</span>':'');
+    return `<li class="qitem${si===S.si&&k===S.qi?' cur':''}" data-k="${k}">
+      <span class="no">${k+1}</span><span class="en">${esc(sentenceText(it))}</span>${tags}<span class="zh2">${esc(it.zh)}</span></li>`;
+  }).join('');
+  $('#qList').querySelectorAll('.qitem').forEach(li=>li.onclick=()=>{closeModals(); goto(listSi,+li.dataset.k);});
+}
+$('#btnContent').onclick=openContent;
+$('#btnBack').onclick=openContent;
+$('#btnResetSec').onclick=()=>{resetSection(listSi); renderQList(listSi); toast(`Section ${SECTIONS[listSi].id} 进度已重置`); if(listSi===S.si)goto(S.si,0);};
+
+$('#btnMode').onclick=()=>$('#ovMode').classList.add('open');
+function setMode(m){
+  S.mode=m;
+  $('#mcType').classList.toggle('on',m==='type');
+  $('#mcRebuild').classList.toggle('on',m==='rebuild');
+  $('#swRebuild').checked = m==='rebuild';
+  if(S.view!=='finish') loadQuestion();
+  closeModals();
+}
+$('#mcType').onclick=()=>setMode('type');
+$('#mcRebuild').onclick=()=>setMode('rebuild');
+$('#swRebuild').onchange=e=>setMode(e.target.checked?'rebuild':'type');
+
+/* ==================== 启动 ==================== */
+addEventListener('resize',()=>{cvs.width=innerWidth;cvs.height=innerHeight;});
+goto(0,0);
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
  * → 节完成页(统计 + 进度导出 + 桌面版 CTA)。无账号无网络依赖。
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   CompletionPage,
@@ -11,6 +11,7 @@ import {
   ProgressBar,
   ReorderBoard,
   TypingBoard,
+  WebAudioSounds,
 } from "@sentenceflow/ui";
 import type {
   CoreEngine,
@@ -60,10 +61,43 @@ export function App() {
   const [tally, setTally] = useState<SessionTally>(EMPTY_TALLY);
   const [theme, setTheme] = useState<ThemePref>(getThemePref());
   const [reduced, setReduced] = useState(getReducedMotion());
+  const sounds = useMemo(() => new WebAudioSounds(), []);
+  /** 解析动效定格后才允许空格/Enter 进下一句(与桌面端一致) */
+  const parseSettledRef = useRef(false);
 
   useEffect(() => {
     loadEngine().then(setEngine);
   }, []);
+
+  // 解析页键盘流(参照原型):空格/Enter 下一句(动效定格后),←→ 朗读
+  useEffect(() => {
+    if (screen.kind !== "practice" || screen.phase !== "parse") return;
+    const { section, index } = screen;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (!parseSettledRef.current) return;
+        parseSettledRef.current = false;
+        const nextIndex = index + 1;
+        const reorderFirst = section.spec.practice.flow === "reorder_then_typing";
+        setScreen(
+          nextIndex >= section.sentences.length
+            ? { kind: "done", section }
+            : {
+                kind: "practice",
+                section,
+                index: nextIndex,
+                phase: reorderFirst ? "reorder" : "typing",
+              },
+        );
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        webSpeech.speak(section.sentences[index]?.en ?? "");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [screen]);
 
   const changeTheme = (t: ThemePref) => {
     setTheme(t);
@@ -180,7 +214,7 @@ export function App() {
   const { section, index, phase } = screen;
   const sentence = section.sentences[index];
   if (!sentence) {
-    setScreen({ kind: "done", section });
+    // advance() 已保证 index 不越界;此分支仅防御数据异常
     return null;
   }
   const reorderFirst = section.spec.practice.flow === "reorder_then_typing";
@@ -188,6 +222,7 @@ export function App() {
 
   const advance = () => {
     const nextIndex = index + 1;
+    parseSettledRef.current = false;
     if (nextIndex >= section.sentences.length) {
       setScreen({ kind: "done", section });
     } else {
@@ -221,6 +256,7 @@ export function App() {
           <ReorderBoard
             sentence={sentence}
             seed={sentence.id}
+            sounds={sounds}
             onComplete={() => setScreen({ ...screen, phase: "typing" })}
           />
         )}
@@ -229,7 +265,9 @@ export function App() {
             sentence={sentence}
             strict={section.spec.practice.judge.strict}
             speech={webSpeech}
+            sounds={sounds}
             onComplete={(result) => {
+              parseSettledRef.current = false;
               setTally((t) => ({
                 sentences: t.sentences + 1,
                 errors: t.errors + result.errors,
@@ -244,11 +282,20 @@ export function App() {
         )}
         {phase === "parse" && (
           <div className="trial-parse-wrap">
-            <ParseView sentence={sentence} speech={webSpeech} celebrate />
+            <ParseView
+              sentence={sentence}
+              speech={webSpeech}
+              sounds={sounds}
+              celebrate
+              onSettled={() => {
+                parseSettledRef.current = true;
+              }}
+            />
             <div className="trial-parse-next">
               <Button onClick={advance}>
                 {index + 1 >= section.sentences.length ? "完成本节" : "下一句 →"}
               </Button>
+              <span className="trial-parse-hint">空格 / Enter 下一句</span>
             </div>
           </div>
         )}

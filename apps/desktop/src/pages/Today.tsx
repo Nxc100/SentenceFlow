@@ -45,11 +45,16 @@ export function TodayPage({ onStart }: { onStart: (launch: PracticeLaunch) => vo
             <StatCard value={String(overview.practiced_today)} label="今日已练" />
           </div>
           <div className="today-action">
-            <Button onClick={() => onStart({ kind: "daily", level })}>
+            <Button
+              onClick={() => onStart({ kind: "daily", level })}
+              disabled={overview.due_count === 0 && overview.new_available === 0}
+            >
               {overview.practiced_today > 0 ? "继续练习 →" : "开始今日练习 →"}
             </Button>
             {overview.due_count === 0 && overview.new_available === 0 && (
-              <p className="today-empty">本级句子都在复习周期里 —— 今天可以休息,或去内容库自由练。</p>
+              <p className="today-empty">
+                今天没有待练句子 —— 可切换等级、去内容库自由练,或在生成工坊生成新句集。
+              </p>
             )}
           </div>
         </>

@@ -11,6 +11,7 @@ export * from "./types";
 export * from "./engine";
 export * from "./grammar";
 export * from "./confetti";
+export * from "./sounds";
 
 export * from "./components/Button";
 export * from "./components/Switch";

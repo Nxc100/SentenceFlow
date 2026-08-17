@@ -3,6 +3,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { silentSounds } from "../sounds";
+import type { SoundPlayer } from "../sounds";
 import type { Sentence } from "../types";
 
 export interface ReorderResult {
@@ -15,6 +17,7 @@ export interface ReorderBoardProps {
   onComplete: (result: ReorderResult) => void;
   /** 洗牌种子(缺省用句 id,保证可复现) */
   seed?: number;
+  sounds?: SoundPlayer;
 }
 
 interface ChipItem {
@@ -41,7 +44,12 @@ function shuffled<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
-export function ReorderBoard({ sentence, onComplete, seed }: ReorderBoardProps) {
+export function ReorderBoard({
+  sentence,
+  onComplete,
+  seed,
+  sounds = silentSounds,
+}: ReorderBoardProps) {
   const chips = useMemo<ChipItem[]>(() => {
     const items = sentence.words.map((w, i) => ({ id: i, word: w.w }));
     const mixed = shuffled(items, seed ?? sentence.id);
@@ -72,6 +80,7 @@ export function ReorderBoard({ sentence, onComplete, seed }: ReorderBoardProps) 
     const expected = sentence.words[nextIndex]?.w;
     // 支持重复词:比对词面而非固定位置 id
     if (expected !== undefined && chip.word.toLowerCase() === expected.toLowerCase()) {
+      sounds.key();
       const placed = [...placedIds, chip.id];
       setPlacedIds(placed);
       if (placed.length === sentence.words.length) {
@@ -81,6 +90,7 @@ export function ReorderBoard({ sentence, onComplete, seed }: ReorderBoardProps) 
       }
     } else {
       errorsRef.current += 1;
+      sounds.error();
       shakeKeyRef.current += 1;
       setShakeId({ id: chip.id, key: shakeKeyRef.current });
     }

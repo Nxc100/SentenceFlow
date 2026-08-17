@@ -86,11 +86,11 @@
   font-size: var(--sf-fs-caption);
   color: var(--sf-text-placeholder);
 }
-.sf-typing__answer {
-  margin-top: 20px;
-  font-size: var(--sf-fs-h3);
+/* ↓ 答案揭示:直接在格内以浅灰显示目标字母(参照原型 .lt.reveal) */
+.sf-typing__reveal {
+  display: inline-block;
   color: var(--sf-text-placeholder);
-  font-weight: 600;
+  line-height: 1.1;
   animation: sf-fade-in var(--sf-dur-fast) var(--sf-ease-out);
 }
 
@@ -265,6 +265,40 @@
   font-size: var(--sf-fs-body);
   color: var(--sf-text-3);
   margin-top: 12px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: 12px 16px;
+  line-height: 1.75;
+  animation: sf-fade-in var(--sf-dur-base) var(--sf-ease-out);
+}
+/* 句型公式:成分色 chips 以 + 连接(参照原型 .pattern) */
+.sf-parse__pattern {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.sf-parse__patwrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sf-parse__patchip {
+  font-size: var(--sf-fs-caption);
+  font-weight: 600;
+  border-radius: 7px;
+  padding: 2px 8px;
+  border: 1px solid;
+}
+.sf-parse__patplus {
+  color: var(--sf-text-placeholder);
+  font-size: var(--sf-fs-caption);
 }
 .sf-parse__confetti {
   position: fixed;

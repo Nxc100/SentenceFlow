@@ -1,11 +1,18 @@
 /**
- * TypingBoard — 打字模式 (§4.1 / §6.2 微交互)。
+ * TypingBoard — 打字模式 (§4.1 / §6.2 微交互;交互细节对齐参照原型
+ * example/句子打字练习.html)。
+ *
  * 严格模式:错字不上屏(抖动 + 红字闪现);宽松模式:上屏标红,Enter 整句校验。
+ * 细节:词满后继续敲键自动落入下一未完成词;点击词格定位;↓ 在格内以浅灰
+ * 揭示答案(记 seen_answer);Enter 在未完成时定位到第一个错/未完成词;
+ * Ctrl 单击(keyup 无组合键)朗读整句;按键/错误音效经 SoundPlayer 注入。
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { SpeechService } from "../engine";
+import { silentSounds } from "../sounds";
+import type { SoundPlayer } from "../sounds";
 import type { Sentence } from "../types";
 
 export interface TypingResult {
@@ -23,6 +30,7 @@ export interface TypingBoardProps {
   onComplete: (result: TypingResult) => void;
   onRevealAnswer?: () => void;
   speech?: SpeechService;
+  sounds?: SoundPlayer;
 }
 
 interface Ghost {
@@ -41,6 +49,7 @@ export function TypingBoard({
   onComplete,
   onRevealAnswer,
   speech,
+  sounds = silentSounds,
 }: TypingBoardProps) {
   const targets = useMemo(() => sentence.words.map((w) => w.w), [sentence]);
 
@@ -57,6 +66,8 @@ export function TypingBoard({
   const submittedRef = useRef(false);
   const ghostKeyRef = useRef(0);
   const composingRef = useRef(false);
+  /** Ctrl 是否参与了组合键(参照原型:keyup 无组合才朗读) */
+  const ctrlComboRef = useRef(false);
 
   // 换句时全量重置
   useEffect(() => {
@@ -108,12 +119,101 @@ export function TypingBoard({
     [targets],
   );
 
+  const wordRight = useCallback(
+    (state: string[][], wi: number) =>
+      state[wi]!.length >= targets[wi]!.length &&
+      state[wi]!.every((ch, li) => ch.toLowerCase() === targets[wi]![li]!.toLowerCase()),
+    [targets],
+  );
+
   // 严格模式:全部正确即自动提交 (§4.1)
   useEffect(() => {
     if (strict && allFull(typed) && !submittedRef.current) {
       submit();
     }
   }, [typed, strict, allFull, submit]);
+
+  const shakeWord = useCallback((wordIdx: number) => {
+    ghostKeyRef.current += 1;
+    setShake({ wordIdx, key: ghostKeyRef.current });
+  }, []);
+
+  /** 输入一个字母;当前词已满时自动落入下一未完成词(参照原型) */
+  const typeChar = useCallback(
+    (key: string) => {
+      if (startRef.current === null) startRef.current = performance.now();
+      let target = current;
+      if (typed[target]!.length >= targets[target]!.length) {
+        const next = nextIncomplete(typed, target);
+        if (next === null) return;
+        target = next;
+      }
+      const word = targets[target]!;
+      const pos = typed[target]!.length;
+      const matches = word[pos]!.toLowerCase() === key.toLowerCase();
+
+      if (strict && !matches) {
+        // 错字不上屏:抖动 240ms + 红字原位闪现 200ms (§6.2)
+        errorsRef.current += 1;
+        sounds.error();
+        shakeWord(target);
+        setGhost({ wordIdx: target, slotIdx: pos, ch: key, key: ghostKeyRef.current });
+        if (target !== current) setCurrent(target);
+        return;
+      }
+      if (!strict && !matches) {
+        errorsRef.current += 1;
+      }
+      sounds.key();
+      const copy = typed.map((w) => [...w]);
+      copy[target]!.push(key);
+      let cursor = target;
+      // 词满自动跳下一未完成词
+      if (copy[target]!.length >= word.length) {
+        const next = nextIncomplete(copy, target);
+        if (next !== null) cursor = next;
+      }
+      setTyped(copy);
+      setCurrent(cursor);
+    },
+    [current, typed, targets, strict, sounds, nextIncomplete, shakeWord],
+  );
+
+  /** Enter:严格模式定位到第一个未完成/错误词(参照原型 submit()) */
+  const locateFirstProblem = useCallback(() => {
+    for (let wi = 0; wi < targets.length; wi++) {
+      if (!wordRight(typed, wi)) {
+        setCurrent(wi);
+        shakeWord(wi);
+        return;
+      }
+    }
+  }, [targets.length, typed, wordRight, shakeWord]);
+
+  /** 宽松模式 Enter 整句校验:错误词清空重打 (§4.1) */
+  const lenientValidate = useCallback(() => {
+    let wrongCount = 0;
+    const cleaned = typed.map((letters, i) => {
+      const got = letters.join("").toLowerCase();
+      const want = targets[i]!.toLowerCase();
+      if (got !== want) {
+        wrongCount += 1;
+        return [];
+      }
+      return letters;
+    });
+    if (wrongCount === 0) {
+      submit();
+    } else {
+      sounds.error();
+      setTyped(cleaned);
+      const firstWrong = cleaned.findIndex((l) => l.length === 0);
+      if (firstWrong >= 0) {
+        setCurrent(firstWrong);
+        shakeWord(firstWrong);
+      }
+    }
+  }, [typed, targets, submit, sounds, shakeWord]);
 
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     // 拦截输入法 composition (§4.1 验收)
@@ -123,8 +223,13 @@ export function TypingBoard({
     }
     const key = e.key;
 
-    if (key === "Control" && !e.repeat) {
-      speech?.speak(sentence.en);
+    // Ctrl 组合键(掌握/不熟悉等)交给页面层,且不当作输入
+    if (e.ctrlKey || e.metaKey) {
+      if (key !== "Control" && key !== "Meta") ctrlComboRef.current = true;
+      return;
+    }
+    if (key === "Control") {
+      ctrlComboRef.current = false;
       return;
     }
     if (key === "ArrowDown") {
@@ -141,10 +246,17 @@ export function TypingBoard({
       setRevealed(false);
       return;
     }
+    if (key === "ArrowRight" || key === "ArrowLeft") {
+      if (e.shiftKey) return; // Shift+←→ 切题在页面层
+      e.preventDefault();
+      const n = targets.length;
+      setCurrent((c) => (c + (key === "ArrowRight" ? 1 : -1) + n) % n);
+      return;
+    }
     if (key === " ") {
       e.preventDefault();
       if (allFull(typed)) {
-        if (strict) return; // 自动提交已处理
+        if (strict) return; // 严格模式全对已自动提交
         lenientValidate();
         return;
       }
@@ -156,7 +268,14 @@ export function TypingBoard({
     }
     if (key === "Enter") {
       e.preventDefault();
-      if (!strict && allFull(typed)) lenientValidate();
+      if (allFull(typed)) {
+        if (!strict) lenientValidate();
+      } else if (strict) {
+        // 未写完:定位到第一处问题并抖动提示(参照原型)
+        locateFirstProblem();
+      } else {
+        lenientValidate();
+      }
       return;
     }
     if (key === "Backspace") {
@@ -177,57 +296,14 @@ export function TypingBoard({
     }
     if (CHAR_RE.test(key)) {
       e.preventDefault();
-      if (startRef.current === null) startRef.current = performance.now();
-      const word = targets[current]!;
-      const pos = typed[current]!.length;
-      if (pos >= word.length) return; // 满词等待跳转
-      const expected = word[pos]!;
-      const matches = expected.toLowerCase() === key.toLowerCase();
-
-      if (strict && !matches) {
-        // 错字不上屏:抖动 240ms + 红字原位闪现 200ms (§6.2)
-        errorsRef.current += 1;
-        ghostKeyRef.current += 1;
-        setShake({ wordIdx: current, key: ghostKeyRef.current });
-        setGhost({ wordIdx: current, slotIdx: pos, ch: key, key: ghostKeyRef.current });
-        return;
-      }
-      if (!strict && !matches) {
-        errorsRef.current += 1;
-      }
-      setTyped((prev) => {
-        const copy = prev.map((w) => [...w]);
-        copy[current]!.push(key);
-        // 词满自动跳下一未完成词
-        if (copy[current]!.length >= word.length) {
-          const next = nextIncomplete(copy, current);
-          if (next !== null) setCurrent(next);
-        }
-        return copy;
-      });
+      typeChar(key);
     }
   };
 
-  /** 宽松模式 Enter 整句校验:错误词清空重打 (§4.1) */
-  const lenientValidate = () => {
-    let wrongCount = 0;
-    const cleaned = typed.map((letters, i) => {
-      const got = letters.join("").toLowerCase();
-      const want = targets[i]!.toLowerCase();
-      if (got !== want) {
-        wrongCount += 1;
-        return [];
-      }
-      return letters;
-    });
-    if (wrongCount === 0) {
-      submit();
-    } else {
-      setTyped(cleaned);
-      const firstWrong = cleaned.findIndex((l) => l.length === 0);
-      if (firstWrong >= 0) setCurrent(firstWrong);
-      ghostKeyRef.current += 1;
-      setShake({ wordIdx: firstWrong, key: ghostKeyRef.current });
+  // Ctrl 单击朗读:keyup 且未参与组合键(参照原型,避免 Ctrl+M 误触发)
+  const handleKeyUp = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Control" && !ctrlComboRef.current) {
+      speech?.speak(sentence.en);
     }
   };
 
@@ -237,6 +313,7 @@ export function TypingBoard({
       className="sf-typing"
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
       onCompositionStart={() => {
         composingRef.current = true;
       }}
@@ -262,24 +339,31 @@ export function TypingBoard({
               ]
                 .filter(Boolean)
                 .join(" ")}
+              onClick={() => {
+                setCurrent(wi);
+                containerRef.current?.focus();
+              }}
             >
               {Array.from(word).map((expected, li) => {
                 const typedCh = letters[li];
                 const isCursor = isCurrent && li === letters.length;
                 const wrong =
-                  !strict && typedCh !== undefined &&
+                  !strict &&
+                  typedCh !== undefined &&
                   typedCh.toLowerCase() !== expected.toLowerCase();
                 return (
                   <span
                     key={li}
                     className={`sf-typing__slot${isCursor ? " sf-typing__slot--cursor" : ""}`}
                   >
-                    {typedCh !== undefined && (
+                    {typedCh !== undefined ? (
                       <span
                         className={`sf-typing__letter${wrong ? " sf-typing__letter--wrong" : ""}`}
                       >
                         {typedCh}
                       </span>
+                    ) : (
+                      revealed && <span className="sf-typing__reveal">{expected}</span>
                     )}
                     {ghost && ghost.wordIdx === wi && ghost.slotIdx === li && (
                       <span key={ghost.key} className="sf-typing__ghost">
@@ -294,11 +378,9 @@ export function TypingBoard({
         })}
         {sentence.punct && <span className="sf-typing__punct">{sentence.punct}</span>}
       </div>
-      {revealed ? (
-        <div className="sf-typing__answer">{sentence.en}</div>
-      ) : (
-        <div className="sf-typing__hint">直接敲键盘输入 · 大小写不限 · ↓ 显示答案</div>
-      )}
+      <div className="sf-typing__hint">
+        {revealed ? "↑ 收起答案 · 已记为看过答案" : "直接敲键盘输入 · 大小写不限 · ↓ 显示答案"}
+      </div>
     </div>
   );
 }

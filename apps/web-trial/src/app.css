@@ -135,6 +135,13 @@ body {
 .trial-parse-next {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.trial-parse-hint {
+  font-size: 12px;
+  color: var(--sf-text-placeholder);
 }
 
 /* ---- 主题条 / 页脚 / 本地徽标 ---- */
