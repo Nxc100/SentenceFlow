@@ -21,7 +21,25 @@ use state::AppState;
 use std::sync::Arc;
 use tauri::Manager;
 
+/// 子进程继承本进程的错误模式:损坏/系统不兼容的 CLI(如老 Win10 上的
+/// opencode)不再弹系统级"无法定位程序输入点"对话框,改由命令层返回
+/// 可读的中文错误(真机踩坑,见 installer.rs)。
+#[cfg(windows)]
+fn suppress_child_error_dialogs() {
+    const SEM_FAILCRITICALERRORS: u32 = 0x0001;
+    const SEM_NOOPENFILEERRORBOX: u32 = 0x8000;
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn SetErrorMode(mode: u32) -> u32;
+    }
+    unsafe {
+        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
+    }
+}
+
 pub fn run() {
+    #[cfg(windows)]
+    suppress_child_error_dialogs();
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),

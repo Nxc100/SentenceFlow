@@ -33,6 +33,47 @@ pub struct InstallDone {
     pub bin_path: String,
 }
 
+/// opencode(Bun 构建)依赖 Win10 1809 引入的 ConPTY API
+/// (ClosePseudoConsole 等);更老的系统上加载即失败。
+#[cfg(windows)]
+const MIN_WINDOWS_BUILD: u32 = 17763;
+
+/// 真实 Windows build 号(RtlGetVersion 不受兼容性清单影响);
+/// 探测失败返回 0(未知时不拦安装)。
+#[cfg(windows)]
+fn windows_build_number() -> u32 {
+    #[repr(C)]
+    struct OsVersionInfo {
+        size: u32,
+        major: u32,
+        minor: u32,
+        build: u32,
+        platform_id: u32,
+        csd: [u16; 128],
+    }
+    #[link(name = "ntdll")]
+    unsafe extern "system" {
+        fn RtlGetVersion(info: *mut OsVersionInfo) -> i32;
+    }
+    let mut info = OsVersionInfo {
+        size: std::mem::size_of::<OsVersionInfo>() as u32,
+        major: 0,
+        minor: 0,
+        build: 0,
+        platform_id: 0,
+        csd: [0; 128],
+    };
+    if unsafe { RtlGetVersion(&mut info) } == 0 {
+        info.build
+    } else {
+        0
+    }
+}
+
+const OLD_WINDOWS_MSG: &str = "这台电脑的 Windows 版本过旧,opencode 无法在其上运行\
+(需要 Windows 10 的 2018 年 10 月更新 1809 及以上)。建议改用「Zen 直连」通道\
+——无需安装任何东西,填 Key 即可;或升级 Windows 后再来一键安装。";
+
 /// 当前平台对应的 opencode npm 平台包;不支持的平台返回 None
 /// (UI 只在 Windows 上展示一键安装)。
 fn platform_package() -> Option<&'static str> {
@@ -160,6 +201,12 @@ fn health_check(bin: &PathBuf) -> Result<String, String> {
         .output()
         .map_err(|e| format!("安装后的程序无法运行: {e}"))?;
     if !out.status.success() {
+        // STATUS_ENTRYPOINT_NOT_FOUND / STATUS_INVALID_IMAGE_FORMAT:
+        // 系统太旧或架构不符,给可行动的中文解释而非十六进制码
+        let code = out.status.code().unwrap_or(0) as u32;
+        if code == 0xC000_0139 || code == 0xC000_007B {
+            return Err(OLD_WINDOWS_MSG.into());
+        }
         return Err(format!(
             "安装后的程序自检失败: {}",
             String::from_utf8_lossy(&out.stderr)
@@ -176,6 +223,15 @@ pub async fn install(app: AppHandle, state: Arc<AppState>) -> CmdResult<InstallD
             "当前系统请使用命令行安装 opencode",
         ));
     };
+    // 预检系统版本:过旧系统直接给出路,不浪费 57MB 下载(真机踩坑:
+    // 老 Win10 上加载 opencode 报"无法定位程序输入点 ClosePseudoConsole")
+    #[cfg(windows)]
+    {
+        let build = windows_build_number();
+        if build != 0 && build < MIN_WINDOWS_BUILD {
+            return Err(CmdError::new("install", OLD_WINDOWS_MSG));
+        }
+    }
     let (registries, proxy) = {
         let settings = state.settings.lock().expect("settings lock");
         (
@@ -249,7 +305,12 @@ pub async fn install(app: AppHandle, state: Arc<AppState>) -> CmdResult<InstallD
     }
 
     emit_progress(&app, "verify", 0, None);
-    health_check(&bin).map_err(|e| CmdError::new("install", e))?;
+    if let Err(e) = health_check(&bin) {
+        // 自检不过就清掉残件,避免后续探测反复触碰坏二进制
+        let _ = std::fs::remove_file(&bin);
+        let _ = std::fs::remove_file(&marker);
+        return Err(CmdError::new("install", e));
+    }
 
     // 写入设置:探测/生成/答疑全部经 bin_override 使用这份托管副本
     {
