@@ -36,6 +36,11 @@
     "resources": {
       "../../../content/build/content.db": "content.db",
       "../../../content/channels.json": "channels.json"
+    },
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico"
+      }
     }
   }
 }
