@@ -294,7 +294,7 @@ function GuideCard() {
         <p>接入任一 AI 通道后,这里可以为「下周出差」「面试」等场景现场生成带全套解析的句集。</p>
         <table className="workshop-guide__table">
           <tbody>
-            <tr><td>opencode 本地</td><td>已装已登录即免费用(限速)</td></tr>
+            <tr><td>opencode 本地</td><td>一键安装即免费用(限速,无需登录)</td></tr>
             <tr><td>DeepSeek 官方</td><td>自己的 Key,质量稳定,按量计费</td></tr>
             <tr><td>Zen 直连</td><td>不装 CLI 也能用免费模型</td></tr>
             <tr><td>Ollama 本地</td><td>全离线,本机模型</td></tr>

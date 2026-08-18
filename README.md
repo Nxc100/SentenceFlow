@@ -153,7 +153,8 @@ cargo run -p sf-license --features issuer -- issue \
 - **校验器是契约**:LLM 输出必须过确定性校验才能入库——模型再不可靠也
   不产出破碎数据。
 - **隐私红线**:Key 只进系统钥匙串且备份结构上不含密钥;绝不读取用户的
-  opencode 凭据(登录态仅经 `opencode models` 输出间接判定)。
+  opencode 凭据(通道可用性仅经 `opencode models` 输出间接判定,
+  免费模型匿名可用、无需登录)。
 - **双端一致**:`now`/`seed` 全是显式参数,桌面(native)与试用版(wasm)
   对同一输入产生逐比特一致的行为。
 

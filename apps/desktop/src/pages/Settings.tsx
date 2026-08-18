@@ -290,8 +290,12 @@ function AiSection() {
             )}
             {c.id === "opencode" && status?.state === "not_authed" && (
               <div className="channel-card__login">
+                <p className="settings-hint">
+                  已安装,但暂时没拿到免费模型名单——多为网络波动,稍等片刻点
+                  [重新检测]即可(免费模型无需登录);持续失败时可试试备用登录。
+                </p>
                 <Button
-                  variant="secondary"
+                  variant="ghost"
                   onClick={async () => {
                     try {
                       await ipc.opencodeLogin();
@@ -301,12 +305,8 @@ function AiSection() {
                     }
                   }}
                 >
-                  打开登录窗口
+                  备用:打开登录窗口
                 </Button>
-                <p className="settings-hint">
-                  会弹出一个黑色窗口:用方向键选择、回车确认,跟着提示完成登录;
-                  完成后关掉窗口,回来点[重新检测]。
-                </p>
               </div>
             )}
             {c.id === "ollama" && status?.state === "not_installed" && (
@@ -516,7 +516,7 @@ function OpencodeInstaller({ onDone }: { onDone: () => void }) {
     setProgress(null);
     try {
       const done = await ipc.opencodeInstall();
-      toast.show(`opencode ${done.version} 已安装,接下来登录即可使用`);
+      toast.show(`opencode ${done.version} 已安装,免费模型即刻可用`);
       onDone();
     } catch (e) {
       setError(String((e as { message?: string }).message ?? e));

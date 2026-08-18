@@ -165,7 +165,11 @@ impl ChannelAdapter for OpencodeChannel {
                 };
             }
         }
-        // ③ login state via `opencode models` output only (never auth.json).
+        // ③ 可用性只看 `opencode models` 输出(从不读 auth.json)。
+        //    实证修正(2026-08-18,隔离 auth 的全新环境真实生成通过):
+        //    Zen 免费层匿名可用、无需登录——名单为空更可能是网络波动或
+        //    名单下线;NotAuthed 在 UI 层呈现为「重试 + 备用登录」,
+        //    而非把登录当成必经步骤。
         match self.run_capture(&bin, &["models"]).await {
             Ok(out) => {
                 let models = parse_models_output(&out);
@@ -298,8 +302,8 @@ fn common_install_dirs() -> Vec<PathBuf> {
     dirs
 }
 
-/// Parse `opencode models` output: one model id per line; login state is
-/// "has at least one `opencode/` entry" (§11.C).
+/// Parse `opencode models` output: one model id per line; channel usability =
+/// "has at least one `opencode/` entry"(§11.C;免费层匿名可用,与登录无关)。
 pub fn parse_models_output(out: &str) -> Vec<ModelInfo> {
     out.lines()
         .map(str::trim)
