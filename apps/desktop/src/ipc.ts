@@ -94,6 +94,8 @@ export interface JobParams {
   microbatch: number;
   channel: string;
   model: string;
+  /** level = 按等级练习句(默认);scenario = 场景对话(不分等级) */
+  mode?: "level" | "scenario";
 }
 
 export type BatchState = "pending" | "running" | "done" | "failed";
@@ -164,6 +166,8 @@ export interface AttemptReport {
   wpm: number;
   error_tags: ErrorTag[];
   tz_offset_secs: number;
+  /** 场景练习:只记日志,不进等级复习队列 */
+  skip_srs?: boolean;
 }
 
 export interface AttemptAck {
@@ -185,6 +189,21 @@ export interface BenchScore {
   pass_rate: number;
   over_level_rate: number;
   latency_ms: number;
+}
+
+/* ---------- 场景练习 (方案 §3.5) ---------- */
+
+export interface ScenePackInfo {
+  pack: string;
+  name: string;
+  category: string;
+  intro: string;
+  /** 参考难度(展示为阶段名;不构成任何约束) */
+  reference_level: LevelId | null;
+  sentence_count: number;
+  /** true = 生成工坊产出的包(可删) */
+  from_user: boolean;
+  practiced: boolean;
 }
 
 /* ---------- 定级测试 (sf-core placement,方案 §3.3) ---------- */
@@ -266,6 +285,11 @@ export const ipc = {
   submitAttempt: (report: AttemptReport) => invoke<AttemptAck>("submit_attempt", { report }),
   judgeText: (sentenceId: number, input: string) =>
     invoke<Verdict>("judge_text", { sentenceId, input }),
+
+  listScenePacks: () => invoke<ScenePackInfo[]>("list_scene_packs"),
+  listPackSentences: (pack: string) => invoke<Sentence[]>("list_pack_sentences", { pack }),
+  startScenarioSession: (pack: string) => invoke<Session>("start_scenario_session", { pack }),
+  deleteUserScenePack: (pack: string) => invoke<number>("delete_user_scene_pack", { pack }),
 
   placementStart: (allowListening: boolean) =>
     invoke<PlacementStep>("placement_start", { allowListening }),

@@ -33,15 +33,29 @@ pub enum JobState {
     Cancelled,
 }
 
+/// 生成模式(《场景练习模块-实现方案》§3.4)。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GenMode {
+    /// 按等级生成练习句(默认;老任务反序列化后即此值)。
+    #[default]
+    Level,
+    /// 场景对话:双角色真实对话,不受词表带约束。
+    Scenario,
+}
+
 /// Parameters of one workshop job (§4.4 场景生成流).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct JobParams {
     pub scene: String,
+    /// 场景对话模式下仅作参考难度记录(不约束生成/校验)。
     pub level: String,
     pub total_sentences: u32,
     pub microbatch: u32,
     pub channel: String,
     pub model: String,
+    #[serde(default)]
+    pub mode: GenMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -213,7 +227,17 @@ mod tests {
             microbatch: mb,
             channel: "opencode".into(),
             model: "opencode/deepseek-v4-flash".into(),
+            mode: GenMode::Level,
         }
+    }
+
+    #[test]
+    fn legacy_job_json_without_mode_defaults_to_level() {
+        // 断点续跑会反序列化旧任务:缺 mode 字段必须回落到按等级生成
+        let legacy = r#"{"scene":"机场值机","level":"L3","total_sentences":10,
+            "microbatch":10,"channel":"opencode","model":"m"}"#;
+        let p: JobParams = serde_json::from_str(legacy).unwrap();
+        assert_eq!(p.mode, GenMode::Level);
     }
 
     #[test]

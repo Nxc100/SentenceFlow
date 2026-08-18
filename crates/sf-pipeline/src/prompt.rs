@@ -89,6 +89,60 @@ pub fn build_prompt(
     PromptParts { system, user }
 }
 
+/// 场景对话的输出 schema:在通用 schema 上增加 `speaker`(A/B 轮替)。
+const SCENARIO_SCHEMA: &str = r#"[{"speaker":"A或B","en":"英文句","zh":"中文翻译","pattern":"句型公式","words":[{"w":"单词","ipa":"英式音标(无斜杠)","pos":"pron|n|v|aux|modal|adj|wh|adv|prep|art|conj|num|propn|part"}],"chunks":[{"r":"subj|pred|link|obj|comp|advl|objc|marker","i":[词序号,从0起]}],"note":"一句话讲解"}]"#;
+
+/// 场景对话 few-shots:真实口语、高频语块、双角色轮替。
+const SCENARIO_FEW_SHOTS: &str = r#"合格示例(咖啡店点单,片段):
+{"speaker":"A","en":"Hi, what can I get for you?","zh":"你好,想喝点什么?","pattern":"特殊疑问句","words":[{"w":"Hi","ipa":"haɪ","pos":"part"},{"w":"what","ipa":"wɒt","pos":"wh"},{"w":"can","ipa":"kæn","pos":"modal"},{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"get","ipa":"ɡet","pos":"v"},{"w":"for","ipa":"fə","pos":"prep"},{"w":"you","ipa":"juː","pos":"pron"}],"chunks":[{"r":"marker","i":[0]},{"r":"obj","i":[1]},{"r":"pred","i":[2,3,4]},{"r":"advl","i":[5,6]}],"note":"店员招呼顾客的高频问法。"}
+{"speaker":"B","en":"Could I get a medium latte, please?","zh":"请给我一杯中杯拿铁。","pattern":"礼貌请求","words":[{"w":"Could","ipa":"kʊd","pos":"modal"},{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"get","ipa":"ɡet","pos":"v"},{"w":"a","ipa":"ə","pos":"art"},{"w":"medium","ipa":"ˈmiːdiəm","pos":"adj"},{"w":"latte","ipa":"ˈlɑːteɪ","pos":"n"},{"w":"please","ipa":"pliːz","pos":"adv"}],"chunks":[{"r":"marker","i":[0]},{"r":"subj","i":[1]},{"r":"pred","i":[2]},{"r":"obj","i":[3,4,5]},{"r":"marker","i":[6]}],"note":"Could I get… 是点单最常用的说法。"}
+反例(书面腔,禁止):
+{"en":"I would like to purchase a beverage of medium size."}
+反例(自言自语、不成对话,禁止):
+{"speaker":"A","en":"Coffee is a popular drink around the world."}"#;
+
+/// 场景对话生成 prompt(《场景练习模块-实现方案》§3.4)。
+///
+/// 与等级 prompt 的区别:**不带 LevelSpec**(不受词表带/语法白名单约束),
+/// 改以"真实口语对话"为约束;`speaker` 字段承载 A/B 轮替。
+/// 前缀同样字节稳定(利于缓存),变量只在 user 段。
+pub fn build_scenario_prompt(
+    scene: &str,
+    count: u32,
+    avoid: &[u64],
+    banned: &[String],
+) -> PromptParts {
+    let system = format!(
+        "你是英语口语对话内容生成器,只输出 JSON 数组,不输出任何其他文字。\n\
+         [prompt-version: {PROMPT_VERSION}-scenario]\n\n\
+         ## 输出 schema\n{SCENARIO_SCHEMA}\n\n\
+         ## 示例\n{SCENARIO_FEW_SHOTS}\n\n\
+         ## 规则\n\
+         - 生成**一段连续的真实对话**,A 与 B 交替发言,顺序即数组顺序;\n\
+         - 用母语者日常口语,优先高频固定说法(语块),不要书面腔;\n\
+         - 每句不超过 20 个词,可直接照着说;\n\
+         - 中文是地道日常表达,禁止翻译腔;\n\
+         - 音标用英式 IPA,不带斜杠;\n\
+         - words 必须与 en 逐词一致(句末标点不算词);\n\
+         - chunks 必须覆盖每个词恰好一次;\n\
+         - 只输出 JSON 数组。"
+    );
+    let mut user = format!("场景:{scene};生成 {count} 句连续对话(A/B 交替)。");
+    if !avoid.is_empty() {
+        let fps: Vec<String> = avoid.iter().map(|h| fingerprint16(*h)).collect();
+        user.push_str(&format!("\n避开与以下指纹相似的句子:{}", fps.join(",")));
+    }
+    if !banned.is_empty() {
+        let words: Vec<&str> = banned
+            .iter()
+            .take(MAX_BANNED_WORDS)
+            .map(String::as_str)
+            .collect();
+        user.push_str(&format!("\n以下单词请避免使用:{}", words.join(", ")));
+    }
+    PromptParts { system, user }
+}
+
 /// Repair prompt: only the diff travels (修补调用仅传差异, §7.4).
 pub fn build_repair_prompt(en: &str, issues_zh: &[String]) -> PromptParts {
     PromptParts {

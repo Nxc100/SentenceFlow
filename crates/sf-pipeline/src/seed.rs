@@ -28,6 +28,9 @@ pub struct SeedSentence {
     pub note: String,
     pub words: Vec<DraftWord>,
     pub chunks: Vec<DraftChunk>,
+    /// 场景对话包专用:说话人 A/B(普通种子句留空)。
+    #[serde(default)]
+    pub speaker: String,
 }
 
 impl SeedFile {
@@ -46,6 +49,7 @@ impl SeedSentence {
             words: self.words.clone(),
             chunks: self.chunks.clone(),
             note: self.note.clone(),
+            speaker: self.speaker.clone(),
         }
     }
 }

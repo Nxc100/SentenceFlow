@@ -174,8 +174,7 @@ impl ChannelAdapter for OpencodeChannel {
             Err(ChannelError::Timeout) => {
                 // 不是网络问题:大概率是大体积二进制在慢磁盘上冷启动
                 return ChannelStatus::Error {
-                    message: "opencode 启动较慢(首次运行或磁盘较忙)——稍等片刻再点[重新检测]"
-                        .into(),
+                    message: "opencode 启动较慢(首次运行或磁盘较忙)——稍等片刻再点[重新检测]".into(),
                 };
             }
             Err(e) => {

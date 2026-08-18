@@ -36,9 +36,14 @@ type Card =
 export function WorkshopPage({
   prefillScene,
   onConsumedPrefill,
+  scenarioMode,
+  onConsumedScenarioMode,
 }: {
   prefillScene: string | null;
   onConsumedPrefill: () => void;
+  /** 从「场景」页跳来时预置为场景对话模式 */
+  scenarioMode?: boolean;
+  onConsumedScenarioMode?: () => void;
 }) {
   const { level, specs, settings } = useApp();
   const toast = useToast();
@@ -46,6 +51,8 @@ export function WorkshopPage({
   const [scene, setScene] = useState("");
   const [genLevel, setGenLevel] = useState<LevelId>(level);
   const [count, setCount] = useState<10 | 20 | 30>(10);
+  /** 生成模式:按等级练习句 / 场景对话(不分等级) */
+  const [mode, setMode] = useState<"level" | "scenario">("level");
   const [running, setRunning] = useState(false);
   const [cards, setCards] = useState<Card[]>([]);
   const [batches, setBatches] = useState<BatchState[]>([]);
@@ -71,6 +78,13 @@ export function WorkshopPage({
       onConsumedPrefill();
     }
   }, [prefillScene, onConsumedPrefill]);
+
+  useEffect(() => {
+    if (scenarioMode) {
+      setMode("scenario");
+      onConsumedScenarioMode?.();
+    }
+  }, [scenarioMode, onConsumedScenarioMode]);
 
   const refreshJobs = useCallback(async () => {
     const jobs = await ipc.workshopJobs();
@@ -189,6 +203,7 @@ export function WorkshopPage({
         microbatch: Math.min(count, 10),
         channel,
         model: settings.ai.model ?? "",
+        mode,
       });
     } catch (e) {
       setRunning(false);
@@ -207,23 +222,48 @@ export function WorkshopPage({
         </span>
       </header>
 
+      {/* 模式切换:按等级练习句 / 场景对话(不分等级) */}
+      <div className="workshop-modes">
+        {(
+          [
+            ["level", "按等级生成", "配合今日练习的整句题"],
+            ["scenario", "场景对话(不分等级)", "一段真实对话,去「场景」页练"],
+          ] as const
+        ).map(([key, label, hint]) => (
+          <button
+            key={key}
+            type="button"
+            className={`workshop-mode${mode === key ? " workshop-mode--on" : ""}`}
+            onClick={() => setMode(key)}
+            disabled={running}
+          >
+            <span className="workshop-mode__label">{label}</span>
+            <span className="workshop-mode__hint">{hint}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="workshop-form">
         <input
           className="workshop-scene"
-          placeholder="场景,如:机场值机和安检"
+          placeholder={
+            mode === "scenario" ? "场景,如:和房东谈续租" : "场景,如:机场值机和安检"
+          }
           value={scene}
           onChange={(e) => setScene(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !running) void start();
           }}
         />
-        <select value={genLevel} onChange={(e) => setGenLevel(e.target.value as LevelId)}>
-          {specs.map((s) => (
-            <option key={s.id} value={s.id}>
-              {levelOptionLabel(s.id, s)}
-            </option>
-          ))}
-        </select>
+        {mode === "level" && (
+          <select value={genLevel} onChange={(e) => setGenLevel(e.target.value as LevelId)}>
+            {specs.map((s) => (
+              <option key={s.id} value={s.id}>
+                {levelOptionLabel(s.id, s)}
+              </option>
+            ))}
+          </select>
+        )}
         <div className="workshop-count">
           {([10, 20, 30] as const).map((n) => (
             <button
@@ -347,7 +387,12 @@ export function WorkshopPage({
         )}
       </div>
 
-      {summary && <div className="workshop-summary">{summary} · 已通过句子已自动入库,可去内容库开练</div>}
+      {summary && (
+        <div className="workshop-summary">
+          {/* 场景模式的收尾指引由后端 summary 自带(去「场景」页开练) */}
+          {mode === "scenario" ? summary : `${summary} · 已通过句子已自动入库,可去内容库开练`}
+        </div>
+      )}
 
       {pausedJobs.length > 0 && (
         <div className="workshop-paused">

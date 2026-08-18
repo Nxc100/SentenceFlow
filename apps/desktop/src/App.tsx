@@ -18,12 +18,23 @@ import { ReportPage } from "./pages/Report";
 import { SettingsPage } from "./pages/Settings";
 import { PlacementTestScreen } from "./pages/PlacementTest";
 import { MyLevelPage } from "./pages/MyLevel";
+import { ScenarioPage } from "./pages/Scenario";
+import { ScenarioPracticeScreen } from "./pages/ScenarioPractice";
+import type { ScenarioLaunch } from "./pages/ScenarioPractice";
 
-export type NavKey = "today" | "library" | "workshop" | "report" | "mylevel" | "settings";
+export type NavKey =
+  | "today"
+  | "library"
+  | "scenario"
+  | "workshop"
+  | "report"
+  | "mylevel"
+  | "settings";
 
 const NAV: Array<{ key: NavKey; label: string; icon: string }> = [
   { key: "today", label: "今日", icon: "☀" },
   { key: "library", label: "内容库", icon: "▤" },
+  { key: "scenario", label: "场景", icon: "💬" },
   { key: "workshop", label: "生成工坊", icon: "✦" },
   { key: "report", label: "报告", icon: "▦" },
   { key: "mylevel", label: "水平", icon: "◎" },
@@ -69,6 +80,9 @@ function Shell() {
   const [practice, setPractice] = useState<PracticeLaunch | null>(null);
   const [workshopPrefill, setWorkshopPrefill] = useState<string | null>(null);
   const [placementOpen, setPlacementOpen] = useState(false);
+  const [scenario, setScenario] = useState<ScenarioLaunch | null>(null);
+  /** 打开工坊时预置为「场景对话」模式 */
+  const [workshopScenarioMode, setWorkshopScenarioMode] = useState(false);
 
   // 定级测试全屏(首启「帮我测一下」/ 设置「重新测一下」都走这里;
   // 必须先于首启分支,首启路径才能进入测试)
@@ -92,6 +106,9 @@ function Shell() {
   // 练习全屏模态(§2.2)
   if (practice) {
     return <PracticeScreen launch={practice} onExit={() => setPractice(null)} />;
+  }
+  if (scenario) {
+    return <ScenarioPracticeScreen launch={scenario} onExit={() => setScenario(null)} />;
   }
 
   const trialCapsule = (() => {
@@ -145,8 +162,22 @@ function Shell() {
         {trialCapsule && <div className="app-topbar">{trialCapsule}</div>}
         {nav === "today" && <TodayPage onStart={(launch) => setPractice(launch)} />}
         {nav === "library" && <LibraryPage onPractice={(launch) => setPractice(launch)} />}
+        {nav === "scenario" && (
+          <ScenarioPage
+            onPractice={(launch) => setScenario(launch)}
+            onGenerate={() => {
+              setWorkshopScenarioMode(true);
+              setNav("workshop");
+            }}
+          />
+        )}
         {nav === "workshop" && (
-          <WorkshopPage prefillScene={workshopPrefill} onConsumedPrefill={() => setWorkshopPrefill(null)} />
+          <WorkshopPage
+            prefillScene={workshopPrefill}
+            onConsumedPrefill={() => setWorkshopPrefill(null)}
+            scenarioMode={workshopScenarioMode}
+            onConsumedScenarioMode={() => setWorkshopScenarioMode(false)}
+          />
         )}
         {nav === "report" && (
           <ReportPage

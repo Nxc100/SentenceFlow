@@ -1,0 +1,264 @@
+# 场景练习包 — 咖啡店点单(格式见《场景练习模块-实现方案》§3.3)
+# 不分等级:句子按真实对话取材,优先高频语块;校验放开词表带,
+# 结构/成分/音标/包内查重照旧强校验(sf factory validate)。
+pack: cafe-order
+name: "咖啡店点单"
+category: "餐饮"
+intro: "从进门点单到取餐的完整对话,含加料、堂食外带、付款。"
+reference_level: L2
+dialogue:
+  - speaker: A
+    en: "Hi, what can I get for you?"
+    zh: "你好,想喝点什么?"
+    pattern: "特殊疑问句"
+    note: "店员招呼顾客最常用的一句。"
+    words:
+      - { w: "Hi", ipa: "haɪ", pos: "part" }
+      - { w: "what", ipa: "wɒt", pos: "wh" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "for", ipa: "fə", pos: "prep" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "obj", i: [1] }
+      - { r: "subj", i: [3] }
+      - { r: "pred", i: [2, 4] }
+      - { r: "advl", i: [5, 6] }
+
+  - speaker: B
+    en: "Could I get a medium latte, please?"
+    zh: "请给我一杯中杯拿铁。"
+    pattern: "礼貌请求"
+    note: "Could I get… 是点单最常用的开口方式。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "medium", ipa: "ˈmiːdiəm", pos: "adj" }
+      - { w: "latte", ipa: "ˈlɑːteɪ", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "marker", i: [6] }
+
+  - speaker: A
+    en: "Sure. Hot or iced?"
+    zh: "好的。热的还是冰的?"
+    pattern: "选择疑问句"
+    note: "省略句,点单时非常高频。"
+    words:
+      - { w: "Sure", ipa: "ʃɔː", pos: "adv" }
+      - { w: "Hot", ipa: "hɒt", pos: "adj" }
+      - { w: "or", ipa: "ɔː", pos: "conj" }
+      - { w: "iced", ipa: "aɪst", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "comp", i: [1, 2, 3] }
+
+  - speaker: B
+    en: "Iced, please. And can I add an extra shot?"
+    zh: "冰的,谢谢。可以加一份浓缩吗?"
+    pattern: "省略句+情态疑问"
+    note: "an extra shot = 多加一份意式浓缩。"
+    words:
+      - { w: "Iced", ipa: "aɪst", pos: "adj" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+      - { w: "And", ipa: "ənd", pos: "conj" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "add", ipa: "æd", pos: "v" }
+      - { w: "an", ipa: "ən", pos: "art" }
+      - { w: "extra", ipa: "ˈekstrə", pos: "adj" }
+      - { w: "shot", ipa: "ʃɒt", pos: "n" }
+    chunks:
+      - { r: "comp", i: [0] }
+      - { r: "marker", i: [1, 2, 3] }
+      - { r: "subj", i: [4] }
+      - { r: "pred", i: [5] }
+      - { r: "obj", i: [6, 7, 8] }
+
+  - speaker: A
+    en: "Of course. Is that for here or to go?"
+    zh: "当然可以。堂食还是带走?"
+    pattern: "选择疑问句"
+    note: "for here or to go 是店内固定问法。"
+    words:
+      - { w: "Of", ipa: "əv", pos: "prep" }
+      - { w: "course", ipa: "kɔːs", pos: "n" }
+      - { w: "Is", ipa: "ɪz", pos: "aux" }
+      - { w: "that", ipa: "ðæt", pos: "pron" }
+      - { w: "for", ipa: "fə", pos: "prep" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "or", ipa: "ɔː", pos: "conj" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "go", ipa: "ɡəʊ", pos: "v" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "subj", i: [3] }
+      - { r: "comp", i: [4, 5, 6, 7, 8] }
+
+  - speaker: B
+    en: "To go, thanks."
+    zh: "带走,谢谢。"
+    pattern: "省略句"
+    note: "最短的回答方式,自然又礼貌。"
+    words:
+      - { w: "To", ipa: "tuː", pos: "part" }
+      - { w: "go", ipa: "ɡəʊ", pos: "v" }
+      - { w: "thanks", ipa: "θæŋks", pos: "n" }
+    chunks:
+      - { r: "comp", i: [0, 1] }
+      - { r: "marker", i: [2] }
+
+  - speaker: A
+    en: "Can I have a name for the order?"
+    zh: "请问这单写什么名字?"
+    pattern: "情态疑问句"
+    note: "店员记名字方便叫号取餐。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "name", ipa: "neɪm", pos: "n" }
+      - { w: "for", ipa: "fə", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "order", ipa: "ˈɔːdə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+
+  - speaker: B
+    en: "It's Lin. How much is it?"
+    zh: "写林就行。多少钱?"
+    pattern: "主+系+表 / 特殊疑问句"
+    note: "How much is it? 是问价的万能句。"
+    words:
+      - { w: "It's", ipa: "ɪts", pos: "pron" }
+      - { w: "Lin", ipa: "lɪn", pos: "propn" }
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adj" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "comp", i: [1] }
+      - { r: "marker", i: [2, 3] }
+      - { r: "link", i: [4] }
+      - { r: "subj", i: [5] }
+
+  - speaker: A
+    en: "That'll be five fifty."
+    zh: "一共五块五。"
+    pattern: "将来时报价"
+    note: "That'll be… 是收银报价的固定说法。"
+    words:
+      - { w: "That'll", ipa: "ðætl", pos: "pron" }
+      - { w: "be", ipa: "biː", pos: "aux" }
+      - { w: "five", ipa: "faɪv", pos: "num" }
+      - { w: "fifty", ipa: "ˈfɪfti", pos: "num" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2, 3] }
+
+  - speaker: B
+    en: "Can I pay by card?"
+    zh: "可以刷卡吗?"
+    pattern: "情态疑问句"
+    note: "pay by card / pay in cash 成对记。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "pay", ipa: "peɪ", pos: "v" }
+      - { w: "by", ipa: "baɪ", pos: "prep" }
+      - { w: "card", ipa: "kɑːd", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4] }
+
+  - speaker: A
+    en: "Yes, just tap here when you're ready."
+    zh: "可以,准备好在这里碰一下就行。"
+    pattern: "祈使句+时间状语从句"
+    note: "tap 是感应支付的常用动词。"
+    words:
+      - { w: "Yes", ipa: "jes", pos: "part" }
+      - { w: "just", ipa: "dʒʌst", pos: "adv" }
+      - { w: "tap", ipa: "tæp", pos: "v" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "you're", ipa: "jɔː", pos: "pron" }
+      - { w: "ready", ipa: "ˈredi", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+
+  - speaker: B
+    en: "Done. How long will it take?"
+    zh: "好了。大概要等多久?"
+    pattern: "特殊疑问句"
+    note: "How long will it take? 问等待时间的通用句。"
+    words:
+      - { w: "Done", ipa: "dʌn", pos: "adj" }
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "long", ipa: "lɒŋ", pos: "adj" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+    chunks:
+      - { r: "comp", i: [0] }
+      - { r: "marker", i: [1, 2] }
+      - { r: "subj", i: [4] }
+      - { r: "pred", i: [3, 5] }
+
+  - speaker: A
+    en: "About three minutes. I'll call your name."
+    zh: "大概三分钟。好了我会叫你名字。"
+    pattern: "省略句+将来时"
+    note: "取餐前店员常这样交代。"
+    words:
+      - { w: "About", ipa: "əˈbaʊt", pos: "prep" }
+      - { w: "three", ipa: "θriː", pos: "num" }
+      - { w: "minutes", ipa: "ˈmɪnɪts", pos: "n" }
+      - { w: "I'll", ipa: "aɪl", pos: "pron" }
+      - { w: "call", ipa: "kɔːl", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "name", ipa: "neɪm", pos: "n" }
+    chunks:
+      - { r: "advl", i: [0, 1, 2] }
+      - { r: "subj", i: [3] }
+      - { r: "pred", i: [4] }
+      - { r: "obj", i: [5, 6] }
+
+  - speaker: B
+    en: "Great, thank you so much."
+    zh: "太好了,非常感谢。"
+    pattern: "固定表达"
+    note: "thank you so much 比 thanks 更热情。"
+    words:
+      - { w: "Great", ipa: "ɡreɪt", pos: "adj" }
+      - { w: "thank", ipa: "θæŋk", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "so", ipa: "səʊ", pos: "adv" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adv" }
+    chunks:
+      - { r: "comp", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4] }

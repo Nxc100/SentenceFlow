@@ -1683,3 +1683,259 @@ select {
   0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
   30% { opacity: 1; transform: translateY(-3px); }
 }
+
+/* ================= 场景练习(不分等级) ================= */
+
+.scenario-intro {
+  color: var(--sf-text-3);
+  font-size: 13px;
+  margin: -12px 0 0;
+}
+
+.scenario-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 0;
+  color: var(--sf-text-3);
+}
+
+.scenario-group__title {
+  font-size: 15px;
+  color: var(--sf-text-2);
+  margin: 0 0 10px;
+}
+
+.scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.scenario-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  text-align: left;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-card);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.scenario-card:hover {
+  border-color: var(--sf-primary);
+  box-shadow: var(--sf-shadow-2);
+}
+
+.scenario-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sf-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scenario-card__done {
+  font-size: 12px;
+  color: var(--sf-success, #2e9e5b);
+}
+
+.scenario-card__intro {
+  font-size: 12.5px;
+  color: var(--sf-text-2);
+  line-height: 1.5;
+}
+
+.scenario-card__meta {
+  font-size: 12px;
+  color: var(--sf-text-placeholder);
+}
+
+/* 详情预览 */
+.scenario-preview {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+}
+
+.scenario-preview__panel {
+  width: min(560px, 92vw);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--sf-card);
+  border-radius: var(--sf-radius-lg);
+  box-shadow: var(--sf-shadow-2);
+  padding: 20px 22px;
+  gap: 12px;
+}
+
+.scenario-preview__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scenario-preview__head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.scenario-preview__close {
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--sf-text-3);
+}
+
+.scenario-preview__intro {
+  margin: 0;
+  font-size: 13px;
+  color: var(--sf-text-2);
+}
+
+.scenario-preview__lines {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px;
+}
+
+.scenario-preview__foot {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* 对话气泡(预览 / 练习历史 / 完成回放共用) */
+.scenario-bubble {
+  max-width: 82%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-family: var(--sf-font-en);
+}
+
+.scenario-bubble--a {
+  align-self: flex-start;
+  background: var(--sf-panel);
+  border-bottom-left-radius: 4px;
+}
+
+.scenario-bubble--b {
+  align-self: flex-end;
+  background: var(--sf-primary-soft);
+  border-bottom-right-radius: 4px;
+}
+
+.scenario-bubble__en {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sf-text);
+}
+
+.scenario-bubble__zh {
+  font-family: var(--sf-font-zh);
+  font-size: 12px;
+  color: var(--sf-text-3);
+}
+
+/* 练习页:上方气泡流 + 下方打字板 */
+.scenario-practice {
+  gap: 20px;
+}
+
+.scenario-history {
+  max-height: 34vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.scenario-current {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.scenario-speaker {
+  font-family: var(--sf-font-zh);
+  font-size: 12px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  color: var(--sf-text-3);
+  background: var(--sf-panel);
+}
+
+.scenario-speaker--b {
+  color: var(--sf-primary);
+  background: var(--sf-primary-soft);
+}
+
+.scenario-replay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 40vh;
+  overflow-y: auto;
+  margin-top: 20px;
+  text-align: left;
+}
+
+/* 工坊模式切换 */
+.workshop-modes {
+  display: flex;
+  gap: 12px;
+}
+
+.workshop-mode {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-card);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.workshop-mode--on {
+  border-color: var(--sf-primary);
+  background: var(--sf-primary-soft);
+}
+
+.workshop-mode__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sf-text);
+}
+
+.workshop-mode__hint {
+  font-size: 12px;
+  color: var(--sf-text-3);
+}
+
+.workshop-mode:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

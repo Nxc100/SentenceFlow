@@ -235,6 +235,7 @@ practice:
                 },
             ],
             note: String::new(),
+            speaker: String::new(),
         };
         Validator::new(&specs[0], &lex).validate(&draft, "s", "f", &DedupeIndex::default())
     }

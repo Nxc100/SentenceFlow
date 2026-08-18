@@ -161,6 +161,14 @@ impl ProgressDb {
 
     // ------------------------------------------------------------- log
 
+    /// 练习过的句子 id 集合(场景包「已练」标记;场景句不写 srs,
+    /// 所以不能用 [`Self::seen_ids`] 判断)。
+    pub fn logged_sentence_ids(&self) -> CmdResult<std::collections::HashSet<i64>> {
+        let mut stmt = self.conn.prepare("SELECT DISTINCT sentence_id FROM log")?;
+        let rows = stmt.query_map([], |r| r.get::<_, i64>(0))?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
+    }
+
     pub fn insert_log(&self, row: &LogRow) -> CmdResult<()> {
         self.conn.execute(
             "INSERT INTO log (ts, sentence_id, mode, result, dur_ms, errors, wpm,
@@ -480,6 +488,7 @@ mod tests {
                 microbatch: 20,
                 channel: "opencode".into(),
                 model: "opencode/x".into(),
+                mode: sf_llm::queue::GenMode::Level,
             },
             123,
         );

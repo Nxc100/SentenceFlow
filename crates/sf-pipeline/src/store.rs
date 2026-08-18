@@ -45,10 +45,15 @@ CREATE TABLE IF NOT EXISTS sentence (
     simhash  INTEGER NOT NULL DEFAULT 0,
     license  TEXT NOT NULL DEFAULT 'proprietary',
     attribution TEXT NOT NULL DEFAULT '',
-    rev      INTEGER NOT NULL DEFAULT 1
+    rev      INTEGER NOT NULL DEFAULT 1,
+    -- 场景练习包 id(《场景练习模块-实现方案》§3.2);'' = 普通等级句。
+    -- 场景句不参与等级 SRS 队列,取句路径统一过滤 pack = ''。
+    pack     TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_sentence_level ON sentence(level);
 CREATE INDEX IF NOT EXISTS idx_sentence_scene ON sentence(level, scene);
+-- idx_sentence_pack 由 migrate_pack_column 建:老库执行 SCHEMA 时 pack 列
+-- 尚不存在,放这里会让整个 batch 失败。
 CREATE TABLE IF NOT EXISTS lemma (
     lemma    TEXT PRIMARY KEY,
     band     INTEGER NOT NULL,
@@ -73,22 +78,65 @@ impl ContentStore {
         let conn = Connection::open(path)?;
         conn.execute_batch(SCHEMA)?;
         let store = Self { conn };
+        store.migrate_pack_column()?;
         store.set_meta("origin", origin)?;
         store.set_meta("rev", &rev.to_string())?;
         Ok(store)
     }
 
     /// Open an existing database read-only (the shipped content.db).
+    ///
+    /// 只读库不做迁移:出厂 content.db 由 `sf factory build` 重建,
+    /// 天然带最新 schema。旧内容包缺列时 [`Self::has_pack_column`] 为 false,
+    /// 查询层自动退化(见 [`Self::pack_filter`])。
     pub fn open_readonly(path: &Path) -> Result<Self> {
         let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
         Ok(Self { conn })
     }
 
     /// Open read-write without recreating meta (user_content.db at runtime).
+    /// 老用户库缺 `pack` 列时就地做加列迁移(additive,行为完全兼容)。
     pub fn open_rw(path: &Path) -> Result<Self> {
         let conn = Connection::open(path)?;
         conn.execute_batch(SCHEMA)?;
-        Ok(Self { conn })
+        let store = Self { conn };
+        store.migrate_pack_column()?;
+        Ok(store)
+    }
+
+    /// 表是否已有 `pack` 列(旧库/旧内容包可能没有)。
+    fn has_pack_column(&self) -> bool {
+        self.conn
+            .prepare("SELECT pack FROM sentence LIMIT 1")
+            .is_ok()
+    }
+
+    /// 幂等迁移:缺列则 `ALTER TABLE … ADD COLUMN`(SQLite 加列是 O(1)
+    /// 元数据操作),随后建索引。新库走 SCHEMA 建表后只补索引。
+    fn migrate_pack_column(&self) -> Result<()> {
+        if !self.has_pack_column() {
+            self.conn
+                .execute_batch("ALTER TABLE sentence ADD COLUMN pack TEXT NOT NULL DEFAULT ''")?;
+        }
+        self.conn
+            .execute_batch("CREATE INDEX IF NOT EXISTS idx_sentence_pack ON sentence(pack)")?;
+        Ok(())
+    }
+
+    /// 等级取句路径的防污染条件:有 pack 列时排除场景句,没有则恒真
+    /// (旧内容包不含场景句,条件无意义)。
+    fn pack_filter(&self, prefix: &str) -> &'static str {
+        if self.has_pack_column() {
+            match prefix {
+                "AND" => "AND pack = ''",
+                _ => "WHERE pack = ''",
+            }
+        } else {
+            match prefix {
+                "AND" => "",
+                _ => "",
+            }
+        }
     }
 
     pub fn set_meta(&self, key: &str, value: &str) -> Result<()> {
@@ -108,14 +156,25 @@ impl ContentStore {
 
     /// Insert a validated sentence; returns its row id.
     pub fn insert_sentence(&self, s: &Sentence, attribution: &str, rev: u32) -> Result<i64> {
+        self.insert_sentence_in_pack(s, attribution, rev, "")
+    }
+
+    /// Insert into a scenario pack(`pack` 非空 = 场景练习句,不进等级队列)。
+    pub fn insert_sentence_in_pack(
+        &self,
+        s: &Sentence,
+        attribution: &str,
+        rev: u32,
+        pack: &str,
+    ) -> Result<i64> {
         let words = serde_json::to_string(&s.words).map_err(|e| StoreError::Data(e.to_string()))?;
         let chunks =
             serde_json::to_string(&s.chunks).map_err(|e| StoreError::Data(e.to_string()))?;
         self.conn.execute(
             "INSERT INTO sentence
                (level, scene, func, pattern, zh, en, punct, words, chunks, note,
-                simhash, license, attribution, rev)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+                simhash, license, attribution, rev, pack)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 s.level.as_str(),
                 s.scene,
@@ -135,6 +194,7 @@ impl ContentStore {
                 },
                 attribution,
                 rev,
+                pack,
             ],
         )?;
         Ok(self.conn.last_insert_rowid())
@@ -208,12 +268,50 @@ impl ContentStore {
         })
     }
 
+    /// 某等级的练习句(**不含场景练习句** —— 防污染,方案 §3.2)。
     pub fn sentences_by_level(&self, level: LevelId) -> Result<Vec<Sentence>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT * FROM sentence WHERE level = ?1 ORDER BY id")?;
+        let sql = format!(
+            "SELECT * FROM sentence WHERE level = ?1 {} ORDER BY id",
+            self.pack_filter("AND")
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
         let rows = stmt.query_map(params![level.as_str()], Self::row_to_sentence)?;
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
+    /// 一个场景包的全部句子,按对话顺序(写入顺序 = id 序)。
+    pub fn sentences_by_pack(&self, pack: &str) -> Result<Vec<Sentence>> {
+        if !self.has_pack_column() {
+            return Ok(Vec::new());
+        }
+        let mut stmt = self
+            .conn
+            .prepare("SELECT * FROM sentence WHERE pack = ?1 ORDER BY id")?;
+        let rows = stmt.query_map(params![pack], Self::row_to_sentence)?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
+    /// 库内全部场景包 id 及其句数(用户库据此即席构造「我的场景包」)。
+    pub fn pack_counts(&self) -> Result<Vec<(String, u32)>> {
+        if !self.has_pack_column() {
+            return Ok(Vec::new());
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT pack, COUNT(*) FROM sentence WHERE pack <> '' GROUP BY pack ORDER BY MIN(id)",
+        )?;
+        let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, u32>(1)?)))?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
+    /// 删除整个场景包(用户库)。
+    pub fn delete_pack(&self, pack: &str) -> Result<u32> {
+        if !self.has_pack_column() || pack.is_empty() {
+            return Ok(0);
+        }
+        let n = self
+            .conn
+            .execute("DELETE FROM sentence WHERE pack = ?1", params![pack])?;
+        Ok(n as u32)
     }
 
     pub fn sentence_by_id(&self, id: i64) -> Result<Option<Sentence>> {
@@ -252,11 +350,13 @@ impl ContentStore {
             .query_row("SELECT COUNT(*) FROM sentence", [], |r| r.get(0))?)
     }
 
-    /// Distinct scenes per level (library grouping, §4.3).
+    /// Distinct scenes per level (library grouping, §4.3);场景练习句不计入。
     pub fn scenes(&self, level: LevelId) -> Result<Vec<String>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT DISTINCT scene FROM sentence WHERE level = ?1 ORDER BY scene")?;
+        let sql = format!(
+            "SELECT DISTINCT scene FROM sentence WHERE level = ?1 {} ORDER BY scene",
+            self.pack_filter("AND")
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
         let rows = stmt.query_map(params![level.as_str()], |r| r.get::<_, String>(0))?;
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
@@ -321,6 +421,32 @@ impl ContentIndex {
         } else {
             self.factory.sentence_by_id(id)
         }
+    }
+
+    /// 场景包内容:出厂包在前,用户同名包续在其后(id 已按库偏移)。
+    pub fn sentences_by_pack(&self, pack: &str) -> Result<Vec<Sentence>> {
+        let mut out = self.factory.sentences_by_pack(pack)?;
+        if let Some(user) = &self.user {
+            out.extend(user.sentences_by_pack(pack)?.into_iter().map(|mut s| {
+                s.id += Self::USER_ID_OFFSET;
+                s
+            }));
+        }
+        Ok(out)
+    }
+
+    /// 两库的场景包句数统计:`(pack, count, from_user)`。
+    pub fn pack_counts(&self) -> Result<Vec<(String, u32, bool)>> {
+        let mut out: Vec<(String, u32, bool)> = self
+            .factory
+            .pack_counts()?
+            .into_iter()
+            .map(|(p, n)| (p, n, false))
+            .collect();
+        if let Some(user) = &self.user {
+            out.extend(user.pack_counts()?.into_iter().map(|(p, n)| (p, n, true)));
+        }
+        Ok(out)
     }
 }
 
@@ -411,6 +537,76 @@ mod tests {
             .unwrap();
         assert_eq!(store.sentences_by_level(LevelId::L1).unwrap().len(), 1);
         assert_eq!(store.scenes(LevelId::L1).unwrap(), vec!["问候"]);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn scenario_pack_sentences_never_leak_into_level_queries() {
+        let path = temp_db("packs");
+        let store = ContentStore::create(&path, "factory", 1).unwrap();
+        store
+            .insert_sentence(&sample(LevelId::L1, "level sentence"), "", 1)
+            .unwrap();
+        store
+            .insert_sentence_in_pack(&sample(LevelId::L1, "pack line 1"), "", 1, "cafe-order")
+            .unwrap();
+        store
+            .insert_sentence_in_pack(&sample(LevelId::L1, "pack line 2"), "", 1, "cafe-order")
+            .unwrap();
+
+        // 等级路径完全看不到场景句(防污染红线)
+        let level = store.sentences_by_level(LevelId::L1).unwrap();
+        assert_eq!(level.len(), 1, "等级取句必须排除场景句");
+        assert_eq!(level[0].en, "level sentence");
+
+        // 场景路径按写入顺序返回整包
+        let pack = store.sentences_by_pack("cafe-order").unwrap();
+        assert_eq!(
+            pack.iter().map(|s| s.en.as_str()).collect::<Vec<_>>(),
+            vec!["pack line 1", "pack line 2"],
+            "对话顺序 = 写入顺序"
+        );
+        assert_eq!(store.pack_counts().unwrap(), vec![("cafe-order".into(), 2)]);
+        // 句总数仍包含场景句(内容包体量统计)
+        assert_eq!(store.sentence_count().unwrap(), 3);
+
+        assert_eq!(store.delete_pack("cafe-order").unwrap(), 2);
+        assert!(store.sentences_by_pack("cafe-order").unwrap().is_empty());
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn legacy_db_without_pack_column_migrates_on_open() {
+        let path = temp_db("migrate");
+        // 造一个"旧版"库:显式建不含 pack 列的表
+        {
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                 CREATE TABLE sentence (
+                    id INTEGER PRIMARY KEY, level TEXT NOT NULL, scene TEXT NOT NULL DEFAULT '',
+                    func TEXT NOT NULL DEFAULT '', pattern TEXT NOT NULL DEFAULT '',
+                    zh TEXT NOT NULL, en TEXT NOT NULL, punct TEXT NOT NULL DEFAULT '',
+                    words TEXT NOT NULL, chunks TEXT NOT NULL, note TEXT NOT NULL DEFAULT '',
+                    simhash INTEGER NOT NULL DEFAULT 0, license TEXT NOT NULL DEFAULT 'proprietary',
+                    attribution TEXT NOT NULL DEFAULT '', rev INTEGER NOT NULL DEFAULT 1);
+                 INSERT INTO sentence(level, zh, en, words, chunks)
+                   VALUES ('L1', '旧句。', 'legacy row', '[]', '[]');",
+            )
+            .unwrap();
+        }
+        // 打开即迁移,老数据保留且默认 pack=''
+        let store = ContentStore::open_rw(&path).unwrap();
+        assert!(store.has_pack_column(), "打开后应已加列");
+        let level = store.sentences_by_level(LevelId::L1).unwrap();
+        assert_eq!(level.len(), 1);
+        assert_eq!(level[0].en, "legacy row");
+        // 迁移后可正常写场景句
+        store
+            .insert_sentence_in_pack(&sample(LevelId::L2, "new pack line"), "", 1, "hotel")
+            .unwrap();
+        assert_eq!(store.sentences_by_pack("hotel").unwrap().len(), 1);
+        assert_eq!(store.sentences_by_level(LevelId::L2).unwrap().len(), 0);
         let _ = std::fs::remove_file(&path);
     }
 

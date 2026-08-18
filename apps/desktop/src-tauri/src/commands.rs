@@ -285,6 +285,10 @@ pub struct AttemptReport {
     pub wpm: f32,
     pub error_tags: Vec<ErrorTag>,
     pub tz_offset_secs: i32,
+    /// 场景练习:只记练习日志,不进等级 SRS 队列(方案 §2.4 / §3.5)。
+    /// 老前端不传 → false,行为不变。
+    #[serde(default)]
+    pub skip_srs: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -328,7 +332,10 @@ pub fn submit_attempt(state: S<'_>, report: AttemptReport) -> CmdResult<AttemptA
         .get_srs(report.sentence_id)?
         .unwrap_or_else(|| SrsState::new(now));
     let next = sf_core::apply_outcome(prev, report.outcome, report.mode, spec, now);
-    progress.upsert_srs(report.sentence_id, &next)?;
+    // 场景练习只写日志(报告页照常统计),不进等级复习队列
+    if !report.skip_srs {
+        progress.upsert_srs(report.sentence_id, &next)?;
+    }
     let (result, seen_answer) = match report.outcome {
         Outcome::Correct { seen_answer } => (LogResult::Correct, seen_answer),
         Outcome::Wrong | Outcome::MarkUnfamiliar => (LogResult::Wrong, false),
@@ -378,6 +385,127 @@ pub fn judge_text(state: S<'_>, sentence_id: i64, input: String) -> CmdResult<Ve
         &target_refs,
         &JudgePolicy::default(),
     ))
+}
+
+// ------------------------------------------------------------- scenario(场景练习)
+
+/// 场景包元信息(内容包 `meta["scenario_packs"]` + 用户库即席统计)。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScenePackInfo {
+    pub pack: String,
+    pub name: String,
+    pub category: String,
+    #[serde(default)]
+    pub intro: String,
+    /// 参考难度(展示为阶段名;不做任何约束)。
+    #[serde(default)]
+    pub reference_level: Option<LevelId>,
+    #[serde(default)]
+    pub sentence_count: u32,
+    /// true = 用户在生成工坊生成的包(可删)。
+    #[serde(default)]
+    pub from_user: bool,
+    /// 是否已练过(log 里有该包句子的记录)。
+    #[serde(default)]
+    pub practiced: bool,
+}
+
+const SCENARIO_META_KEY: &str = "scenario_packs";
+
+/// 场景包列表:出厂包(带分类/简介)+ 用户生成包,附句数与已练标记。
+#[tauri::command]
+pub fn list_scene_packs(state: S<'_>) -> CmdResult<Vec<ScenePackInfo>> {
+    let content = state.content.lock().expect("content lock");
+    // 出厂包元数据
+    let mut factory_meta: Vec<ScenePackInfo> = content
+        .factory
+        .get_meta(SCENARIO_META_KEY)?
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or_default();
+    let counts = content.pack_counts()?;
+    let practiced_ids: std::collections::HashSet<i64> = {
+        let progress = state.progress.lock().expect("progress lock");
+        progress.logged_sentence_ids()?
+    };
+
+    let mut out: Vec<ScenePackInfo> = Vec::new();
+    for info in &mut factory_meta {
+        info.sentence_count = counts
+            .iter()
+            .filter(|(p, _, _)| *p == info.pack)
+            .map(|(_, n, _)| *n)
+            .sum();
+        if info.sentence_count == 0 {
+            continue; // 元数据里有、内容包里没有 → 不展示
+        }
+        info.from_user = false;
+        info.practiced = content
+            .sentences_by_pack(&info.pack)?
+            .iter()
+            .any(|s| practiced_ids.contains(&s.id));
+        out.push(info.clone());
+    }
+    // 用户生成包:元数据即席构造(pack 名 = 任务场景名)
+    let known: std::collections::HashSet<String> = out.iter().map(|i| i.pack.clone()).collect();
+    for (pack, n, from_user) in &counts {
+        if !*from_user || known.contains(pack.as_str()) {
+            continue;
+        }
+        let sentences = content.sentences_by_pack(pack)?;
+        out.push(ScenePackInfo {
+            pack: pack.clone(),
+            name: pack.clone(),
+            category: "我生成的".into(),
+            intro: String::new(),
+            reference_level: sentences.first().map(|s| s.level),
+            sentence_count: *n,
+            from_user: true,
+            practiced: sentences.iter().any(|s| practiced_ids.contains(&s.id)),
+        });
+    }
+    Ok(out)
+}
+
+/// 一个场景包的全部对话句(详情预览 / 完成页回放)。
+#[tauri::command]
+pub fn list_pack_sentences(state: S<'_>, pack: String) -> CmdResult<Vec<Sentence>> {
+    let content = state.content.lock().expect("content lock");
+    Ok(content.sentences_by_pack(&pack)?)
+}
+
+/// 场景练习会话:按对话顺序、全部打字模式、不洗牌(方案 §2.4)。
+#[tauri::command]
+pub fn start_scenario_session(state: S<'_>, pack: String) -> CmdResult<Session> {
+    let content = state.content.lock().expect("content lock");
+    let sentences = content.sentences_by_pack(&pack)?;
+    if sentences.is_empty() {
+        return Err(CmdError::new("content", "这个场景包还没有句子"));
+    }
+    Ok(Session {
+        items: sentences
+            .iter()
+            .map(|s| SessionItem {
+                sentence_id: s.id,
+                mode: Mode::Typing,
+                is_review: false,
+                reorder_first: false,
+            })
+            .collect(),
+        overflow_reviews: 0,
+    })
+}
+
+/// 删除整个用户生成的场景包(出厂包不可删)。
+#[tauri::command]
+pub fn delete_user_scene_pack(state: S<'_>, pack: String) -> CmdResult<u32> {
+    let content = state.content.lock().expect("content lock");
+    if !content.factory.sentences_by_pack(&pack)?.is_empty() {
+        return Err(CmdError::new("content", "出厂场景包不可删除"));
+    }
+    let Some(user) = &content.user else {
+        return Err(CmdError::new("content", "用户句库未初始化"));
+    };
+    Ok(user.delete_pack(&pack)?)
 }
 
 // ------------------------------------------------------------- placement(定级测试)

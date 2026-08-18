@@ -18,7 +18,7 @@ use sf_core::sentence::LevelId;
 use sf_llm::backoff::{BackoffPolicy, BackoffState};
 use sf_llm::estimate::estimate_tokens;
 use sf_llm::meter::{BudgetVerdict, MoneyMeter};
-use sf_llm::queue::{GenJob, JobParams, JobState, MAX_TOPUP_BATCHES};
+use sf_llm::queue::{GenJob, GenMode, JobParams, JobState, MAX_TOPUP_BATCHES};
 use sf_llm::types::{ChannelError, ChannelId, GenChunk, GenRequest};
 use sf_pipeline::parse::StreamScanner;
 use sf_pipeline::prompt::build_prompt;
@@ -185,7 +185,20 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
         .level
         .parse()
         .map_err(|e: String| CmdError::new("workshop", e))?;
-    let spec = state.spec_for(level)?.clone();
+    let scenario = job.params.mode == GenMode::Scenario;
+    // 场景模式:整批句子归入以任务场景命名的场景包(等级模式为空串)
+    let pack = if scenario {
+        job.params.scene.trim().to_string()
+    } else {
+        String::new()
+    };
+    // 场景对话不受词表带/句长阶梯约束(方案 §3.4):以最高等级 spec 为底
+    // 克隆一份"放开带宽"的校验规格,结构/成分/音标/查重照旧强校验。
+    let spec = if scenario {
+        state.spec_for(LevelId::L6)?.clone() // 句长上限 20,词表判定见下
+    } else {
+        state.spec_for(level)?.clone()
+    };
     let all_specs: Vec<_> = state.specs.values().cloned().collect();
     let channel: ChannelId =
         serde_json::from_value(serde_json::Value::String(job.params.channel.clone()))
@@ -242,7 +255,16 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
             let batch_size = job.request_size(batch_idx);
             let avoid: Vec<u64> = dedupe.recent(16).collect();
             let banned: Vec<String> = banned_words.iter().cloned().collect();
-            let parts = build_prompt(&spec, &job.params.scene, batch_size, &avoid, &banned);
+            let parts = if scenario {
+                sf_pipeline::prompt::build_scenario_prompt(
+                    &job.params.scene,
+                    batch_size,
+                    &avoid,
+                    &banned,
+                )
+            } else {
+                build_prompt(&spec, &job.params.scene, batch_size, &avoid, &banned)
+            };
             if let Some(m) = &mut money {
                 m.est_prompt_tokens = estimate_tokens(&parts.system) + estimate_tokens(&parts.user);
             }
@@ -305,7 +327,11 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                 }
             };
 
-            let validator = Validator::new(&spec, &state.lexicon);
+            let validator = if scenario {
+                Validator::new_open_vocabulary(&spec, &state.lexicon)
+            } else {
+                Validator::new(&spec, &state.lexicon)
+            };
             let mut scanner = StreamScanner::new();
             let mut accepted_in_batch = 0u32;
             let mut batch_failed = false;
@@ -361,8 +387,14 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                         for draft in scanner.push(&text) {
                             match draft {
                                 Ok(d) => {
-                                    let report =
-                                        validator.validate(&d, &job.params.scene, "", &dedupe);
+                                    // 场景对话:说话人存进 func 列(A/B 轮替)
+                                    let speaker = d.speaker.trim().to_uppercase();
+                                    let report = validator.validate(
+                                        &d,
+                                        &job.params.scene,
+                                        &speaker,
+                                        &dedupe,
+                                    );
                                     for issue in &report.issues {
                                         if let ValidationIssue::OverLevel { word, .. }
                                         | ValidationIssue::UnknownWord { word } = issue
@@ -394,7 +426,9 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                             }
                                             dedupe.add(hash);
                                             if let Some(user) = &content.user {
-                                                let rid = user.insert_sentence(&sentence, "", 1)?;
+                                                let rid = user.insert_sentence_in_pack(
+                                                    &sentence, "", 1, &pack,
+                                                )?;
                                                 sentence.id =
                                                     sf_pipeline::store::ContentIndex::USER_ID_OFFSET
                                                         + rid;
@@ -565,7 +599,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                             }
                             dedupe.add(fixed.simhash);
                             if let Some(user) = &content.user {
-                                let rid = user.insert_sentence(&fixed, "", 1)?;
+                                let rid = user.insert_sentence_in_pack(&fixed, "", 1, &pack)?;
                                 fixed.id = sf_pipeline::store::ContentIndex::USER_ID_OFFSET + rid;
                             }
                         }
@@ -639,6 +673,11 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
             job.produced,
             discarded_total,
             job.topup_count()
+        )
+    } else if scenario {
+        format!(
+            "{} 句对话已生成 · {} 丢弃 · 去「场景」页开练",
+            job.produced, discarded_total
         )
     } else {
         format!("{} 通过 · {} 丢弃", job.produced, discarded_total)

@@ -193,11 +193,30 @@ impl DedupeIndex {
 pub struct Validator<'a> {
     pub spec: &'a LevelSpec,
     pub lexicon: &'a Lexicon,
+    /// 开放词表模式(场景练习:不分等级,词汇取材于真实生活)。
+    /// true 时跳过**全部词表判定**——既不查超带,也不查词表外
+    /// (latte/checkout 这类真实词汇本就不在 NGSL 2827 词内);
+    /// 结构、成分覆盖、音标、句长、查重照旧强校验。
+    /// 见《场景练习模块-实现方案》§3.3。
+    pub open_vocabulary: bool,
 }
 
 impl<'a> Validator<'a> {
     pub fn new(spec: &'a LevelSpec, lexicon: &'a Lexicon) -> Self {
-        Self { spec, lexicon }
+        Self {
+            spec,
+            lexicon,
+            open_vocabulary: false,
+        }
+    }
+
+    /// 场景练习用的校验器:词表不设限(其余规则不变)。
+    pub fn new_open_vocabulary(spec: &'a LevelSpec, lexicon: &'a Lexicon) -> Self {
+        Self {
+            spec,
+            lexicon,
+            open_vocabulary: true,
+        }
     }
 
     pub fn validate(
@@ -326,7 +345,7 @@ impl<'a> Validator<'a> {
         }
         for dw in &draft.words {
             let is_propn = dw.pos == "propn";
-            if is_propn {
+            if is_propn || self.open_vocabulary {
                 continue;
             }
             match self.lexicon.band_of(&dw.w) {
@@ -457,6 +476,7 @@ practice:
             en: "I am fine.".into(),
             zh: "我很好。".into(),
             pattern: "主+系+表".into(),
+            speaker: String::new(),
             words: vec![
                 DraftWord {
                     w: "I".into(),
@@ -599,6 +619,72 @@ practice:
         let lex = lexicon();
         let r = Validator::new(&spec, &lex).validate(&good_draft(), "s", "f", &dedupe);
         assert_eq!(r.verdict, VerdictKind::Duplicate);
+    }
+
+    #[test]
+    fn open_vocabulary_accepts_real_world_words_but_keeps_other_rules() {
+        // 场景练习:latte 这类真实词汇不在 NGSL 词表内,开放模式必须放行
+        let spec = spec();
+        let lexicon = lexicon();
+        let mut d = good_draft();
+        d.en = "I am latte.".into();
+        d.words = vec![
+            DraftWord {
+                w: "I".into(),
+                ipa: "aɪ".into(),
+                pos: "pron".into(),
+            },
+            DraftWord {
+                w: "am".into(),
+                ipa: "æm".into(),
+                pos: "aux".into(),
+            },
+            DraftWord {
+                w: "latte".into(),
+                ipa: "ˈlɑːteɪ".into(),
+                pos: "n".into(),
+            },
+        ];
+        d.chunks = vec![
+            DraftChunk {
+                r: "subj".into(),
+                i: vec![0],
+            },
+            DraftChunk {
+                r: "link".into(),
+                i: vec![1],
+            },
+            DraftChunk {
+                r: "comp".into(),
+                i: vec![2],
+            },
+        ];
+
+        let strict = Validator::new(&spec, &lexicon).validate(&d, "", "", &DedupeIndex::default());
+        assert_eq!(
+            strict.verdict,
+            VerdictKind::OverLevel,
+            "严格模式仍拦词表外词"
+        );
+
+        let open = Validator::new_open_vocabulary(&spec, &lexicon).validate(
+            &d,
+            "",
+            "",
+            &DedupeIndex::default(),
+        );
+        assert_eq!(open.verdict, VerdictKind::Pass, "开放词表模式放行");
+
+        // 但结构性错误照旧拦截(成分未覆盖全句)
+        let mut broken = d.clone();
+        broken.chunks.pop();
+        let still = Validator::new_open_vocabulary(&spec, &lexicon).validate(
+            &broken,
+            "",
+            "",
+            &DedupeIndex::default(),
+        );
+        assert_eq!(still.verdict, VerdictKind::Broken, "开放词表不放松结构校验");
     }
 
     #[test]

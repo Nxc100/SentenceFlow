@@ -52,6 +52,10 @@ pub struct DraftSentence {
     pub chunks: Vec<DraftChunk>,
     #[serde(default)]
     pub note: String,
+    /// 场景对话的说话人(`"A"`/`"B"`);等级生成时缺省为空
+    /// (《场景练习模块-实现方案》§3.2:存进 sentence.func)。
+    #[serde(default)]
+    pub speaker: String,
 }
 
 /// Locate the first top-level JSON array in `text` (tolerates markdown fences

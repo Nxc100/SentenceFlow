@@ -120,7 +120,8 @@ fn main() -> Result<()> {
             } => build(&content_dir, &out, rev),
             FactoryCmd::Validate { content_dir } => {
                 validate_seeds(&content_dir)?;
-                run_placement(&content_dir).map(|_| ())
+                run_placement(&content_dir)?;
+                run_scenario_packs(&content_dir, None, 1).map(|_| ())
             }
             FactoryCmd::Gen {
                 scene,
@@ -260,6 +261,144 @@ fn validate_seeds(content_dir: &Path) -> Result<SeedRun> {
         bail!("{} seed sentence(s) failed validation", run.problems.len());
     }
     Ok(run)
+}
+
+// ---------------------------------------------------------------- scenario
+
+/// 出厂场景包文件(`content/scenario/*.yaml`,方案 §3.3)。
+#[derive(serde::Deserialize)]
+struct ScenarioFile {
+    pack: String,
+    name: String,
+    category: String,
+    #[serde(default)]
+    intro: String,
+    #[serde(default)]
+    reference_level: Option<LevelId>,
+    dialogue: Vec<sf_pipeline::seed::SeedSentence>,
+}
+
+/// 写入 content.db `meta["scenario_packs"]` 的包元信息。
+#[derive(serde::Serialize)]
+struct ScenarioPackMeta {
+    pack: String,
+    name: String,
+    category: String,
+    intro: String,
+    reference_level: Option<LevelId>,
+}
+
+/// 每个出厂场景包的最小对话轮数(太短不成对话)。
+const SCENARIO_MIN_TURNS: usize = 6;
+
+/// 校验并写入全部出厂场景包;返回包元信息(空目录 → 空表)。
+///
+/// 与等级种子的差别只有一处:**校验用放开词表带的规格**(场景对话
+/// 不分等级,方案 §1/§3.3),结构/成分/音标/查重照旧强校验。
+fn run_scenario_packs(
+    content_dir: &Path,
+    store: Option<&ContentStore>,
+    rev: u32,
+) -> Result<Vec<ScenarioPackMeta>> {
+    let dir = content_dir.join("scenario");
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    let specs = load_specs(content_dir)?;
+    let lexicon = load_lexicon(content_dir)?;
+    // 校验规格以 L6 为底(句长上限 20),词表判定整体关闭:场景对话的
+    // 词汇取材于真实生活(latte/checkout…),不受 NGSL 词表约束。
+    let open_spec = {
+        let (l6, _) = specs
+            .get(&LevelId::L6)
+            .context("scenario packs need the L6 spec as validation base")?;
+        l6.clone()
+    };
+    let validator = Validator::new_open_vocabulary(&open_spec, &lexicon);
+
+    let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .with_context(|| format!("reading {}", dir.display()))?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("yaml"))
+        .collect();
+    files.sort();
+
+    let mut problems: Vec<String> = Vec::new();
+    let mut metas: Vec<ScenarioPackMeta> = Vec::new();
+    let mut seen_packs: BTreeMap<String, String> = BTreeMap::new();
+
+    for file in files {
+        let yaml = std::fs::read_to_string(&file)?;
+        let sf: ScenarioFile =
+            serde_yaml::from_str(&yaml).map_err(|e| anyhow::anyhow!("{}: {e}", file.display()))?;
+        let fname = file
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("?")
+            .to_string();
+        if let Some(prev) = seen_packs.insert(sf.pack.clone(), fname.clone()) {
+            problems.push(format!("{fname}: pack id「{}」与 {prev} 重复", sf.pack));
+        }
+        if sf.dialogue.len() < SCENARIO_MIN_TURNS {
+            problems.push(format!(
+                "{fname}: 只有 {} 轮,少于 {SCENARIO_MIN_TURNS} 轮下限",
+                sf.dialogue.len()
+            ));
+        }
+        // 包内查重(跨包/跨库允许重复:不同场景常有相同短句)
+        let mut dedupe = DedupeIndex::default();
+        for (idx, line) in sf.dialogue.iter().enumerate() {
+            let speaker = line.speaker.trim().to_uppercase();
+            if speaker != "A" && speaker != "B" {
+                problems.push(format!("{fname}#{}: speaker 必须是 A 或 B", idx + 1));
+                continue;
+            }
+            let report = validator.validate(&line.to_draft(), &sf.name, &speaker, &dedupe);
+            match report.verdict {
+                VerdictKind::Pass => {
+                    dedupe.add(report.simhash);
+                    if let Some(store) = store {
+                        let mut s = report.sentence.expect("Pass carries a sentence");
+                        s.note = line.note.clone();
+                        s.level = sf.reference_level.unwrap_or(LevelId::L3);
+                        store
+                            .insert_sentence_in_pack(&s, "", rev, &sf.pack)
+                            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+                    }
+                }
+                verdict => {
+                    let reasons: Vec<String> = report
+                        .issues
+                        .iter()
+                        .filter(|i| i.severity() != sf_pipeline::validate::Severity::AutoFixed)
+                        .map(|i| i.zh_reason())
+                        .collect();
+                    problems.push(format!(
+                        "{fname}#{} [{}] {verdict:?}: {}",
+                        idx + 1,
+                        line.en,
+                        reasons.join("；")
+                    ));
+                }
+            }
+        }
+        metas.push(ScenarioPackMeta {
+            pack: sf.pack,
+            name: sf.name,
+            category: sf.category,
+            intro: sf.intro,
+            reference_level: sf.reference_level,
+        });
+    }
+
+    if !problems.is_empty() {
+        println!("scenario problems ({}):", problems.len());
+        for p in &problems {
+            println!("  ✕ {p}");
+        }
+        bail!("{} scenario line(s) failed validation", problems.len());
+    }
+    Ok(metas)
 }
 
 // ---------------------------------------------------------------- placement
@@ -500,6 +639,16 @@ fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
         store
             .insert_sentence(s, "", rev)
             .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    }
+
+    // 出厂场景包(《场景练习模块-实现方案》§3.3):句子按对话顺序入
+    // sentence 表(带 pack),包元信息进 meta["scenario_packs"]。
+    let packs = run_scenario_packs(content_dir, Some(&store), rev)?;
+    if !packs.is_empty() {
+        store
+            .set_meta("scenario_packs", &serde_json::to_string(&packs)?)
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        println!("scenario packs embedded: {}", packs.len());
     }
 
     // 定级题库(方案 §3.2):校验后整体打进 meta["placement"]。

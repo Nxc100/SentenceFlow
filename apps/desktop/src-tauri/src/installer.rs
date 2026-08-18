@@ -193,7 +193,8 @@ async fn download_tgz(
     let mut last_emit = 0u64;
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| format!("下载中断: {e}"))?;
-        file.write_all(&chunk).map_err(|e| format!("写入失败: {e}"))?;
+        file.write_all(&chunk)
+            .map_err(|e| format!("写入失败: {e}"))?;
         received += chunk.len() as u64;
         // 每 512KB 上报一次,避免事件风暴
         if received - last_emit >= 512 * 1024 {
@@ -303,8 +304,13 @@ pub async fn install(app: AppHandle, state: Arc<AppState>) -> CmdResult<InstallD
     }
 
     let dir = install_dir(&state);
-    std::fs::create_dir_all(&dir).map_err(|e| CmdError::new("install", format!("创建目录失败: {e}")))?;
-    let bin = dir.join(if cfg!(windows) { "opencode.exe" } else { "opencode" });
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| CmdError::new("install", format!("创建目录失败: {e}")))?;
+    let bin = dir.join(if cfg!(windows) {
+        "opencode.exe"
+    } else {
+        "opencode"
+    });
     let marker = dir.join("version.txt");
 
     // 已装同版本 → 短路
@@ -314,10 +320,7 @@ pub async fn install(app: AppHandle, state: Arc<AppState>) -> CmdResult<InstallD
         let mut last_err = String::new();
         let mut ok = false;
         for reg in &registries {
-            let url = format!(
-                "{}/{pkg}/-/{pkg}-{version}.tgz",
-                reg.trim_end_matches('/')
-            );
+            let url = format!("{}/{pkg}/-/{pkg}-{version}.tgz", reg.trim_end_matches('/'));
             match download_tgz(&app, &client, &url, &tgz).await {
                 Ok(()) => {
                     ok = true;
