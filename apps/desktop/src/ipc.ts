@@ -205,6 +205,19 @@ export interface PlacementStep {
   result: PlacementResult | null;
 }
 
+/* ---------- opencode 一键安装 (installer.rs) ---------- */
+
+export interface InstallProgress {
+  phase: "resolve" | "download" | "extract" | "verify";
+  received: number;
+  total: number | null;
+}
+
+export interface InstallDone {
+  version: string;
+  bin_path: string;
+}
+
 export interface CmdError {
   code: string;
   message: string;
@@ -283,6 +296,11 @@ export const ipc = {
   ttsSpeak: (text: string, usAccent: boolean, rate: number) =>
     invoke<string | null>("tts_speak", { text, usAccent, rate }),
   diagnostics: () => invoke<Record<string, unknown>>("diagnostics"),
+
+  /** opencode 一键安装(免 Node/免终端);进度经 install://progress */
+  opencodeInstall: () => invoke<InstallDone>("opencode_install"),
+  /** 弹出独立控制台窗口运行 opencode auth login */
+  opencodeLogin: () => invoke<void>("opencode_login"),
 };
 
 /* ---------- events ---------- */
@@ -303,6 +321,8 @@ export const events = {
   onWorkshopError: (
     cb: (p: { job_id: number; message: string; budget_stop?: boolean }) => void,
   ): Promise<UnlistenFn> => listen("workshop://error", (e) => cb(e.payload as never)),
+  onInstallProgress: (cb: (p: InstallProgress) => void): Promise<UnlistenFn> =>
+    listen<InstallProgress>("install://progress", (e) => cb(e.payload)),
   onAskChunk: (cb: (text: string) => void): Promise<UnlistenFn> =>
     listen<string>("ask://chunk", (e) => cb(e.payload)),
   onAskDone: (cb: () => void): Promise<UnlistenFn> => listen("ask://done", () => cb()),

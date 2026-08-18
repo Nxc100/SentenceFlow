@@ -567,6 +567,21 @@ pub async fn probe_channel(state: S<'_>, channel: ChannelId) -> CmdResult<Channe
     Ok(channels::probe(&state, channel).await)
 }
 
+/// opencode 一键安装(免 Node/免终端,详见 installer.rs)。
+#[tauri::command]
+pub async fn opencode_install(
+    app: AppHandle,
+    state: S<'_>,
+) -> CmdResult<crate::installer::InstallDone> {
+    crate::installer::install(app, state.inner().clone()).await
+}
+
+/// 弹出独立控制台窗口运行 `opencode auth login`(小白按提示登录)。
+#[tauri::command]
+pub fn opencode_login(state: S<'_>) -> CmdResult<()> {
+    crate::installer::login(&state)
+}
+
 #[tauri::command]
 pub async fn test_channel_key(
     state: S<'_>,

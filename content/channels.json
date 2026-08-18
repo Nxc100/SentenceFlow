@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rev": 2,
+  "rev": 3,
   "enabled": {
     "opencode": true,
     "deepseek": true,
@@ -11,6 +11,10 @@
   "opencode_known_bad": [],
   "proxy_required_models": ["deepseek-v4-flash"],
   "free_list_fingerprint": "",
+  "npm_registries": [
+    "https://registry.npmmirror.com",
+    "https://registry.npmjs.org"
+  ],
   "deepseek_prices": {
     "prompt_per_m": 2.0,
     "completion_per_m": 8.0

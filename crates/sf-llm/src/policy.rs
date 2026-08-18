@@ -11,6 +11,13 @@ use std::collections::HashMap;
 
 pub const CURRENT_POLICY_VERSION: u32 = 1;
 
+fn default_npm_registries() -> Vec<String> {
+    vec![
+        "https://registry.npmmirror.com".into(),
+        "https://registry.npmjs.org".into(),
+    ]
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChannelPolicy {
     /// Schema version of this file.
@@ -35,6 +42,10 @@ pub struct ChannelPolicy {
     /// (§3.5 名单变化自动重测).
     #[serde(default)]
     pub free_list_fingerprint: String,
+    /// opencode 一键安装的 npm registry 候选(按序尝试)。国内镜像在前,
+    /// 面向国内用户直连可用;上游变动随内容包更新(§3.6)。
+    #[serde(default = "default_npm_registries")]
+    pub npm_registries: Vec<String>,
     /// DeepSeek prices (user-editable copy seeds from this).
     pub deepseek_prices: PriceTable,
     /// Unix seconds the price table was last verified.
@@ -87,6 +98,7 @@ impl Default for ChannelPolicy {
             // 内置兜底与随包 channels.json 保持一致(实测 2026-08-17)
             proxy_required_models: vec!["deepseek-v4-flash".into()],
             free_list_fingerprint: String::new(),
+            npm_registries: default_npm_registries(),
             deepseek_prices: PriceTable {
                 prompt_per_m: 2.0,
                 completion_per_m: 8.0,
@@ -138,6 +150,14 @@ mod tests {
         let p = ChannelPolicy::default();
         assert!(p.is_enabled(ChannelId::Deepseek));
         assert_eq!(p.default_microbatch, 20);
+    }
+
+    #[test]
+    fn npm_registries_default_when_absent_in_json() {
+        // 旧版 channels.json 没有该字段 → serde default 兜底(镜像在前)
+        let p = ChannelPolicy::from_json(SAMPLE).unwrap();
+        assert_eq!(p.npm_registries.len(), 2);
+        assert!(p.npm_registries[0].contains("npmmirror"));
     }
 
     #[test]

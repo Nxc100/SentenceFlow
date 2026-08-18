@@ -8,6 +8,7 @@
 mod channels;
 mod commands;
 mod error;
+mod installer;
 mod licensing;
 mod paths;
 mod progress;
@@ -65,6 +66,8 @@ pub fn run() {
             commands::get_stats,
             commands::import_trial_progress,
             commands::probe_channel,
+            commands::opencode_install,
+            commands::opencode_login,
             commands::test_channel_key,
             commands::clear_channel_key,
             commands::spend_summary,

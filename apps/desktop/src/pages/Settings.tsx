@@ -4,10 +4,10 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, Switch, useToast } from "@sentenceflow/ui";
+import { Button, ProgressBar, Switch, useToast } from "@sentenceflow/ui";
 import { useApp } from "../appState";
-import type { ChannelId, ChannelStatus, ModelInfo, Settings } from "../ipc";
-import { ipc } from "../ipc";
+import type { ChannelId, ChannelStatus, InstallProgress, ModelInfo, Settings } from "../ipc";
+import { events, ipc } from "../ipc";
 
 type Section = "general" | "ai" | "license" | "data";
 
@@ -286,10 +286,28 @@ function AiSection() {
             <p className="channel-card__desc">{c.desc}</p>
 
             {c.id === "opencode" && status?.state === "not_installed" && (
-              <InlineCommand label="安装命令" cmd="curl -fsSL https://opencode.ai/install | bash" />
+              <OpencodeInstaller onDone={() => void probe(c.id)} />
             )}
             {c.id === "opencode" && status?.state === "not_authed" && (
-              <InlineCommand label="终端登录" cmd="opencode auth login" />
+              <div className="channel-card__login">
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    try {
+                      await ipc.opencodeLogin();
+                      toast.show("已打开登录窗口,按提示完成后回来点[重新检测]");
+                    } catch (e) {
+                      toast.show(String((e as { message?: string }).message ?? e));
+                    }
+                  }}
+                >
+                  打开登录窗口
+                </Button>
+                <p className="settings-hint">
+                  会弹出一个黑色窗口:用方向键选择、回车确认,跟着提示完成登录;
+                  完成后关掉窗口,回来点[重新检测]。
+                </p>
+              </div>
             )}
             {c.id === "ollama" && status?.state === "not_installed" && (
               <p className="channel-card__err">未检测到本地服务(11434) · <a href="https://ollama.com" target="_blank" rel="noreferrer">如何安装</a></p>
@@ -446,6 +464,93 @@ function BenchButton({ onPicked }: { onPicked: (model: string) => void }) {
     >
       {busy ? "挑选中…" : "帮我选模型"}
     </Button>
+  );
+}
+
+/**
+ * opencode 一键安装(免 Node/免终端):后端从 npm registry(国内镜像优先)
+ * 下载官方平台包、解出 exe、健康检查后自动接管。进度经 install://progress。
+ */
+function OpencodeInstaller({ onDone }: { onDone: () => void }) {
+  const toast = useToast();
+  const [installing, setInstalling] = useState(false);
+  const [progress, setProgress] = useState<InstallProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!installing) return;
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+    void events.onInstallProgress((p) => {
+      if (!cancelled) setProgress(p);
+    }).then((u) => {
+      unlisten = u;
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [installing]);
+
+  const phaseText = (p: InstallProgress | null): string => {
+    if (!p) return "准备中…";
+    switch (p.phase) {
+      case "resolve":
+        return "正在获取版本信息…";
+      case "download": {
+        const mb = (n: number) => (n / 1048576).toFixed(1);
+        return p.total
+          ? `正在下载 ${mb(p.received)} / ${mb(p.total)} MB`
+          : `正在下载 ${mb(p.received)} MB`;
+      }
+      case "extract":
+        return "正在解包…";
+      default:
+        return "正在校验…";
+    }
+  };
+
+  const start = async () => {
+    setInstalling(true);
+    setError(null);
+    setProgress(null);
+    try {
+      const done = await ipc.opencodeInstall();
+      toast.show(`opencode ${done.version} 已安装,接下来登录即可使用`);
+      onDone();
+    } catch (e) {
+      setError(String((e as { message?: string }).message ?? e));
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  return (
+    <div className="oc-installer">
+      {!installing && (
+        <Button onClick={() => void start()}>一键安装 opencode(约 60MB)</Button>
+      )}
+      {installing && (
+        <div className="oc-installer__progress">
+          <ProgressBar
+            value={
+              progress?.phase === "download" && progress.total
+                ? progress.received / progress.total
+                : progress?.phase === "extract" || progress?.phase === "verify"
+                  ? 1
+                  : 0
+            }
+            aria-label="安装进度"
+          />
+          <span className="oc-installer__phase">{phaseText(progress)}</span>
+        </div>
+      )}
+      {error && <p className="channel-card__err">{error}</p>}
+      <details className="oc-installer__manual">
+        <summary>高级:手动安装</summary>
+        <InlineCommand label="已装 Node.js 时可用" cmd="npm install -g opencode-ai" />
+      </details>
+    </div>
   );
 }
 

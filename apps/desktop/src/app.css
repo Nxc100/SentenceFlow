@@ -1574,3 +1574,43 @@ select {
   border-radius: 999px;
   padding: 1px 8px;
 }
+
+/* ================= opencode 一键安装(设置 · AI 接入) ================= */
+
+.oc-installer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.oc-installer > .sf-btn {
+  align-self: flex-start;
+}
+
+.oc-installer__progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.oc-installer__progress > :first-child {
+  flex: 1;
+  max-width: 320px;
+}
+
+.oc-installer__phase {
+  font-size: 12px;
+  color: var(--sf-text-3);
+  white-space: nowrap;
+}
+
+.oc-installer__manual summary {
+  font-size: 12px;
+  color: var(--sf-text-placeholder);
+  cursor: pointer;
+}
+
+.channel-card__login {
+  margin-top: 8px;
+}
