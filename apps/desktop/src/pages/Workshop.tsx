@@ -9,8 +9,25 @@ import { Button, Markdown, ProgressBar, levelOptionLabel, useToast } from "@sent
 import type { LevelId, Sentence } from "@sentenceflow/ui";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { useApp } from "../appState";
-import type { BatchState, GenJob, WorkshopCard } from "../ipc";
+import type { BatchState, GenJob, WorkshopActivity, WorkshopCard } from "../ipc";
 import { events, ipc } from "../ipc";
+
+/** 已接收字数的友好显示 */
+function formatChars(n: number): string {
+  return n >= 10_000 ? `${(n / 10_000).toFixed(1)} 万` : String(n);
+}
+
+function formatElapsed(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/** 删除首个匹配项(修补队列按句面配对) */
+function removeFirst(list: string[], value: string): string[] {
+  const idx = list.indexOf(value);
+  return idx < 0 ? list : [...list.slice(0, idx), ...list.slice(idx + 1)];
+}
 
 type Card =
   | { key: number; kind: "accepted"; sentence: Sentence }
@@ -41,6 +58,11 @@ export function WorkshopPage({
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [pausedJobs, setPausedJobs] = useState<GenJob[]>([]);
   const [spendToday, setSpendToday] = useState(0);
+  /** 生成过程活跃信号 + 修补中的句子 + 已用时(秒) */
+  const [activity, setActivity] = useState<WorkshopActivity | null>(null);
+  const [repairing, setRepairing] = useState<string[]>([]);
+  const [elapsed, setElapsed] = useState(0);
+  const startTsRef = useRef<number | null>(null);
   const keyRef = useRef(0);
 
   useEffect(() => {
@@ -61,6 +83,18 @@ export function WorkshopPage({
     void refreshJobs();
   }, [refreshJobs]);
 
+  // 已用时计时器:running 期间每秒走表
+  useEffect(() => {
+    if (!running) return;
+    startTsRef.current ??= Date.now();
+    const timer = window.setInterval(() => {
+      if (startTsRef.current !== null) {
+        setElapsed(Math.floor((Date.now() - startTsRef.current) / 1000));
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [running]);
+
   // 事件订阅
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +106,7 @@ export function WorkshopPage({
           keyRef.current += 1;
           if (card.kind === "accepted") {
             setCards((c) => [...c, { key: keyRef.current, kind: "accepted", sentence: card.sentence }]);
+            setRepairing((r) => removeFirst(r, card.sentence.en));
           } else if (card.kind === "discarded") {
             setCards((c) => [
               ...c,
@@ -83,7 +118,15 @@ export function WorkshopPage({
                 recoverable: card.recoverable,
               },
             ]);
+            setRepairing((r) => removeFirst(r, card.en));
+          } else if (card.kind === "repairing") {
+            // 后端已发"修补中 ⟳"事件,此前被前端丢弃 —— 现在如实呈现
+            setRepairing((r) => [...r, card.en]);
           }
+        }),
+        await events.onWorkshopActivity((a) => {
+          if (cancelled) return;
+          setActivity(a);
         }),
         await events.onWorkshopProgress((p) => {
           if (cancelled) return;
@@ -133,6 +176,10 @@ export function WorkshopPage({
     setInlineError(null);
     setProduced(0);
     setBatches([]);
+    setActivity(null);
+    setRepairing([]);
+    setElapsed(0);
+    startTsRef.current = Date.now();
     setRunning(true);
     try {
       await ipc.workshopStart({
@@ -228,7 +275,35 @@ export function WorkshopPage({
           <span className="workshop-produced">已入库 {produced}</span>
         </div>
       )}
-      {running && <ProgressBar value={batches.length ? batches.filter((b) => b === "done").length / batches.length : 0} />}
+      {running && (
+        <>
+          {/* 进度按「已通过句数/目标」实时推进(句卡是流式到达的),
+              而非按批次——慢通道第一批期间批次进度会静止在 0 */}
+          <ProgressBar
+            value={Math.min(cards.filter((c) => c.kind === "accepted").length / count, 1)}
+            aria-label="生成进度"
+          />
+          <div className="workshop-live">
+            <span className="workshop-live__spinner" aria-hidden />
+            <span>
+              {(() => {
+                const time = `已用时 ${formatElapsed(elapsed)}`;
+                if (!activity) return `正在准备… · ${time}`;
+                const batchTag =
+                  activity.batches > 1 ? `第 ${activity.batch}/${activity.batches} 批 · ` : "";
+                switch (activity.phase) {
+                  case "connect":
+                    return `${batchTag}正在连接 AI 通道… · ${time}`;
+                  case "streaming":
+                    return `${batchTag}AI 正在生成,已接收 ${formatChars(activity.n)} 字 · ${time}`;
+                  case "repairing":
+                    return `正在修补 ${activity.n} 句的标注… · ${time}`;
+                }
+              })()}
+            </span>
+          </div>
+        </>
+      )}
 
       {inlineError && <div className="workshop-error">{inlineError}</div>}
 
@@ -250,6 +325,26 @@ export function WorkshopPage({
             </details>
           ),
         )}
+        {repairing.map((en, i) => (
+          <div key={`repair-${en}-${i}`} className="gen-card gen-card--repair">
+            <span className="gen-card__badge">⟳</span>
+            <span className="gen-card__en">{en}</span>
+            <span className="gen-card__zh">修补标注中…</span>
+          </div>
+        ))}
+        {running && activity?.phase === "streaming" && (
+          <div className="gen-card gen-card--skeleton">
+            <span className="gen-card__badge">✍</span>
+            <span className="gen-card__en">
+              AI 正在写下一句
+              <span className="typing-dots">
+                <i />
+                <i />
+                <i />
+              </span>
+            </span>
+          </div>
+        )}
       </div>
 
       {summary && <div className="workshop-summary">{summary} · 已通过句子已自动入库,可去内容库开练</div>}
@@ -266,6 +361,9 @@ export function WorkshopPage({
                 onClick={async () => {
                   setRunning(true);
                   setSummary(null);
+                  setActivity(null);
+                  setElapsed(0);
+                  startTsRef.current = Date.now();
                   await ipc.workshopResume(j.job_id);
                 }}
               >

@@ -128,6 +128,16 @@ export interface WorkshopDone {
   summary: string;
 }
 
+/** 生成过程活跃信号(慢通道上的"AI 正在工作"反馈) */
+export interface WorkshopActivity {
+  job_id: number;
+  /** connect 连接中 / streaming 产出中(n=已接收字符) / repairing 修补中(n=句数) */
+  phase: "connect" | "streaming" | "repairing";
+  n: number;
+  batch: number;
+  batches: number;
+}
+
 /* ---------- misc payloads ---------- */
 
 export interface Bootstrap {
@@ -318,6 +328,8 @@ export const events = {
   onWorkshopMeter: (
     cb: (p: { job_id: number; cost_cny: number | null; warning: boolean }) => void,
   ): Promise<UnlistenFn> => listen("workshop://meter", (e) => cb(e.payload as never)),
+  onWorkshopActivity: (cb: (p: WorkshopActivity) => void): Promise<UnlistenFn> =>
+    listen<WorkshopActivity>("workshop://activity", (e) => cb(e.payload)),
   onWorkshopDone: (cb: (p: WorkshopDone) => void): Promise<UnlistenFn> =>
     listen<WorkshopDone>("workshop://done", (e) => cb(e.payload)),
   onWorkshopError: (

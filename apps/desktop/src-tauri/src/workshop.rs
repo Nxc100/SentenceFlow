@@ -73,6 +73,23 @@ pub struct DoneEvent {
     pub summary: String,
 }
 
+/// 生成过程活跃信号(`workshop://activity`,节流 ≤稍多于每 400ms 一条):
+/// 慢通道上第一批可能跑 1–2 分钟,没有它界面完全静止,用户以为卡死。
+/// `phase`:`connect` 连接通道 / `streaming` 正在产出(`n` = 已接收字符数)
+/// / `repairing` 修补中(`n` = 待修补句数)。
+#[derive(Debug, Clone, Serialize)]
+pub struct ActivityEvent {
+    pub job_id: u64,
+    pub phase: String,
+    pub n: u64,
+    /// 当前批次(1 起)与总批数,给「第 x/y 批」文案。
+    pub batch: usize,
+    pub batches: usize,
+}
+
+/// streaming 活跃信号的最小间隔(事件风暴保护)。
+const ACTIVITY_INTERVAL: std::time::Duration = std::time::Duration::from_millis(400);
+
 fn emit<T: Serialize + Clone>(app: &AppHandle, event: &str, payload: T) {
     let _ = app.emit(event, payload);
 }
@@ -237,6 +254,22 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                 temperature: Some(0.7),
             };
 
+            let (batch_no, batch_total) = (batch_idx + 1, job.batches.len());
+            let activity = |phase: &str, n: u64| {
+                emit(
+                    &app,
+                    "workshop://activity",
+                    ActivityEvent {
+                        job_id,
+                        phase: phase.into(),
+                        n,
+                        batch: batch_no,
+                        batches: batch_total,
+                    },
+                );
+            };
+
+            activity("connect", 0);
             let adapter = make_adapter(&state, channel, None)?;
             let mut stream = match adapter.complete_stream(req).await {
                 Ok(s) => {
@@ -278,6 +311,9 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
             let mut batch_failed = false;
             // 修补队列:流结束后统一发修补调用(仅传差异,§7.4)。
             let mut pending_repairs: Vec<(sf_core::Sentence, Vec<String>)> = Vec::new();
+            // 活跃信号:已接收字符数,节流上报
+            let mut stream_chars = 0u64;
+            let mut last_activity = std::time::Instant::now();
 
             while let Some(chunk) = stream.next().await {
                 if state.gen_cancelled() {
@@ -288,6 +324,11 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                 }
                 match chunk {
                     Ok(GenChunk::Text { text }) => {
+                        stream_chars += text.chars().count() as u64;
+                        if last_activity.elapsed() >= ACTIVITY_INTERVAL {
+                            activity("streaming", stream_chars);
+                            last_activity = std::time::Instant::now();
+                        }
                         if let Some(m) = &mut money {
                             let verdict = m.add_completion_tokens(estimate_tokens(&text));
                             emit(
@@ -486,6 +527,9 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
             }
 
             // 修补调用:一句一发,单次尝试;修不好 → 丢弃可捞回 (§7.4).
+            if !pending_repairs.is_empty() {
+                activity("repairing", pending_repairs.len() as u64);
+            }
             for (broken, reasons) in pending_repairs.drain(..) {
                 if state.gen_cancelled() {
                     break;
