@@ -31,6 +31,8 @@ pub struct InstallProgress {
 pub struct InstallDone {
     pub version: String,
     pub bin_path: String,
+    /// 安装目录是否已加入用户 PATH(新开的终端可直接用 `opencode` 命令)。
+    pub on_path: bool,
 }
 
 /// opencode(Bun 构建)依赖 Win10 1809 引入的 ConPTY API
@@ -73,6 +75,40 @@ fn windows_build_number() -> u32 {
 const OLD_WINDOWS_MSG: &str = "这台电脑的 Windows 版本过旧,opencode 无法在其上运行\
 (需要 Windows 10 的 2018 年 10 月更新 1809 及以上)。建议改用「Zen 直连」通道\
 ——无需安装任何东西,填 Key 即可;或升级 Windows 后再来一键安装。";
+
+/// 安装目录:标准的用户级程序位置(免管理员权限,同时也在探测器的
+/// 兜底搜索列表里)。取不到 LOCALAPPDATA 时退回应用数据目录。
+fn install_dir(state: &AppState) -> PathBuf {
+    #[cfg(windows)]
+    if let Ok(local) = std::env::var("LOCALAPPDATA") {
+        return PathBuf::from(local).join("Programs").join("opencode");
+    }
+    state.paths.root.join("tools").join("opencode")
+}
+
+/// 把安装目录追加进用户 PATH(HKCU,不动系统 PATH、免管理员)。
+/// 用隐藏的 PowerShell 跑 .NET SetEnvironmentVariable:读改写原子,
+/// 且自动广播 WM_SETTINGCHANGE——之后新开的终端直接可用 `opencode`。
+/// 失败不致命(应用自身走 opencode_bin,不依赖 PATH)。
+#[cfg(windows)]
+fn add_to_user_path(dir: &std::path::Path) -> bool {
+    use std::os::windows::process::CommandExt;
+    let dir_str = dir.to_string_lossy().replace('\'', "''");
+    let script = format!(
+        "$d = '{dir_str}'; \
+         $p = [Environment]::GetEnvironmentVariable('Path', 'User'); \
+         if ($null -eq $p) {{ $p = '' }}; \
+         if (($p -split ';') -notcontains $d) {{ \
+             [Environment]::SetEnvironmentVariable('Path', ($p.TrimEnd(';') + ';' + $d).TrimStart(';'), 'User') \
+         }}"
+    );
+    std::process::Command::new("powershell")
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &script])
+        .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
 
 /// 当前平台对应的 opencode npm 平台包;不支持的平台返回 None
 /// (UI 只在 Windows 上展示一键安装)。
@@ -266,7 +302,7 @@ pub async fn install(app: AppHandle, state: Arc<AppState>) -> CmdResult<InstallD
         ));
     }
 
-    let dir = state.paths.root.join("tools").join("opencode");
+    let dir = install_dir(&state);
     std::fs::create_dir_all(&dir).map_err(|e| CmdError::new("install", format!("创建目录失败: {e}")))?;
     let bin = dir.join(if cfg!(windows) { "opencode.exe" } else { "opencode" });
     let marker = dir.join("version.txt");
@@ -312,6 +348,19 @@ pub async fn install(app: AppHandle, state: Arc<AppState>) -> CmdResult<InstallD
         return Err(CmdError::new("install", e));
     }
 
+    // 全局可用:安装目录写入用户 PATH(新终端可直接敲 `opencode`,
+    // 兼容有经验的用户);失败不影响应用内使用
+    #[cfg(windows)]
+    let on_path = add_to_user_path(&dir);
+    #[cfg(not(windows))]
+    let on_path = false;
+
+    // 迁移清理:早期版本装在应用数据目录,统一挪到标准位置后删掉旧副本
+    let legacy = state.paths.root.join("tools").join("opencode");
+    if legacy != dir && legacy.exists() {
+        let _ = std::fs::remove_dir_all(&legacy);
+    }
+
     // 写入设置:探测/生成/答疑全部经 bin_override 使用这份托管副本
     {
         let mut settings = state.settings.lock().expect("settings lock");
@@ -324,6 +373,7 @@ pub async fn install(app: AppHandle, state: Arc<AppState>) -> CmdResult<InstallD
     Ok(InstallDone {
         version,
         bin_path: bin.to_string_lossy().to_string(),
+        on_path,
     })
 }
 

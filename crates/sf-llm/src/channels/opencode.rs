@@ -28,8 +28,12 @@ use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
-/// Probe timeout (§11.C: 全程只读、超时 3s).
-const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
+/// 探测超时(有意偏离 §11.C 的"3s":opencode 是 ~179MB 的 Bun 单文件,
+/// 慢磁盘/虚拟机上冷启动就要 3–10s,3s 会把"程序还在加载"误判成网络故障
+/// ——真机踩坑,见 doc/开发状态.md)。探测仍然全程只读。
+const PROBE_VERSION_TIMEOUT: Duration = Duration::from_secs(20);
+/// 模型名单可能触发首次联网拉取,给更宽裕的窗口。
+const PROBE_MODELS_TIMEOUT: Duration = Duration::from_secs(45);
 
 /// 我方托管的沙箱 `opencode.json` (§3.4 约束②; 键名 W2 spike 对官方文档钉死).
 /// The desktop app writes this file into the sandbox dir on every update.
@@ -111,7 +115,12 @@ impl OpencodeChannel {
         }
     }
 
-    async fn run_capture(&self, bin: &Path, args: &[&str]) -> Result<String, ChannelError> {
+    async fn run_capture(
+        &self,
+        bin: &Path,
+        args: &[&str],
+        timeout: Duration,
+    ) -> Result<String, ChannelError> {
         let mut cmd = hidden_command(bin);
         self.apply_proxy(&mut cmd);
         let fut = cmd
@@ -120,7 +129,7 @@ impl OpencodeChannel {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output();
-        let out = tokio::time::timeout(PROBE_TIMEOUT, fut)
+        let out = tokio::time::timeout(timeout, fut)
             .await
             .map_err(|_| ChannelError::Timeout)?
             .map_err(|e| ChannelError::Process(e.to_string()))?;
@@ -145,7 +154,10 @@ impl ChannelAdapter for OpencodeChannel {
             return ChannelStatus::NotInstalled;
         };
         // ② version baseline / known-bad (§11.C).
-        match self.run_capture(&bin, &["--version"]).await {
+        match self
+            .run_capture(&bin, &["--version"], PROBE_VERSION_TIMEOUT)
+            .await
+        {
             Ok(v) => {
                 let version = v.trim().to_string();
                 if self
@@ -159,6 +171,13 @@ impl ChannelAdapter for OpencodeChannel {
                     };
                 }
             }
+            Err(ChannelError::Timeout) => {
+                // 不是网络问题:大概率是大体积二进制在慢磁盘上冷启动
+                return ChannelStatus::Error {
+                    message: "opencode 启动较慢(首次运行或磁盘较忙)——稍等片刻再点[重新检测]"
+                        .into(),
+                };
+            }
             Err(e) => {
                 return ChannelStatus::Error {
                     message: e.zh_message(),
@@ -170,7 +189,10 @@ impl ChannelAdapter for OpencodeChannel {
         //    Zen 免费层匿名可用、无需登录——名单为空更可能是网络波动或
         //    名单下线;NotAuthed 在 UI 层呈现为「重试 + 备用登录」,
         //    而非把登录当成必经步骤。
-        match self.run_capture(&bin, &["models"]).await {
+        match self
+            .run_capture(&bin, &["models"], PROBE_MODELS_TIMEOUT)
+            .await
+        {
             Ok(out) => {
                 let models = parse_models_output(&out);
                 if models.is_empty() {

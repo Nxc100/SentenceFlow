@@ -516,7 +516,11 @@ function OpencodeInstaller({ onDone }: { onDone: () => void }) {
     setProgress(null);
     try {
       const done = await ipc.opencodeInstall();
-      toast.show(`opencode ${done.version} 已安装,免费模型即刻可用`);
+      toast.show(
+        done.on_path
+          ? `opencode ${done.version} 已全局安装,免费模型即刻可用(新开的终端也能直接用 opencode 命令)`
+          : `opencode ${done.version} 已安装,免费模型即刻可用`,
+      );
       onDone();
     } catch (e) {
       setError(String((e as { message?: string }).message ?? e));

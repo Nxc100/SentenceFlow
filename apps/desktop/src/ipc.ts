@@ -216,6 +216,8 @@ export interface InstallProgress {
 export interface InstallDone {
   version: string;
   bin_path: string;
+  /** 安装目录已加入用户 PATH(新开终端可直接用 opencode 命令) */
+  on_path: boolean;
 }
 
 export interface CmdError {
