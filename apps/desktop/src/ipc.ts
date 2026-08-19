@@ -282,6 +282,41 @@ export interface ChatToolEvent {
   thread_id: number;
   label: string;
   status: "pending" | "running" | "completed" | "error" | string;
+  /** skill = 加载技能(🧠),tool = 普通工具(⚙) */
+  kind: "skill" | "tool" | string;
+}
+
+/* ---------- opencode 技能 (skills.rs) ---------- */
+
+/** active=opencode 已登记(AI 可自动调用) / unloaded=未登记(仍可手动注入) */
+export type SkillState = "active" | "unloaded";
+
+export interface SkillInfo {
+  name: string;
+  description: string;
+  /** SKILL.md 绝对路径;内置技能为空串 */
+  path: string;
+  scope: "builtin" | "global" | "project" | string;
+  source_label: string;
+  state: SkillState;
+  editable: boolean;
+  /** 磁盘上同名副本份数(>1 表示装了多处,只有一份生效) */
+  copies: number;
+  /** 未加载时的人话原因(诊断得出才有值) */
+  reason: string;
+}
+
+export interface SkillCatalog {
+  skills: SkillInfo[];
+  active_count: number;
+  /** 取清单失败时的人话原因 */
+  warning: string;
+}
+
+export interface SkillSource {
+  name: string;
+  description: string;
+  body: string;
 }
 
 export interface ChatDoneEvent {
@@ -427,7 +462,32 @@ export const ipc = {
   chatStop: (threadId: number) => invoke<void>("chat_stop", { threadId }),
   /** 仍在生成回复的会话 id(离开页面再回来时恢复「生成中」指示) */
   chatActiveThreads: () => invoke<number[]>("chat_active_threads"),
-  agentSend: (threadId: number, text: string) => invoke<void>("agent_send", { threadId, text }),
+  /** skillPath 非空 = 手动触发型技能:后端把技能正文注入本轮消息 */
+  agentSend: (threadId: number, text: string, skillPath = "") =>
+    invoke<void>("agent_send", { threadId, text, skillPath }),
+
+  /** 技能总目录:opencode 已登记的 + 磁盘上未登记的(带状态标注) */
+  skillCatalog: (workdir: string) => invoke<SkillCatalog>("skill_catalog", { workdir }),
+  skillSource: (path: string) => invoke<SkillSource>("skill_source", { path }),
+  /** path 非空 = 改写已有技能(名字不可变);返回写入的文件路径 */
+  skillSave: (args: {
+    path?: string;
+    scope: "global" | "project";
+    workdir?: string;
+    name: string;
+    description: string;
+    body: string;
+  }) =>
+    invoke<string>("skill_save", {
+      path: args.path ?? "",
+      scope: args.scope,
+      workdir: args.workdir ?? "",
+      name: args.name,
+      description: args.description,
+      body: args.body,
+    }),
+  /** 删除技能:整个技能目录移入回收站,返回被删目录 */
+  skillDelete: (path: string) => invoke<string>("skill_delete", { path }),
   /** 系统文件夹选择器;null = 用户取消 */
   pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
 

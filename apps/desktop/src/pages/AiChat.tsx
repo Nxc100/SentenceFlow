@@ -26,10 +26,12 @@ import type {
   FixCard,
   ModelInfo,
 } from "../ipc";
+import type { SkillInfo } from "../ipc";
 import { useApp } from "../appState";
 import { desktopSpeech } from "../speech";
 import { ROLE_CARDS } from "./aichatRoles";
 import type { RoleCard } from "./aichatRoles";
+import { SkillsPanel } from "./SkillsPanel";
 
 /** 从情景对话页跳入的「实战演练」预填(§3.3 联动) */
 export interface AiChatPrefill {
@@ -42,9 +44,15 @@ interface UiMsg {
   text: string;
   fix: FixCard | null;
   /** 智能体本轮完成的工具活动(仅当次会话内存,不落库) */
-  tools: string[];
+  tools: ToolActivity[];
   /** 被停止/超时截断的部分回复 */
   partial?: boolean;
+}
+
+/** 一次工具/技能活动(技能单独用 🧠 呈现) */
+interface ToolActivity {
+  label: string;
+  skill: boolean;
 }
 
 /** 一个会话正在进行的流(按 thread id 分桶,切换会话不丢) */
@@ -54,9 +62,9 @@ interface ThreadStream {
   /** 已吐出的字 */
   shown: string;
   /** 已完成的工具活动 */
-  tools: string[];
+  tools: ToolActivity[];
   /** 正在进行的工具活动 */
-  activity: string | null;
+  activity: ToolActivity | null;
   /** 后端已 done/error,吐完缓冲即收尾 */
   ended: boolean;
   done: ChatDoneEvent | null;
@@ -127,11 +135,14 @@ export function AiChatPage({
   /** 正在生成的会话 id(侧栏小圆点 + 当前会话的发送/停止切换) */
   const [liveIds, setLiveIds] = useState<number[]>([]);
   /** 当前会话的实时流视图(打字机吐出的字 + 工具活动) */
-  const [view, setView] = useState<{ text: string; tools: string[]; activity: string | null }>({
-    text: "",
-    tools: [],
-    activity: null,
-  });
+  const [view, setView] = useState<{
+    text: string;
+    tools: ToolActivity[];
+    activity: ToolActivity | null;
+  }>({ text: "", tools: [], activity: null });
+  /** 技能面板 / 已附加的手动触发技能 */
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const [attachedSkill, setAttachedSkill] = useState<SkillInfo | null>(null);
   /** 按会话保留的错误提示(切走再回来仍看得到) */
   const [errors, setErrors] = useState<Record<number, string>>({});
   /** roleplay 的角色选择视图 / agent 的目录选择视图 */
@@ -282,13 +293,14 @@ export function AiChatPage({
         await events.onChatTool((p) => {
           if (cancelled) return;
           const s = streamFor(p.thread_id);
+          const act: ToolActivity = { label: p.label, skill: p.kind === "skill" };
           if (p.status === "completed") {
-            s.tools = [...s.tools, p.label];
+            s.tools = [...s.tools, act];
             s.activity = null;
           } else if (p.status === "error") {
             s.activity = null;
           } else {
-            s.activity = p.label;
+            s.activity = act;
           }
           syncView();
         }),
@@ -486,7 +498,9 @@ export function AiChatPage({
         syncView();
         window.setTimeout(scrollToBottom, 0);
         if (mode === "agent") {
-          await ipc.agentSend(id, text);
+          // 附加的手动触发技能:后端读取正文注入这一轮(用后即清)
+          await ipc.agentSend(id, text, attachedSkill?.path ?? "");
+          setAttachedSkill(null);
         } else {
           await ipc.chatSend(id, text, fixEnabled);
         }
@@ -514,6 +528,7 @@ export function AiChatPage({
       liveIds,
       mode,
       fixEnabled,
+      attachedSkill,
       applyPending,
       refreshThreads,
       streamFor,
@@ -753,6 +768,16 @@ export function AiChatPage({
                     onProbe={probeFor}
                     onChoose={(pick) => void chooseModel(pick)}
                   />
+                  {mode === "agent" && (
+                    <button
+                      type="button"
+                      className="aichat-skillbtn"
+                      onClick={() => setSkillsOpen(true)}
+                      title="opencode 技能:查看、使用、制作(和 opencode 命令行同一套)"
+                    >
+                      🧠 技能
+                    </button>
+                  )}
                   {mode === "agent" && active && (
                     <span className="aichat-workdir" title={active.workdir}>
                       📁 {active.workdir}
@@ -801,11 +826,20 @@ export function AiChatPage({
                   {busy && (
                     <div className="aichat-msg aichat-msg--ai">
                       {view.tools.map((t, i) => (
-                        <div key={i} className="aichat-tool aichat-tool--done">
-                          ⚙ {t}
+                        <div
+                          key={i}
+                          className={`aichat-tool aichat-tool--done${t.skill ? " aichat-tool--skill" : ""}`}
+                        >
+                          {t.skill ? "🧠" : "⚙"} {t.label}
                         </div>
                       ))}
-                      {view.activity && <div className="aichat-tool">⚙ {view.activity}…</div>}
+                      {view.activity && (
+                        <div
+                          className={`aichat-tool${view.activity.skill ? " aichat-tool--skill" : ""}`}
+                        >
+                          {view.activity.skill ? "🧠" : "⚙"} {view.activity.label}…
+                        </div>
+                      )}
                       {view.text ? (
                         <Markdown text={view.text} />
                       ) : (
@@ -817,6 +851,20 @@ export function AiChatPage({
                   {activeError && <div className="aichat-error">{activeError}</div>}
                 </div>
 
+                {attachedSkill && mode === "agent" && (
+                  <div className="aichat-attached" title={attachedSkill.path}>
+                    🧠 已附加技能:<b>{attachedSkill.name}</b>
+                    <span className="aichat-attached__hint">这条消息会按它的指令执行</span>
+                    <button
+                      type="button"
+                      onClick={() => setAttachedSkill(null)}
+                      aria-label="取消附加"
+                      title="取消附加"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
                 <div className="aichat-composer">
                   {mode !== "agent" && (
                     <label
@@ -866,6 +914,24 @@ export function AiChatPage({
         onCancel={() => setDeleting(null)}
         onConfirm={(alsoFolder) => deleting && void confirmDelete(deleting, alsoFolder)}
       />
+
+      {skillsOpen && (
+        <SkillsPanel
+          workdir={active?.mode === "agent" ? active.workdir : ""}
+          onClose={() => setSkillsOpen(false)}
+          onUse={(s) => {
+            // 可自动调用的技能:点名它,模型即会用 skill 工具加载
+            setInput((v) => `使用「${s.name}」技能:${v.trim()}`);
+            setSkillsOpen(false);
+            toast.show(`已点名技能「${s.name}」,补上你的要求再发送`);
+          }}
+          onAttach={(s) => {
+            setAttachedSkill(s);
+            setSkillsOpen(false);
+            toast.show(`已附加「${s.name}」—— 这条消息会按它的指令执行`);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1085,8 +1151,11 @@ function MsgBubble({
   return (
     <div className="aichat-msg aichat-msg--ai">
       {msg.tools.map((t, i) => (
-        <div key={i} className="aichat-tool aichat-tool--done">
-          ⚙ {t}
+        <div
+          key={i}
+          className={`aichat-tool aichat-tool--done${t.skill ? " aichat-tool--skill" : ""}`}
+        >
+          {t.skill ? "🧠" : "⚙"} {t.label}
         </div>
       ))}
       <Markdown text={msg.text} />

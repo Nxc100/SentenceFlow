@@ -40,7 +40,7 @@
 - 答对的瞬间触发**签名时刻**——下划线消融、单词按句子成分聚拢成彩色卡片、词性胶囊弹入、音标浮现;颜色即教学信息,不是装饰;
 - 出厂内置六级(L1–L6,锚定 CEFR)全标注句库,**零配置、完全离线可练**;
 - 接入 AI 通道后解锁**生成工坊**:为任何场景("下周出差要用的机场句子")现场生成带全套解析的专属句集,每一句都先过本地确定性校验才入库;
-- **AI 聊天**:英文自由聊天(AI 按你的等级控制用词,顺手润色你的句子)、角色扮演(面试官/店员/房东…,可从情景对话一键"实战演练"),以及给本机 opencode CLI 套上友好外壳的**智能体模式**(在你选定的文件夹里读写文件、执行命令,工具活动全程可见);
+- **AI 聊天**:英文自由聊天(AI 按你的等级控制用词,顺手润色你的句子)、角色扮演(面试官/店员/房东…,可从情景对话一键"实战演练"),以及给本机 opencode CLI 套上友好外壳的**智能体模式**——在你选定的文件夹里读写文件、执行命令,工具活动全程可见,并内置 **opencode 原生技能(Agent Skills)面板**:搜索/调用/图形化制作技能,还能诊断并一键修复从 Claude Code 装来却静默失效的技能;
 - 学习数据只存本机,API Key 只进系统钥匙串,练习路径零网络调用——**架构上可审计**。
 
 ## AI 四通道(全部可选,不配置不影响任何学习功能)
@@ -175,7 +175,7 @@ cargo run -p sf-license --features issuer -- issue \
 
 | 检查 | 命令 |
 |---|---|
-| Rust 单测(184 用例) | `cargo test --workspace --all-features` |
+| Rust 单测(200 用例) | `cargo test --workspace --all-features` |
 | Lint(拒绝 warning) | `cargo clippy -p sf-core -p sf-license -p sf-pipeline -p sf-llm --all-features -- -D warnings` |
 | 格式 | `cargo fmt --check` |
 | 金标回归 | `cargo run -p sf-pipeline --features factory --bin sf -- gold run` |

@@ -14,6 +14,7 @@ mod licensing;
 mod paths;
 mod progress;
 mod settings;
+mod skills;
 mod state;
 mod tts;
 mod workshop;
@@ -115,6 +116,10 @@ pub fn run() {
             chat::chat_active_threads,
             chat::agent_send,
             chat::pick_folder,
+            skills::skill_catalog,
+            skills::skill_source,
+            skills::skill_save,
+            skills::skill_delete,
             commands::backup_export,
             commands::backup_restore,
             commands::tts_speak,

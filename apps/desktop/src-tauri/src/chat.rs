@@ -128,6 +128,8 @@ struct ToolPayload {
     label: String,
     /// running | completed | pending | error(照传 opencode 的 state.status)
     status: String,
+    /// skill = 技能加载(界面用 🧠 单独呈现),tool = 普通工具
+    kind: String,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -805,9 +807,17 @@ fn emit_chat_error(app: &AppHandle, thread_id: i64, e: &ChannelError) {
 #[derive(Debug, PartialEq)]
 pub enum AgentLineEvent {
     Text(String),
-    Tool { label: String, status: String },
+    Tool {
+        label: String,
+        status: String,
+        /// skill = 加载技能,tool = 普通工具
+        kind: String,
+    },
     Session(String),
-    Tokens { input: u64, output: u64 },
+    Tokens {
+        input: u64,
+        output: u64,
+    },
 }
 
 /// 解析一行 `opencode run --format json` 事件(形状为 2026-08-19 实机
@@ -848,14 +858,24 @@ pub fn parse_agent_line(line: &str) -> Vec<AgentLineEvent> {
                 .pointer("/part/state/status")
                 .and_then(|t| t.as_str())
                 .unwrap_or("running");
-            let label = if title.is_empty() {
-                tool.to_string()
+            // 技能加载单独成一类:界面用「🧠 技能:名字」而不是英文工具名
+            // (实机事件:tool="skill",state.input.name / state.metadata.name)
+            let skill_name = v
+                .pointer("/part/state/input/name")
+                .or_else(|| v.pointer("/part/state/metadata/name"))
+                .and_then(|t| t.as_str())
+                .unwrap_or("");
+            let (label, kind) = if tool == "skill" && !skill_name.is_empty() {
+                (format!("技能:{skill_name}"), "skill")
+            } else if title.is_empty() {
+                (tool.to_string(), "tool")
             } else {
-                format!("{tool} · {title}")
+                (format!("{tool} · {title}"), "tool")
             };
             out.push(AgentLineEvent::Tool {
                 label,
                 status: status.to_string(),
+                kind: kind.to_string(),
             });
         }
         Some("step_finish") => {
@@ -876,17 +896,34 @@ pub fn parse_agent_line(line: &str) -> Vec<AgentLineEvent> {
     out
 }
 
+/// `skill_path` 非空 = 手动触发型技能:把技能正文注入本轮消息
+/// (opencode 不会自动调用这类技能 —— 见 skills.rs 模块说明)。
 #[tauri::command]
 pub async fn agent_send(
     app: AppHandle,
     state: S<'_>,
     thread_id: i64,
     text: String,
+    skill_path: String,
 ) -> CmdResult<()> {
     let text = text.trim().to_string();
     if text.is_empty() {
         return Err(CmdError::new("chat", "消息为空"));
     }
+    // 界面上显示的仍是用户原话,送给模型的是"技能正文 + 原话"
+    let prompt = if skill_path.trim().is_empty() {
+        text.clone()
+    } else {
+        let raw = std::fs::read_to_string(&skill_path)
+            .map_err(|e| CmdError::new("skill", format!("读不到这个技能文件:{e}")))?;
+        let (fm, body) = crate::skills::parse_skill_md(&raw);
+        let name = if fm.name.is_empty() {
+            "skill"
+        } else {
+            &fm.name
+        };
+        crate::skills::compose_skill_prompt(name, &body, &text)
+    };
     let (bin_override, proxy, global_model) = {
         let settings = state.settings.lock().expect("settings lock");
         (
@@ -938,11 +975,13 @@ pub async fn agent_send(
         .find(|m| m.starts_with("opencode/"));
     let state = state.inner().clone();
     tauri::async_runtime::spawn(async move {
-        run_agent(app, state, thread, bin, proxy, model, text).await;
+        run_agent(app, state, thread, bin, proxy, model, prompt).await;
     });
     Ok(())
 }
 
+/// `prompt` 是送给 CLI 的完整提示:可能已注入技能正文,与界面显示的用户
+/// 原话不同(手动触发型技能,见 skills.rs)。
 async fn run_agent(
     app: AppHandle,
     state: Arc<AppState>,
@@ -950,7 +989,7 @@ async fn run_agent(
     bin: std::path::PathBuf,
     proxy: Option<String>,
     model: Option<String>,
-    text: String,
+    prompt: String,
 ) {
     let thread_id = thread.id;
     // 本会话专属停止信号(切走不打断,[停止] 只掐这一个)
@@ -979,7 +1018,6 @@ async fn run_agent(
         }
     };
     if let Some(mut stdin) = child.stdin.take() {
-        let prompt = text.clone();
         tokio::spawn(async move {
             let _ = stdin.write_all(prompt.as_bytes()).await;
             let _ = stdin.shutdown().await;
@@ -1027,8 +1065,8 @@ async fn run_agent(
                                 full.push_str(&t);
                                 let _ = app.emit("chat://chunk", ChunkPayload { thread_id, text: t });
                             }
-                            AgentLineEvent::Tool { label, status } => {
-                                let _ = app.emit("chat://tool", ToolPayload { thread_id, label, status });
+                            AgentLineEvent::Tool { label, status, kind } => {
+                                let _ = app.emit("chat://tool", ToolPayload { thread_id, label, status, kind });
                             }
                             AgentLineEvent::Session(id) => {
                                 if !session_saved {
@@ -1237,7 +1275,8 @@ mod tests {
         assert!(evs.contains(&AgentLineEvent::Session("ses_1".into())));
         assert!(evs.contains(&AgentLineEvent::Tool {
             label: "bash · ls -1A".into(),
-            status: "completed".into()
+            status: "completed".into(),
+            kind: "tool".into()
         }));
 
         let text =
@@ -1255,5 +1294,17 @@ mod tests {
             vec![AgentLineEvent::Text("plain\n".into())]
         );
         assert!(parse_agent_line("   ").is_empty());
+    }
+
+    /// 技能加载事件单独成一类(实机形状:tool="skill",state.input.name,
+    /// title="Loaded skill: x",metadata.dir 指向技能目录)。
+    #[test]
+    fn skill_tool_event_is_labelled_in_chinese() {
+        let line = r#"{"type":"tool_use","sessionID":"ses_1","part":{"type":"tool","tool":"skill","state":{"status":"completed","title":"Loaded skill: tea-brewing","input":{"name":"tea-brewing"},"metadata":{"name":"tea-brewing","dir":"D:\\x\\.opencode\\skills\\tea-brewing"}}}}"#;
+        assert!(parse_agent_line(line).contains(&AgentLineEvent::Tool {
+            label: "技能:tea-brewing".into(),
+            status: "completed".into(),
+            kind: "skill".into()
+        }));
     }
 }
