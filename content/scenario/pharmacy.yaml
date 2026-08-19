@@ -1,0 +1,195 @@
+# 场景练习包 — 药店买药(由 `sf export scenario` 从生成结果导出,已人工审校)
+pack: pharmacy
+name: "药店买药"
+category: "医疗"
+intro: "描述症状、买常用药、问用法用量。"
+reference_level: L3
+dialogue:
+  - speaker: B
+    en: "Hi, do you have anything for a sore throat?"
+    zh: "你好,有没有治喉咙痛的东西?"
+    pattern: "一般疑问句"
+    note: "进店说明症状的开场问法。"
+    words:
+      - { w: "Hi", ipa: "haɪ", pos: "part" }
+      - { w: "do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "anything", ipa: "ˈeniθɪŋ", pos: "pron" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "sore", ipa: "sɔː", pos: "adj" }
+      - { w: "throat", ipa: "θrəʊt", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4] }
+      - { r: "advl", i: [5, 6, 7, 8] }
+
+  - speaker: A
+    en: "Sure, how long have you had it?"
+    zh: "有的，您这样多久了？"
+    pattern: "特殊疑问句"
+    note: "店员常追问症状持续时间来判断轻重。"
+    words:
+      - { w: "Sure", ipa: "ʃɔː", pos: "adv" }
+      - { w: "how", ipa: "haʊ", pos: "wh" }
+      - { w: "long", ipa: "lɒŋ", pos: "adv" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "had", ipa: "hæd", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "pred", i: [3, 4, 5] }
+      - { r: "obj", i: [6] }
+
+  - speaker: B
+    en: "About three days, and it hurts to swallow."
+    zh: "大概三天了，咽东西就疼。"
+    pattern: "并列陈述句"
+    note: "用 swallow 描述吞咽痛，口语很自然。"
+    words:
+      - { w: "About", ipa: "əˈbaʊt", pos: "prep" }
+      - { w: "three", ipa: "θriː", pos: "num" }
+      - { w: "days", ipa: "deɪz", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "hurts", ipa: "hɜːts", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "swallow", ipa: "ˈswɒləʊ", pos: "v" }
+    chunks:
+      - { r: "advl", i: [0, 1, 2] }
+      - { r: "marker", i: [3] }
+      - { r: "subj", i: [4] }
+      - { r: "pred", i: [5, 6, 7] }
+
+  - speaker: A
+    en: "Try these lozenges, they really numb the pain."
+    zh: "试试这些润喉糖，挺能缓解疼的。"
+    pattern: "祈使句+并列句"
+    note: "lozenges 是润喉糖，店员推荐常用药。"
+    words:
+      - { w: "Try", ipa: "traɪ", pos: "v" }
+      - { w: "these", ipa: "ðiːz", pos: "pron" }
+      - { w: "lozenges", ipa: "ˈlɒzɪndʒɪz", pos: "n" }
+      - { w: "they", ipa: "ðeɪ", pos: "pron" }
+      - { w: "really", ipa: "ˈrɪəli", pos: "adv" }
+      - { w: "numb", ipa: "nʌm", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "pain", ipa: "peɪn", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0, 1, 2] }
+      - { r: "subj", i: [3] }
+      - { r: "advl", i: [4] }
+      - { r: "pred", i: [5] }
+      - { r: "obj", i: [6, 7] }
+
+  - speaker: B
+    en: "How often should I take it?"
+    zh: "我多久吃一次?"
+    pattern: "特殊疑问句"
+    note: "问服用频率的高频说法。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "often", ipa: "ˈɒfən", pos: "adv" }
+      - { w: "should", ipa: "ʃʊd", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+    chunks:
+      - { r: "advl", i: [0, 1] }
+      - { r: "pred", i: [2, 3, 4] }
+      - { r: "obj", i: [5] }
+
+  - speaker: A
+    en: "One every four hours, max four a day."
+    zh: "每四小时一颗,一天最多四颗。"
+    pattern: "简单句"
+    note: "说明剂量与每日上限。"
+    words:
+      - { w: "One", ipa: "wʌn", pos: "num" }
+      - { w: "every", ipa: "ˈevri", pos: "prep" }
+      - { w: "four", ipa: "fɔː", pos: "num" }
+      - { w: "hours", ipa: "ˈaʊəz", pos: "n" }
+      - { w: "max", ipa: "mæks", pos: "adv" }
+      - { w: "four", ipa: "fɔː", pos: "num" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "day", ipa: "deɪ", pos: "n" }
+    chunks:
+      - { r: "obj", i: [0] }
+      - { r: "advl", i: [1, 2, 3] }
+      - { r: "marker", i: [4] }
+      - { r: "obj", i: [5, 6, 7] }
+
+  - speaker: B
+    en: "Could you grab me some tissues too?"
+    zh: "能帮我拿包纸巾吗?"
+    pattern: "礼貌请求"
+    note: "顺便加购的口语说法。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "grab", ipa: "ɡræb", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "some", ipa: "sʌm", pos: "art" }
+      - { w: "tissues", ipa: "ˈtɪʃuːz", pos: "n" }
+      - { w: "too", ipa: "tuː", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "marker", i: [6] }
+
+  - speaker: B
+    en: "How much is everything altogether?"
+    zh: "一共多少钱?"
+    pattern: "特殊疑问句"
+    note: "结账前问总价。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adv" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "everything", ipa: "ˈevriθɪŋ", pos: "pron" }
+      - { w: "altogether", ipa: "ˌɔːltəˈɡeðə", pos: "adv" }
+    chunks:
+      - { r: "advl", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "subj", i: [3] }
+      - { r: "marker", i: [4] }
+
+  - speaker: A
+    en: "That'll be six ninety, thanks."
+    zh: "六块九，谢谢。"
+    pattern: "陈述句"
+    note: "That'll be… 是收银报价的固定语块。"
+    words:
+      - { w: "That'll", ipa: "ˈðætl", pos: "pron" }
+      - { w: "be", ipa: "biː", pos: "v" }
+      - { w: "six", ipa: "sɪks", pos: "num" }
+      - { w: "ninety", ipa: "ˈnaɪnti", pos: "num" }
+      - { w: "thanks", ipa: "θæŋks", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "marker", i: [4] }
+
+  - speaker: A
+    en: "Yes, tap it here, thanks."
+    zh: "可以,在这里拍一下卡,谢谢。"
+    pattern: "简单句"
+    note: "让顾客用 contactless 付款。"
+    words:
+      - { w: "Yes", ipa: "jes", pos: "part" }
+      - { w: "tap", ipa: "tæp", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "thanks", ipa: "θæŋks", pos: "part" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "advl", i: [3] }
+      - { r: "marker", i: [4] }
+

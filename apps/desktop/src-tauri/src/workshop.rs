@@ -648,7 +648,12 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
 
         // 拿满机制:规划批全部完成但未达到用户指定句数 → 追加补足批继续,
         // 有限次触顶后诚实收尾(不达标场景见 done summary 的引导文案)。
-        if job.state == JobState::Completed
+        //
+        // 场景模式**不补足**(实测教训):补足批会生成另一段独立对话接在
+        // 后面,出现重复问候、话轮断裂——一段连贯的 9 句对话远胜拼接出的
+        // 12 句。连贯性是场景练习的核心价值,不能用句数换。
+        if !scenario
+            && job.state == JobState::Completed
             && job.shortfall() > 0
             && job.topup_count() < MAX_TOPUP_BATCHES
             && !state.gen_cancelled()
@@ -666,18 +671,19 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
         progress.save_job(&job)?;
     }
     // 拿满未遂时诚实收尾:说明原因并给出可行动的建议(§6.1 不甩锅给用户)。
-    let summary = if job.state == JobState::Completed && job.shortfall() > 0 {
+    // 场景模式不走"补足"叙事(它本就不补足,句数少是连贯性的代价)。
+    let summary = if scenario {
+        format!(
+            "{} 句对话已生成 · {} 丢弃 · 去「场景」页开练",
+            job.produced, discarded_total
+        )
+    } else if job.state == JobState::Completed && job.shortfall() > 0 {
         format!(
             "目标 {} · 通过 {} · 丢弃 {}。已自动补生成 {} 轮仍未凑满——这个场景的常用说法超出了当前等级范围,建议提高等级或换个更日常的场景描述",
             job.params.total_sentences,
             job.produced,
             discarded_total,
             job.topup_count()
-        )
-    } else if scenario {
-        format!(
-            "{} 句对话已生成 · {} 丢弃 · 去「场景」页开练",
-            job.produced, discarded_total
         )
     } else {
         format!("{} 通过 · {} 丢弃", job.produced, discarded_total)

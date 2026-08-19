@@ -1,0 +1,216 @@
+# 场景练习包 — 机场值机与安检(由 `sf export scenario` 从生成结果导出,已人工审校)
+pack: airport-checkin
+name: "机场值机与安检"
+category: "出行"
+intro: "办登机牌、托运行李到过安检的对话。"
+reference_level: L3
+dialogue:
+  - speaker: B
+    en: "Where's the check-in desk for flight BA208?"
+    zh: "飞往BA208航班的值机柜台在哪儿?"
+    pattern: "特殊疑问句"
+    note: "在航站楼找特定航班柜台时最常用的问法。"
+    words:
+      - { w: "Where's", ipa: "wɛəz", pos: "wh" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "check-in", ipa: "ˈtʃek ɪn", pos: "n" }
+      - { w: "desk", ipa: "desk", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+      - { w: "BA208", ipa: "biː eɪ tuː əʊ eɪt", pos: "propn" }
+    chunks:
+      - { r: "obj", i: [0] }
+      - { r: "subj", i: [1, 2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+
+  - speaker: A
+    en: "It's over there, just past the big departure board."
+    zh: "就在那边,过了那个大出发信息屏就是。"
+    pattern: "存在/方位陈述"
+    note: "用方位地标指路,母语者常提信息屏作参照。"
+    words:
+      - { w: "It's", ipa: "ɪts", pos: "pron" }
+      - { w: "over", ipa: "ˈəʊvə", pos: "adv" }
+      - { w: "there", ipa: "ðeə", pos: "adv" }
+      - { w: "just", ipa: "dʒʌst", pos: "adv" }
+      - { w: "past", ipa: "pɑːst", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "big", ipa: "bɪɡ", pos: "adj" }
+      - { w: "departure", ipa: "dɪˈpɑːtʃə", pos: "n" }
+      - { w: "board", ipa: "bɔːd", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "advl", i: [3, 4, 5, 6, 7, 8] }
+
+  - speaker: B
+    en: "Hi, I'd like to check in for my flight to London."
+    zh: "你好,我要办理去伦敦航班的登机手续。"
+    pattern: "陈述句(请求)"
+    note: "旅客开口办理值机的高频说法。"
+    words:
+      - { w: "Hi", ipa: "haɪ", pos: "part" }
+      - { w: "I'd", ipa: "aɪd", pos: "pron" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "check", ipa: "tʃek", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "adv" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "London", ipa: "ˈlʌndən", pos: "propn" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3, 4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+      - { r: "advl", i: [9, 10] }
+
+  - speaker: A
+    en: "Sure, can I see your passport and booking reference?"
+    zh: "好的,能看一下您的护照和预订号吗?"
+    pattern: "一般疑问句"
+    note: "地勤查验证件的常用问法。"
+    words:
+      - { w: "Sure", ipa: "ʃɔː", pos: "adv" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "passport", ipa: "ˈpɑːspɔːt", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "booking", ipa: "ˈbʊkɪŋ", pos: "n" }
+      - { w: "reference", ipa: "ˈrefrəns", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "marker", i: [6] }
+      - { r: "obj", i: [7, 8] }
+
+  - speaker: B
+    en: "Could I also check a suitcase, please?"
+    zh: "我还能托运一个行李箱吗,麻烦了?"
+    pattern: "礼貌请求"
+    note: "旅客礼貌请求托运行李。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "also", ipa: "ˈɔːlsəʊ", pos: "adv" }
+      - { w: "check", ipa: "tʃek", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "suitcase", ipa: "ˈsuːtkeɪs", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "advl", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "marker", i: [6] }
+
+  - speaker: A
+    en: "Let me see. I can give you 14A."
+    zh: "我查一下。我可以给您 14A。"
+    pattern: "陈述句"
+    note: "地勤查座位后告知结果。"
+    words:
+      - { w: "Let", ipa: "let", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "give", ipa: "ɡɪv", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "14A", ipa: "ə", pos: "propn" }
+    chunks:
+      - { r: "pred", i: [0, 1, 2] }
+      - { r: "subj", i: [3] }
+      - { r: "pred", i: [4, 5, 6] }
+      - { r: "obj", i: [7] }
+
+  - speaker: B
+    en: "Great, thanks. Where do I go for security?"
+    zh: "太好了,谢谢。安检往哪儿走?"
+    pattern: "特殊疑问句"
+    note: "问安检方向的日常口语。"
+    words:
+      - { w: "Great", ipa: "ɡreɪt", pos: "adj" }
+      - { w: "thanks", ipa: "θæŋks", pos: "n" }
+      - { w: "Where", ipa: "weə", pos: "wh" }
+      - { w: "do", ipa: "duː", pos: "aux" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "go", ipa: "ɡəʊ", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "security", ipa: "sɪˈkjʊərəti", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "obj", i: [2] }
+      - { r: "pred", i: [3, 4, 5] }
+      - { r: "advl", i: [6, 7] }
+
+  - speaker: A
+    en: "Go straight ahead and turn left after the shop."
+    zh: "一直往前走,过了那家店左转。"
+    pattern: "祈使句"
+    note: "指路最自然的连说方式。"
+    words:
+      - { w: "Go", ipa: "ɡəʊ", pos: "v" }
+      - { w: "straight", ipa: "streɪt", pos: "adv" }
+      - { w: "ahead", ipa: "əˈhed", pos: "adv" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "turn", ipa: "tɜːn", pos: "v" }
+      - { w: "left", ipa: "left", pos: "adv" }
+      - { w: "after", ipa: "ˈɑːftə", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "shop", ipa: "ʃɒp", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "advl", i: [1, 2] }
+      - { r: "marker", i: [3] }
+      - { r: "pred", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+
+  - speaker: B
+    en: "Do I need to take my laptop out here?"
+    zh: "我得在这儿把笔记本拿出来吗?"
+    pattern: "一般疑问句"
+    note: "安检前确认电子设备取出要求的地道说法。"
+    words:
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "laptop", ipa: "ˈlæptɒp", pos: "n" }
+      - { w: "out", ipa: "aʊt", pos: "adv" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3, 4, 5, 6] }
+      - { r: "advl", i: [7, 8] }
+
+  - speaker: A
+    en: "Yes, and please put your things in the tray."
+    zh: "对,请把您的物品放进托盘里。"
+    pattern: "祈使句"
+    note: "安检放物品的标准提示。"
+    words:
+      - { w: "Yes", ipa: "jes", pos: "adv" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+      - { w: "put", ipa: "pʊt", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "things", ipa: "θɪŋz", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "tray", ipa: "treɪ", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0, 1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+

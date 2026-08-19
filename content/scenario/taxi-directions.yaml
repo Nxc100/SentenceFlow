@@ -1,0 +1,194 @@
+# 场景练习包 — 打车与问路(由 `sf export scenario` 从生成结果导出,已人工审校)
+pack: taxi-directions
+name: "打车与问路"
+category: "出行"
+intro: "叫车、说目的地、路上沟通与付款。"
+reference_level: L2
+dialogue:
+  - speaker: B
+    en: "Excuse me, is this taxi available?"
+    zh: "打扰一下,这辆出租车空着吗?"
+    pattern: "招呼+一般疑问句"
+    note: "拦车时常先说 Excuse me 引起司机注意。"
+    words:
+      - { w: "Excuse", ipa: "ɪkˈskjuːz", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "this", ipa: "ðɪs", pos: "art" }
+      - { w: "taxi", ipa: "ˈtæksi", pos: "n" }
+      - { w: "available", ipa: "əˈveɪləbəl", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "subj", i: [3, 4] }
+      - { r: "comp", i: [5] }
+
+  - speaker: A
+    en: "Yes, where are you headed?"
+    zh: "空着,您要去哪儿?"
+    pattern: "特殊疑问句"
+    note: "司机遇客高频问去向。"
+    words:
+      - { w: "Yes", ipa: "jes", pos: "part" }
+      - { w: "where", ipa: "weə", pos: "wh" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "headed", ipa: "ˈhedɪd", pos: "v" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "obj", i: [1] }
+      - { r: "pred", i: [2, 3, 4] }
+
+  - speaker: B
+    en: "The train station on Maple Avenue, please."
+    zh: "请去枫树大道的火车站。"
+    pattern: "名词短语作答"
+    note: "报地点时直接说路名,简洁清楚。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "train", ipa: "treɪn", pos: "n" }
+      - { w: "station", ipa: "ˈsteɪʃən", pos: "n" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "Maple", ipa: "ˈmeɪpəl", pos: "propn" }
+      - { w: "Avenue", ipa: "ˈævənjuː", pos: "propn" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "obj", i: [0, 1, 2] }
+      - { r: "advl", i: [3, 4, 5] }
+      - { r: "marker", i: [6] }
+
+  - speaker: A
+    en: "Got it, that should take about twenty minutes today."
+    zh: "知道了,今天大概得二十分钟。"
+    pattern: "主谓+时间状语"
+    note: "got it 表示听懂了,司机报时常用 should take。"
+    words:
+      - { w: "Got", ipa: "ɡɒt", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "that", ipa: "ðæt", pos: "pron" }
+      - { w: "should", ipa: "ʃʊd", pos: "modal" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "about", ipa: "əˈbaʊt", pos: "prep" }
+      - { w: "twenty", ipa: "ˈtwenti", pos: "num" }
+      - { w: "minutes", ipa: "ˈmɪnɪts", pos: "n" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "obj", i: [1] }
+      - { r: "subj", i: [2] }
+      - { r: "pred", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7, 8] }
+
+  - speaker: B
+    en: "Can you go via the bridge road instead of the high street?"
+    zh: "你能走桥那边的路,别走商业街吗?"
+    pattern: "情态动词疑问句"
+    note: "instead of 用来换路线,避免绕路。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "go", ipa: "ɡəʊ", pos: "v" }
+      - { w: "via", ipa: "ˈvaɪə", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bridge", ipa: "brɪdʒ", pos: "n" }
+      - { w: "road", ipa: "rəʊd", pos: "n" }
+      - { w: "instead", ipa: "ɪnˈsted", pos: "adv" }
+      - { w: "of", ipa: "ɒv", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "high", ipa: "haɪ", pos: "adj" }
+      - { w: "street", ipa: "striːt", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+      - { r: "advl", i: [7, 8, 9, 10, 11] }
+
+  - speaker: A
+    en: "No problem, I will tell you."
+    zh: "没问题,到了我告诉你。"
+    pattern: "陈述句"
+    note: "No problem 爽快答应的常用语。"
+    words:
+      - { w: "No", ipa: "nəʊ", pos: "part" }
+      - { w: "problem", ipa: "ˈprɒbləm", pos: "n" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "tell", ipa: "tel", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "subj", i: [2] }
+      - { r: "pred", i: [3, 4, 5] }
+
+  - speaker: B
+    en: "Thanks, could you drop me at the back entrance?"
+    zh: "谢谢,能在后门让我下车吗?"
+    pattern: "礼貌请求"
+    note: "drop me at… 是让司机定点下车的地道说法。"
+    words:
+      - { w: "Thanks", ipa: "θæŋks", pos: "n" }
+      - { w: "could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "drop", ipa: "drɒp", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "at", ipa: "æt", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "back", ipa: "bæk", pos: "adj" }
+      - { w: "entrance", ipa: "ˈentrəns", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "subj", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4] }
+      - { r: "advl", i: [5, 6, 7, 8] }
+
+  - speaker: A
+    en: "The rear gate of the station, I know it well."
+    zh: "车站后门啊,那地方我熟。"
+    pattern: "同位短语+主谓宾"
+    note: "先重复地点再表态,口语里很自然。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "rear", ipa: "rɪə", pos: "adj" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+      - { w: "of", ipa: "ɒv", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "station", ipa: "ˈsteɪʃən", pos: "n" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "know", ipa: "nəʊ", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "well", ipa: "wel", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2, 3, 4, 5] }
+      - { r: "subj", i: [6] }
+      - { r: "pred", i: [7] }
+      - { r: "obj", i: [8] }
+      - { r: "advl", i: [9] }
+
+  - speaker: B
+    en: "Perfect, how much do I owe you for the trip?"
+    zh: "完美,这趟车我该付你多少?"
+    pattern: "特殊疑问句"
+    note: "owe you 表示欠(车费),结账时常用。"
+    words:
+      - { w: "Perfect", ipa: "ˈpɜːfɪkt", pos: "adj" }
+      - { w: "how", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adv" }
+      - { w: "do", ipa: "duː", pos: "aux" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "owe", ipa: "əʊ", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "trip", ipa: "trɪp", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "subj", i: [4] }
+      - { r: "pred", i: [5] }
+      - { r: "obj", i: [6] }
+      - { r: "advl", i: [7, 8, 9] }
+

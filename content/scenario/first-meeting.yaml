@@ -1,0 +1,181 @@
+# 场景练习包 — 初次见面寒暄(由 `sf export scenario` 从生成结果导出,已人工审校)
+pack: first-meeting
+name: "初次见面寒暄"
+category: "社交"
+intro: "自我介绍、聊工作与兴趣、礼貌收尾。"
+reference_level: L2
+dialogue:
+  - speaker: A
+    en: "Hi, I don't think we've met before."
+    zh: "嗨,我们之前应该没见过吧。"
+    pattern: "初次见面寒暄"
+    note: "见面时表示不认识对方的高频开场。"
+    words:
+      - { w: "Hi", ipa: "haɪ", pos: "part" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "don't", ipa: "dəʊnt", pos: "aux" }
+      - { w: "think", ipa: "θɪŋk", pos: "v" }
+      - { w: "we've", ipa: "wiːv", pos: "pron" }
+      - { w: "met", ipa: "met", pos: "v" }
+      - { w: "before", ipa: "bɪˈfɔː", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3, 4, 5] }
+      - { r: "advl", i: [6] }
+
+  - speaker: B
+    en: "No, I'm new here actually."
+    zh: "对,其实我是新来的。"
+    pattern: "自我介绍应答"
+    note: "用 actually 补充真实情况,很口语化。"
+    words:
+      - { w: "No", ipa: "nəʊ", pos: "part" }
+      - { w: "I'm", ipa: "aɪm", pos: "pron" }
+      - { w: "new", ipa: "njuː", pos: "adj" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "actually", ipa: "ˈæktʃuəli", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "comp", i: [2] }
+      - { r: "advl", i: [3, 4] }
+
+  - speaker: A
+    en: "Oh, welcome! I'm Alex."
+    zh: "哦,欢迎!我叫 Alex。"
+    pattern: "问候并自报姓名"
+    note: "迎接新人时的自然反应。"
+    words:
+      - { w: "Oh", ipa: "əʊ", pos: "part" }
+      - { w: "welcome", ipa: "ˈwelkəm", pos: "part" }
+      - { w: "I'm", ipa: "aɪm", pos: "pron" }
+      - { w: "Alex", ipa: "ˈeɪleks", pos: "propn" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "marker", i: [1] }
+      - { r: "subj", i: [2] }
+      - { r: "comp", i: [3] }
+
+  - speaker: A
+    en: "So what brings you here today?"
+    zh: "那你今天来这儿是干嘛的?"
+    pattern: "特殊疑问句"
+    note: "用 bring 把人引到某地,口语常用。"
+    words:
+      - { w: "So", ipa: "səʊ", pos: "adv" }
+      - { w: "what", ipa: "wɒt", pos: "wh" }
+      - { w: "brings", ipa: "brɪŋz", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "advl", i: [0] }
+      - { r: "obj", i: [1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+
+  - speaker: B
+    en: "I'm here for the training session."
+    zh: "我是来参加培训课的。"
+    pattern: "说明来意"
+    note: "for + 活动 说明目的,简洁自然。"
+    words:
+      - { w: "I'm", ipa: "aɪm", pos: "pron" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "training", ipa: "ˈtreɪnɪŋ", pos: "adj" }
+      - { w: "session", ipa: "ˈseʃən", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "comp", i: [1] }
+      - { r: "advl", i: [2, 3, 4, 5] }
+
+  - speaker: A
+    en: "Same here, it's my first time."
+    zh: "我也是!我第一次来。"
+    pattern: "附和+补充"
+    note: "Same here 表示同感,极常用的回应。"
+    words:
+      - { w: "Same", ipa: "seɪm", pos: "adj" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "it's", ipa: "ɪts", pos: "pron" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "first", ipa: "fɜːst", pos: "adj" }
+      - { w: "time", ipa: "taɪm", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "subj", i: [2] }
+      - { r: "comp", i: [3, 4, 5] }
+
+  - speaker: B
+    en: "Cool. Do you know anyone else?"
+    zh: "不错。你认识其他人吗?"
+    pattern: "一般疑问句"
+    note: "anyone else 问还有没有认识的人。"
+    words:
+      - { w: "Cool", ipa: "kuːl", pos: "part" }
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "know", ipa: "nəʊ", pos: "v" }
+      - { w: "anyone", ipa: "ˈeniwʌn", pos: "pron" }
+      - { w: "else", ipa: "els", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5] }
+
+  - speaker: A
+    en: "Not really, I just arrived myself."
+    zh: "不太认识,我自己刚到。"
+    pattern: "简短应答+解释"
+    note: "Not really 委婉否定,很地道。"
+    words:
+      - { w: "Not", ipa: "nɒt", pos: "adv" }
+      - { w: "really", ipa: "ˈrɪəli", pos: "adv" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "just", ipa: "dʒʌst", pos: "adv" }
+      - { w: "arrived", ipa: "əˈraɪvd", pos: "v" }
+      - { w: "myself", ipa: "maɪˈself", pos: "pron" }
+    chunks:
+      - { r: "advl", i: [0, 1] }
+      - { r: "subj", i: [2] }
+      - { r: "pred", i: [3, 4, 5] }
+
+  - speaker: B
+    en: "Well, we can sit together then."
+    zh: "那我们可以一起坐。"
+    pattern: "提议"
+    note: "Well 用于开启新话题,自然过渡。"
+    words:
+      - { w: "Well", ipa: "wel", pos: "part" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "sit", ipa: "sɪt", pos: "v" }
+      - { w: "together", ipa: "təˈɡeðə", pos: "adv" }
+      - { w: "then", ipa: "ðen", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+
+  - speaker: A
+    en: "Good idea. Save me a seat?"
+    zh: "好主意。给我留个座?"
+    pattern: "赞同+请求"
+    note: "用升调把陈述当请求,口语常见。"
+    words:
+      - { w: "Good", ipa: "ɡʊd", pos: "adj" }
+      - { w: "idea", ipa: "aɪˈdɪə", pos: "n" }
+      - { w: "Save", ipa: "seɪv", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "seat", ipa: "siːt", pos: "n" }
+    chunks:
+      - { r: "comp", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+

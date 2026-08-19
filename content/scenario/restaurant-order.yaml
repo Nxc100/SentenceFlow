@@ -1,0 +1,189 @@
+# 场景练习包 — 餐厅点餐与结账(由 `sf export scenario` 从生成结果导出,已人工审校)
+pack: restaurant-order
+name: "餐厅点餐与结账"
+category: "餐饮"
+intro: "从入座点菜到买单的完整餐厅对话。"
+reference_level: L3
+dialogue:
+  - speaker: B
+    en: "Yes, a quiet table by the window please."
+    zh: "有,靠窗安静点的桌位,谢谢。"
+    pattern: "名词短语应答"
+    note: "说清座位偏好,加 please 更礼貌。"
+    words:
+      - { w: "Yes", ipa: "jes", pos: "part" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "quiet", ipa: "ˈkwaɪət", pos: "adj" }
+      - { w: "table", ipa: "ˈteɪbəl", pos: "n" }
+      - { w: "by", ipa: "baɪ", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "window", ipa: "ˈwɪndəʊ", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "obj", i: [1, 2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+      - { r: "marker", i: [7] }
+
+  - speaker: A
+    en: "Sure, follow me to the window seat."
+    zh: "有,跟我来靠窗的位置。"
+    pattern: "祈使句"
+    note: "领位时最自然的口语表达。"
+    words:
+      - { w: "Sure", ipa: "ʃɔː", pos: "adv" }
+      - { w: "follow", ipa: "ˈfɒləʊ", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "window", ipa: "ˈwɪndəʊ", pos: "n" }
+      - { w: "seat", ipa: "siːt", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+
+  - speaker: B
+    en: "I will have the salmon, medium well."
+    zh: "我要三文鱼,七分熟。"
+    pattern: "意愿陈述"
+    note: "点菜并说明熟度。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "salmon", ipa: "ˈsæmən", pos: "n" }
+      - { w: "medium", ipa: "ˈmiːdiəm", pos: "adj" }
+      - { w: "well", ipa: "wel", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "comp", i: [5, 6] }
+
+  - speaker: A
+    en: "Good choice. And for your friend?"
+    zh: "选得好。你朋友点什么?"
+    pattern: "简答加追问"
+    note: "确认一人后再问同伴。"
+    words:
+      - { w: "Good", ipa: "ɡʊd", pos: "adj" }
+      - { w: "choice", ipa: "tʃɔɪs", pos: "n" }
+      - { w: "And", ipa: "ænd", pos: "conj" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "friend", ipa: "frend", pos: "n" }
+    chunks:
+      - { r: "comp", i: [0, 1] }
+      - { r: "marker", i: [2] }
+      - { r: "advl", i: [3, 4, 5] }
+
+  - speaker: B
+    en: "She will take the beef steak, please."
+    zh: "她要牛排,谢谢。"
+    pattern: "意愿陈述"
+    note: "替同伴点单的常用句式。"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "beef", ipa: "biːf", pos: "n" }
+      - { w: "steak", ipa: "steɪk", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "marker", i: [6] }
+
+  - speaker: A
+    en: "Anything to drink with that?"
+    zh: "配点喝的吗?"
+    pattern: "省略疑问句"
+    note: "顺带问饮料的固定说法。"
+    words:
+      - { w: "Anything", ipa: "ˈeniθɪŋ", pos: "pron" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "drink", ipa: "drɪŋk", pos: "v" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "that", ipa: "ðæt", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "advl", i: [3, 4] }
+
+  - speaker: B
+    en: "Two glasses of water, thanks."
+    zh: "两杯水就行,谢了。"
+    pattern: "数量短语应答"
+    note: "只要白水时的简洁说法。"
+    words:
+      - { w: "Two", ipa: "tuː", pos: "num" }
+      - { w: "glasses", ipa: "ˈɡlɑːsɪz", pos: "n" }
+      - { w: "of", ipa: "ɒv", pos: "prep" }
+      - { w: "water", ipa: "ˈwɔːtə", pos: "n" }
+      - { w: "thanks", ipa: "θæŋks", pos: "part" }
+    chunks:
+      - { r: "obj", i: [0, 1, 2, 3] }
+      - { r: "marker", i: [4] }
+
+  - speaker: A
+    en: "Great, I will bring your food soon."
+    zh: "好嘞,菜马上给您上。"
+    pattern: "陈述承诺"
+    note: "下单后告知上菜时间。"
+    words:
+      - { w: "Great", ipa: "ɡreɪt", pos: "adj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "bring", ipa: "brɪŋ", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "food", ipa: "fuːd", pos: "n" }
+      - { w: "soon", ipa: "suːn", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6] }
+
+  - speaker: B
+    en: "Could we get the bill, please?"
+    zh: "麻烦把账单给我们好吗?"
+    pattern: "礼貌请求"
+    note: "用餐结束叫服务员买单的常用说法。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bill", ipa: "bɪl", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "marker", i: [5] }
+
+  - speaker: A
+    en: "Sure, I'll bring it right over."
+    zh: "好的,我马上拿来。"
+    pattern: "肯定回应"
+    note: "服务员爽快应答并说明立刻送来的地道口语。"
+    words:
+      - { w: "Sure", ipa: "ʃɔː", pos: "adv" }
+      - { w: "I'll", ipa: "aɪl", pos: "pron" }
+      - { w: "bring", ipa: "brɪŋ", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "right", ipa: "raɪt", pos: "adv" }
+      - { w: "over", ipa: "ˈəʊvə", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+

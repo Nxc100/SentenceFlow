@@ -457,7 +457,9 @@ pub fn list_scene_packs(state: S<'_>) -> CmdResult<Vec<ScenePackInfo>> {
             name: pack.clone(),
             category: "我生成的".into(),
             intro: String::new(),
-            reference_level: sentences.first().map(|s| s.level),
+            // 自建包不标参考难度:场景生成本就不分等级,句子的 level 列
+            // 只是校验时用的规格(L6),显示出来会误导。
+            reference_level: None,
             sentence_count: *n,
             from_user: true,
             practiced: sentences.iter().any(|s| practiced_ids.contains(&s.id)),

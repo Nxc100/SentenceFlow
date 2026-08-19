@@ -1,0 +1,148 @@
+# 场景练习包 — 超市购物与结账(由 `sf export scenario` 从生成结果导出,已人工审校)
+pack: supermarket-checkout
+name: "超市购物与结账"
+category: "购物"
+intro: "找商品、称重、结账与付款方式。"
+reference_level: L2
+dialogue:
+  - speaker: A
+    en: "Need any help finding the pasta?"
+    zh: "找意面需要帮忙吗?"
+    pattern: "省略疑问"
+    note: "Need any help… 是主动搭话的常用问法。"
+    words:
+      - { w: "Need", ipa: "niːd", pos: "v" }
+      - { w: "any", ipa: "ˈeni", pos: "adj" }
+      - { w: "help", ipa: "help", pos: "n" }
+      - { w: "finding", ipa: "ˈfaɪndɪŋ", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "pasta", ipa: "ˈpæstə", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "advl", i: [3, 4, 5] }
+
+  - speaker: B
+    en: "Just some eggs, where are they?"
+    zh: "就再拿点鸡蛋,在哪?"
+    pattern: "省略+特殊疑问"
+    note: "口语常省略主谓直接说物品。"
+    words:
+      - { w: "Just", ipa: "dʒʌst", pos: "adv" }
+      - { w: "some", ipa: "sʌm", pos: "adj" }
+      - { w: "eggs", ipa: "ɛɡz", pos: "n" }
+      - { w: "where", ipa: "weə", pos: "wh" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "they", ipa: "ðeɪ", pos: "pron" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "obj", i: [3] }
+      - { r: "pred", i: [4, 5] }
+
+  - speaker: A
+    en: "Next to the milk, in the fridge."
+    zh: "牛奶旁边,冰柜里。"
+    pattern: "介词短语指路"
+    note: "口语指位置常用 next to。"
+    words:
+      - { w: "Next", ipa: "nɛkst", pos: "adv" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "milk", ipa: "mɪlk", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "fridge", ipa: "frɪdʒ", pos: "n" }
+    chunks:
+      - { r: "advl", i: [0, 1, 2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+
+  - speaker: A
+    en: "Those are on sale this week."
+    zh: "那些这周打折。"
+    pattern: "主系表"
+    note: "on sale 是打折的固定搭配。"
+    words:
+      - { w: "Those", ipa: "ðəʊz", pos: "pron" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "sale", ipa: "seɪl", pos: "n" }
+      - { w: "this", ipa: "ðɪs", pos: "adj" }
+      - { w: "week", ipa: "wiːk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "advl", i: [2, 3, 4, 5] }
+
+  - speaker: B
+    en: "Great, I will take two."
+    zh: "太好了,我要两个。"
+    pattern: "陈述句+数量"
+    note: "take 在购物里表示要买。"
+    words:
+      - { w: "Great", ipa: "ɡreɪt", pos: "adj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "two", ipa: "tuː", pos: "num" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "obj", i: [4] }
+
+  - speaker: A
+    en: "Do you need a basket for that?"
+    zh: "那个需要拿个篮子吗?"
+    pattern: "一般疑问句"
+    note: "店员主动帮忙的口语。"
+    words:
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "basket", ipa: "ˈbɑːskɪt", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "that", ipa: "ðæt", pos: "pron" }
+    chunks:
+      - { r: "pred", i: [0, 1, 2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }
+
+  - speaker: A
+    en: "Sure, did you find everything okay?"
+    zh: "好,东西都找齐了吗?"
+    pattern: "一般疑问句"
+    note: "收银员常问是否都找齐了。"
+    words:
+      - { w: "Sure", ipa: "ʃʊə", pos: "adj" }
+      - { w: "did", ipa: "dɪd", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "find", ipa: "faɪnd", pos: "v" }
+      - { w: "everything", ipa: "ˈevriθɪŋ", pos: "pron" }
+      - { w: "okay", ipa: "əʊˈkeɪ", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4] }
+      - { r: "comp", i: [5] }
+
+  - speaker: A
+    en: "Sure, the self-checkout is free over there."
+    zh: "好,那边自助结账空着。"
+    pattern: "主系表+地点"
+    note: "self-checkout 指自助结账台。"
+    words:
+      - { w: "Sure", ipa: "ʃʊə", pos: "part" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "self-checkout", ipa: "ˈsɛlfˈtʃɛkaʊt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "free", ipa: "friː", pos: "adj" }
+      - { w: "over", ipa: "ˈəʊvə", pos: "adv" }
+      - { w: "there", ipa: "ðeə", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "comp", i: [4] }
+      - { r: "advl", i: [5, 6] }
+

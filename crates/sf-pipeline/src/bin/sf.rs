@@ -108,6 +108,28 @@ enum ExportCmd {
         #[arg(long, default_value_t = 20)]
         per_level: u32,
     },
+    /// 把某个已生成的场景包(用户库)导出成出厂 YAML 素材,人工审校后
+    /// 放进 content/scenario/(内容生产流水线,方案 §3.3)。
+    Scenario {
+        /// 用户库路径(桌面端:%APPDATA%/app.sentenceflow.desktop/user_content.db)
+        #[arg(long)]
+        db: PathBuf,
+        /// 包 id(= 生成任务的场景名)
+        #[arg(long)]
+        pack: String,
+        /// 输出文件
+        #[arg(long)]
+        out: PathBuf,
+        /// 出厂包 id(kebab-case,如 cafe-order)
+        #[arg(long)]
+        id: String,
+        #[arg(long)]
+        category: String,
+        #[arg(long, default_value = "")]
+        intro: String,
+        #[arg(long, default_value = "L3")]
+        reference_level: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -153,6 +175,15 @@ fn main() -> Result<()> {
                 levels,
                 per_level,
             } => export_trial(&content_dir, &out, &levels, per_level),
+            ExportCmd::Scenario {
+                db,
+                pack,
+                out,
+                id,
+                category,
+                intro,
+                reference_level,
+            } => export_scenario(&db, &pack, &out, &id, &category, &intro, &reference_level),
         },
     }
 }
@@ -261,6 +292,92 @@ fn validate_seeds(content_dir: &Path) -> Result<SeedRun> {
         bail!("{} seed sentence(s) failed validation", run.problems.len());
     }
     Ok(run)
+}
+
+// ------------------------------------------------------- scenario export
+
+/// 把用户库里的一个场景包导出为出厂 YAML(内容生产:工坊生成 → 导出 →
+/// 人工审校 → 放进 content/scenario/ → factory build 强校验)。
+fn export_scenario(
+    db: &Path,
+    pack: &str,
+    out: &Path,
+    id: &str,
+    category: &str,
+    intro: &str,
+    reference_level: &str,
+) -> Result<()> {
+    let store = ContentStore::open_readonly(db)
+        .map_err(|e| anyhow::anyhow!("opening {}: {e}", db.display()))?;
+    let lines = store
+        .sentences_by_pack(pack)
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    if lines.is_empty() {
+        bail!("pack「{pack}」not found in {}", db.display());
+    }
+
+    let mut yaml = String::new();
+    yaml.push_str(&format!(
+        "# 场景练习包 — {pack}(由 `sf export scenario` 从生成结果导出,已人工审校)\n\
+         pack: {id}\nname: \"{pack}\"\ncategory: \"{category}\"\n"
+    ));
+    if !intro.is_empty() {
+        yaml.push_str(&format!("intro: \"{intro}\"\n"));
+    }
+    yaml.push_str(&format!("reference_level: {reference_level}\ndialogue:\n"));
+
+    for (i, s) in lines.iter().enumerate() {
+        // speaker 存在 func 列;缺失时按顺序 A/B 交替兜底
+        let speaker = if s.func == "A" || s.func == "B" {
+            s.func.clone()
+        } else if i % 2 == 0 {
+            "A".into()
+        } else {
+            "B".into()
+        };
+        let en = format!("{}{}", s.en.trim_end_matches(&s.punct), s.punct);
+        yaml.push_str(&format!(
+            "  - speaker: {speaker}\n    en: \"{}\"\n    zh: \"{}\"\n",
+            en.replace('"', "\\\""),
+            s.zh.replace('"', "\\\"")
+        ));
+        if !s.pattern.is_empty() {
+            yaml.push_str(&format!("    pattern: \"{}\"\n", s.pattern));
+        }
+        if !s.note.is_empty() {
+            yaml.push_str(&format!("    note: \"{}\"\n", s.note.replace('"', "\\\"")));
+        }
+        yaml.push_str("    words:\n");
+        for w in &s.words {
+            yaml.push_str(&format!(
+                "      - {{ w: \"{}\", ipa: \"{}\", pos: \"{}\" }}\n",
+                w.w,
+                w.ipa,
+                serde_json::to_value(w.pos)?.as_str().unwrap_or("n")
+            ));
+        }
+        yaml.push_str("    chunks:\n");
+        for c in &s.chunks {
+            let idx: Vec<String> = c.i.iter().map(|n| n.to_string()).collect();
+            yaml.push_str(&format!(
+                "      - {{ r: \"{}\", i: [{}] }}\n",
+                serde_json::to_value(c.r)?.as_str().unwrap_or("advl"),
+                idx.join(", ")
+            ));
+        }
+        yaml.push('\n');
+    }
+
+    if let Some(parent) = out.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(out, yaml)?;
+    println!(
+        "scenario pack exported: {} ({} lines) — 请人工审校后再 factory build",
+        out.display(),
+        lines.len()
+    );
+    Ok(())
 }
 
 // ---------------------------------------------------------------- scenario

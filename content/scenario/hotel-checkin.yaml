@@ -1,0 +1,229 @@
+# 场景练习包 — 酒店入住登记(由 `sf export scenario` 从生成结果导出,已人工审校)
+pack: hotel-checkin
+name: "酒店入住登记"
+category: "出行"
+intro: "从前台报预订到拿房卡的完整入住对话。"
+reference_level: L3
+dialogue:
+  - speaker: A
+    en: "Good afternoon, do you have a reservation with us?"
+    zh: "下午好,您在我们这里有预订吗?"
+    pattern: "一般疑问句"
+    note: "前台确认预订的常用开场问法。"
+    words:
+      - { w: "Good", ipa: "ɡʊd", pos: "adj" }
+      - { w: "afternoon", ipa: "ˌɑːftəˈnuːn", pos: "n" }
+      - { w: "do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "reservation", ipa: "ˌrezəˈveɪʃn", pos: "n" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "us", ipa: "ʌs", pos: "pron" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "subj", i: [3] }
+      - { r: "pred", i: [2, 4] }
+      - { r: "obj", i: [5, 6] }
+      - { r: "advl", i: [7, 8] }
+
+  - speaker: B
+    en: "Yes, I booked a room for two nights."
+    zh: "有,我订了一间房,住两晚。"
+    pattern: "陈述句"
+    note: "用 booked 说明已预订,并补充住几晚。"
+    words:
+      - { w: "Yes", ipa: "jes", pos: "part" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "booked", ipa: "bʊkt", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "room", ipa: "ruːm", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "two", ipa: "tuː", pos: "num" }
+      - { w: "nights", ipa: "naɪts", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+
+  - speaker: A
+    en: "May I have your name, please?"
+    zh: "请问您贵姓?"
+    pattern: "礼貌请求"
+    note: "May I have… 是核实住客姓名的高频说法。"
+    words:
+      - { w: "May", ipa: "meɪ", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "name", ipa: "neɪm", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "marker", i: [5] }
+
+  - speaker: B
+    en: "My name is Chen, from Shanghai."
+    zh: "我姓陈,从上海来的。"
+    pattern: "主系表"
+    note: "报姓名并顺带说明来源地。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "name", ipa: "neɪm", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "Chen", ipa: "tʃen", pos: "propn" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "Shanghai", ipa: "ˌʃæŋˈhaɪ", pos: "propn" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "advl", i: [4, 5] }
+
+  - speaker: A
+    en: "I have got your booking here."
+    zh: "我这里查到您的预订了。"
+    pattern: "主谓宾"
+    note: "have got 在此等于 find,确认预订已查到。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "got", ipa: "ɡɒt", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "booking", ipa: "ˈbʊkɪŋ", pos: "n" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5] }
+
+  - speaker: A
+    en: "I will also need your ID and a card for the deposit."
+    zh: "另外我需要您的证件和一张刷押金的卡。"
+    pattern: "陈述+信息请求"
+    note: "前台办入住时说明所需材料的常用说法。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "aux" }
+      - { w: "also", ipa: "ˈɔːlsəʊ", pos: "adv" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "ID", ipa: "ˌaɪˈdiː", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "card", ipa: "kɑːd", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "deposit", ipa: "dɪˈpɒzɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [2] }
+      - { r: "pred", i: [1, 3] }
+      - { r: "obj", i: [4, 5, 6, 7, 8] }
+      - { r: "advl", i: [9, 10, 11] }
+
+  - speaker: B
+    en: "No problem, here is my passport and my Visa card."
+    zh: "没问题,这是我的护照和维萨卡。"
+    pattern: "应答+提供"
+    note: "Here is… 递东西时自然引出所交证件。"
+    words:
+      - { w: "No", ipa: "nəʊ", pos: "adj" }
+      - { w: "problem", ipa: "ˈprɒbləm", pos: "n" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "passport", ipa: "ˈpɑːspɔːt", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "Visa", ipa: "ˈviːzə", pos: "propn" }
+      - { w: "card", ipa: "kɑːd", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "advl", i: [2] }
+      - { r: "link", i: [3] }
+      - { r: "subj", i: [4, 5, 6, 7, 8, 9] }
+
+  - speaker: A
+    en: "Sure, I will find you a quiet room."
+    zh: "没问题,我给您找一间安静的房间。"
+    pattern: "主谓双宾"
+    note: "Sure 爽快答应,find you a room 为双宾结构。"
+    words:
+      - { w: "Sure", ipa: "ʃɔː", pos: "part" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "find", ipa: "faɪnd", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "quiet", ipa: "ˈkwaɪət", pos: "adj" }
+      - { w: "room", ipa: "ruːm", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "obj", i: [4, 5, 6, 7] }
+
+  - speaker: B
+    en: "What time is breakfast served here?"
+    zh: "这里早餐几点开始供应?"
+    pattern: "特殊疑问句"
+    note: "问供餐时间是入住后常问的问题。"
+    words:
+      - { w: "What", ipa: "wɒt", pos: "wh" }
+      - { w: "time", ipa: "taɪm", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "breakfast", ipa: "ˈbrekfəst", pos: "n" }
+      - { w: "served", ipa: "sɜːvd", pos: "v" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+    chunks:
+      - { r: "obj", i: [0, 1] }
+      - { r: "subj", i: [3] }
+      - { r: "pred", i: [2, 4] }
+      - { r: "advl", i: [5] }
+
+  - speaker: A
+    en: "Breakfast is from seven to ten each morning."
+    zh: "早餐每天早上七点到十点。"
+    pattern: "主系表"
+    note: "用 from…to… 说明时间区间。"
+    words:
+      - { w: "Breakfast", ipa: "ˈbrekfəst", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "seven", ipa: "ˈsevən", pos: "num" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "ten", ipa: "ten", pos: "num" }
+      - { w: "each", ipa: "iːtʃ", pos: "adj" }
+      - { w: "morning", ipa: "ˈmɔːnɪŋ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "advl", i: [2, 3, 4, 5, 6, 7] }
+
+  - speaker: B
+    en: "Perfect, thank you so much for your help."
+    zh: "太好了,非常感谢你的帮助。"
+    pattern: "致谢句"
+    note: "Perfect 表满意,so much 加强感谢语气。"
+    words:
+      - { w: "Perfect", ipa: "ˈpɜːfɪkt", pos: "adj" }
+      - { w: "thank", ipa: "θæŋk", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "so", ipa: "səʊ", pos: "adv" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adv" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "help", ipa: "help", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+
