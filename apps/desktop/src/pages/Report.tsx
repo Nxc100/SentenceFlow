@@ -3,13 +3,46 @@
  * · 周报导出(打印为 PDF — 系统打印对话框选“另存为 PDF”,A4 一页)。
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, HeatmapCalendar, POS_ZH, ROLE_ZH, StatCard } from "@sentenceflow/ui";
 import type { StatsSummary } from "@sentenceflow/ui";
 import { ipc, tzOffsetSecs } from "../ipc";
 
+/** 热力图一个格子占的宽度(12px 方块 + 3px 间距,与 components.css 一致) */
+const HEAT_COL_PX = 15;
+const HEAT_WEEKS_MIN = 12;
+/** 上限一年:再多也没有意义,横向也放不下 */
+const HEAT_WEEKS_MAX = 53;
+
+/** 元素当前宽度(随窗口缩放实时更新) */
+function useElementWidth<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const [width, setWidth] = useState(0);
+  const attach = useCallback((node: T | null) => {
+    ref.current = node;
+    if (node) setWidth(node.clientWidth);
+  }, []);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setWidth(w);
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [width === 0]);
+  return [attach, width] as const;
+}
+
 export function ReportPage({ onDrill }: { onDrill: (scene: string) => void }) {
   const [stats, setStats] = useState<StatsSummary | null>(null);
+  // 热力图按可用宽度决定显示多少周:窗口越宽看得越久(最多一年)
+  const [heatRef, heatWidth] = useElementWidth<HTMLElement>();
+  const heatWeeks = Math.max(
+    HEAT_WEEKS_MIN,
+    Math.min(HEAT_WEEKS_MAX, Math.floor((heatWidth || 0) / HEAT_COL_PX) || HEAT_WEEKS_MIN),
+  );
 
   useEffect(() => {
     void ipc.getStats().then(setStats);
@@ -60,11 +93,12 @@ export function ReportPage({ onDrill }: { onDrill: (scene: string) => void }) {
         <StatCard value={`${stats.streak_days} 天`} label="连续打卡 🔥" />
       </div>
 
-      <section className="report-section">
+      <section className="report-section" ref={heatRef}>
         <h2>练习热力</h2>
         <HeatmapCalendar
           counts={heatCounts}
           endDay={Math.floor((Date.now() / 1000 + tzOffsetSecs()) / 86_400)}
+          weeks={heatWeeks}
         />
       </section>
 
@@ -117,6 +151,8 @@ export function ReportPage({ onDrill }: { onDrill: (scene: string) => void }) {
 }
 
 function Sparkline({ label, values, color }: { label: string; values: number[]; color: string }) {
+  // 坐标系固定,靠 viewBox 横向拉伸铺满可用宽度;
+  // 线宽用 non-scaling-stroke 保持均匀,不会被拉扁。
   const w = 560;
   const h = 64;
   const max = Math.max(...values, 1);
@@ -126,8 +162,21 @@ function Sparkline({ label, values, color }: { label: string; values: number[]; 
   return (
     <div className="sparkline">
       <span className="sparkline__label">{label}</span>
-      <svg width={w} height={h} role="img" aria-label={`${label} 曲线`}>
-        <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+      <svg
+        className="sparkline__svg"
+        viewBox={`0 0 ${w} ${h}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={`${label} 曲线`}
+      >
+        <polyline
+          points={pts}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
       </svg>
     </div>
   );

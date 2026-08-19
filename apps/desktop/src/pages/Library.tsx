@@ -191,7 +191,11 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
 
       <ul className="library-list">
         {pageItems.map((s) => (
-          <li key={s.id} className="library-item">
+          // 展开看解析时独占整行:多列布局下一格太窄放不下成分卡
+          <li
+            key={s.id}
+            className={`library-item${expanded === s.id ? " library-item--open" : ""}`}
+          >
             <button
               type="button"
               className="library-item__row"
