@@ -220,7 +220,7 @@ export function WorkshopPage({
   return (
     <div className="page page--workshop">
       <header className="page__header">
-        <h1>生成工坊</h1>
+        <h1>AI 造句</h1>
         <span className="workshop-channel">
           AI:{settings.ai.model_label ?? settings.ai.model?.split("/").pop() ?? channel}
         </span>
@@ -231,7 +231,7 @@ export function WorkshopPage({
         {(
           [
             ["level", "按等级生成", "配合今日练习的整句题"],
-            ["scenario", "场景对话(不分等级)", "一段真实对话,去「场景」页练"],
+            ["scenario", "场景对话(不分等级)", "一段真实对话,去「情景对话」练"],
           ] as const
         ).map(([key, label, hint]) => (
           <button
@@ -403,7 +403,7 @@ export function WorkshopPage({
       {summary && (
         <div className="workshop-summary">
           {/* 场景模式的收尾指引由后端 summary 自带(去「场景」页开练) */}
-          {mode === "scenario" ? summary : `${summary} · 已通过句子已自动入库,可去内容库开练`}
+          {mode === "scenario" ? summary : `${summary} · 已通过句子已自动入库,可去「我的句库」开练`}
         </div>
       )}
 
@@ -444,7 +444,7 @@ export function WorkshopPage({
 function GuideCard() {
   return (
     <div className="page page--workshop">
-      <h1>生成工坊</h1>
+      <h1>AI 造句</h1>
       <div className="workshop-guide">
         <h2>为任何场景生成专属练习</h2>
         <p>接入任一 AI 通道后,这里可以为「下周出差」「面试」等场景现场生成带全套解析的句集。</p>

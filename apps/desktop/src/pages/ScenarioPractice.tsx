@@ -181,6 +181,13 @@ export function ScenarioPracticeScreen({
     }
   }, [sentence, items, index]);
 
+  /** 回到上一句重练(跳过后想补练、或想再打一遍前一句) */
+  const prevTurn = useCallback(() => {
+    if (index <= 0) return;
+    setHistory((h) => h.slice(0, -1)); // 收回最后一条气泡,回到那句的练习态
+    setIndex((i) => i - 1);
+  }, [index]);
+
   // 键盘:Esc 退出整包、Shift+→ 跳到下一句(与等级练习的手感一致)
   useEffect(() => {
     if (done) return;
@@ -191,11 +198,14 @@ export function ScenarioPracticeScreen({
       } else if (e.key === "ArrowRight" && e.shiftKey) {
         e.preventDefault();
         skipTurn();
+      } else if (e.key === "ArrowLeft" && e.shiftKey) {
+        e.preventDefault();
+        prevTurn();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [done, onExit, skipTurn]);
+  }, [done, onExit, skipTurn, prevTurn]);
 
   const topBar = (
     <header className="practice-top">
@@ -222,6 +232,7 @@ export function ScenarioPracticeScreen({
             stats={{ sentences: tally.sentences, accuracy, avgWpm, durMs: tally.durMs }}
             actions={<Button onClick={onExit}>返回场景列表</Button>}
           >
+            <p className="scenario-replay__title">整段对话回顾</p>
             <div className="scenario-replay">
               {history.map((t, i) => (
                 <div
@@ -293,10 +304,19 @@ export function ScenarioPracticeScreen({
         </div>
       </main>
       <footer className="practice-footer">
+        <button
+          type="button"
+          className="practice-nav"
+          onClick={prevTurn}
+          disabled={index === 0}
+          title="回到上一句重练(Shift+←)"
+        >
+          ‹ 上一句
+        </button>
         <span className="practice-shortcuts">
-          空格 跳到下一词 · Enter 提交 · ↓ 显示答案 · Ctrl 朗读 · Shift+→ 跳过 · Esc 退出
+          空格 跳到下一词 · Enter 提交 · ↓ 显示答案 · Ctrl 朗读 · Shift+←→ 上一句/跳过 · Esc 退出
         </span>
-        <button type="button" className="practice-nav" onClick={skipTurn}>
+        <button type="button" className="practice-nav" onClick={skipTurn} title="跳过这句(Shift+→)">
           跳过这句 ›
         </button>
       </footer>

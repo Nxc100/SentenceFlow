@@ -55,7 +55,7 @@ body {
 }
 
 .app-nav {
-  width: 72px;
+  width: 84px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -82,7 +82,7 @@ body {
 }
 
 .app-nav__item {
-  width: 60px;
+  width: 74px;
   padding: 8px 0;
   border: none;
   background: none;
@@ -111,6 +111,9 @@ body {
 
 .app-nav__label {
   font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .app-nav__spacer {
@@ -1889,14 +1892,36 @@ select {
   background: var(--sf-primary-soft);
 }
 
+/* 完成页对话回放:限宽居中(否则气泡贴着屏幕两边散开)、
+   与统计卡拉开层次、滚动区自带边框提示可滚 */
 .scenario-replay {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 40vh;
+  max-height: 34vh;
   overflow-y: auto;
-  margin-top: 20px;
+  width: 100%;
+  max-width: 560px;
+  margin: 28px auto 0;
+  padding: 14px 16px;
   text-align: left;
+  background: var(--sf-panel);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+}
+
+.scenario-replay__title {
+  font-family: var(--sf-font-zh);
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-3);
+  text-align: center;
+  margin: 24px 0 -10px;
+}
+
+/* 完成页整体:内容纵向居中不贴顶 */
+.scenario-done {
+  justify-content: center;
+  padding: 16px 0 24px;
 }
 
 /* 工坊模式切换 */
@@ -1953,4 +1978,47 @@ select {
 .scenario-bubble--skipped .scenario-bubble__en {
   text-decoration: line-through;
   text-decoration-color: var(--sf-text-placeholder);
+}
+
+/* ---- 内容库分页与批量删除 ---- */
+.library-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 4px 0 8px;
+}
+
+.library-pager__info {
+  font-size: 12.5px;
+  color: var(--sf-text-3);
+  min-width: 160px;
+  text-align: center;
+}
+
+.library-bulk-del,
+.scenario-group__bulk {
+  margin-left: auto;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-card);
+  color: var(--sf-text-3);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--sf-dur-fast) var(--sf-ease-standard),
+    border-color var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.library-bulk-del:hover,
+.scenario-group__bulk:hover {
+  color: var(--sf-error);
+  border-color: var(--sf-error);
+}
+
+.scenario-group__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }

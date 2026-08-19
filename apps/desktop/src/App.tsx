@@ -31,14 +31,18 @@ export type NavKey =
   | "mylevel"
   | "settings";
 
-const NAV: Array<{ key: NavKey; label: string; icon: string }> = [
-  { key: "today", label: "今日", icon: "☀" },
-  { key: "library", label: "内容库", icon: "▤" },
-  { key: "scenario", label: "场景", icon: "💬" },
-  { key: "workshop", label: "生成工坊", icon: "✦" },
-  { key: "report", label: "报告", icon: "▦" },
-  { key: "mylevel", label: "水平", icon: "◎" },
-  { key: "settings", label: "设置", icon: "⚙" },
+/**
+ * 导航标签:小白用户第一眼要看懂"点进去能做什么"。
+ * label 保持两到四字(窄栏宽度),title 给一句话补充说明(悬停可见)。
+ */
+const NAV: Array<{ key: NavKey; label: string; icon: string; title: string }> = [
+  { key: "today", label: "今日练习", icon: "☀", title: "今天该练的句子:复习 + 新学" },
+  { key: "library", label: "我的句库", icon: "▤", title: "所有句子:出厂句库、我的句集、错题本、收藏" },
+  { key: "scenario", label: "情景对话", icon: "💬", title: "按真实生活场景练整段对话,不分等级" },
+  { key: "workshop", label: "AI 造句", icon: "✦", title: "用 AI 为任意场景生成练习句或整段对话" },
+  { key: "report", label: "学习报告", icon: "▦", title: "练习统计、热力图与薄弱分析" },
+  { key: "mylevel", label: "我的水平", icon: "◎", title: "当前等级、水平测试与手动切换等级" },
+  { key: "settings", label: "设置", icon: "⚙", title: "练习、声音、外观、AI 接入、授权与数据" },
 ];
 
 export function App() {
@@ -145,6 +149,7 @@ function Shell() {
             type="button"
             className={`app-nav__item${nav === item.key ? " app-nav__item--on" : ""}`}
             onClick={() => setNav(item.key)}
+            title={item.title}
           >
             <span className="app-nav__icon" aria-hidden>{item.icon}</span>
             <span className="app-nav__label">{item.label}</span>

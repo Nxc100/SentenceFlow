@@ -353,7 +353,7 @@ export function PracticeScreen({
           <div className="practice-empty__icon">🌱</div>
           <p className="practice-empty__title">这个等级还没有可练的句子</p>
           <p className="practice-empty__sub">
-            出厂句库正在成长中 —— 可以先切换到其他等级,或在生成工坊为这个等级生成专属句集。
+            出厂句库正在成长中 —— 可以先切换到其他等级,或去「AI 造句」为这个等级生成专属句集。
           </p>
           <Button onClick={onExit}>返回</Button>
         </main>

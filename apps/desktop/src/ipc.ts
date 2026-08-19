@@ -276,6 +276,9 @@ export const ipc = {
     invoke<Sentence[]>("list_sentences", { level, scene: scene ?? null }),
   getSentence: (id: number) => invoke<Sentence | null>("get_sentence", { id }),
   deleteUserSentence: (id: number) => invoke<void>("delete_user_sentence", { id }),
+  /** 按场景批量删除「我的句集」里的句子,返回删除条数 */
+  deleteUserSentencesByScene: (level: LevelId, scene: string) =>
+    invoke<number>("delete_user_sentences_by_scene", { level, scene }),
   importTabSentences: (level: LevelId, text: string) =>
     invoke<number>("import_tab_sentences", { level, text }),
 
@@ -292,6 +295,9 @@ export const ipc = {
   listPackSentences: (pack: string) => invoke<Sentence[]>("list_pack_sentences", { pack }),
   startScenarioSession: (pack: string) => invoke<Session>("start_scenario_session", { pack }),
   deleteUserScenePack: (pack: string) => invoke<number>("delete_user_scene_pack", { pack }),
+  /** 批量删除自建场景包(出厂包自动跳过),返回删掉的句子总数 */
+  deleteUserScenePacks: (packs: string[]) =>
+    invoke<number>("delete_user_scene_packs", { packs }),
 
   placementStart: (allowListening: boolean) =>
     invoke<PlacementStep>("placement_start", { allowListening }),

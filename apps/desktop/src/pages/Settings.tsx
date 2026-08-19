@@ -258,7 +258,7 @@ function AiSection() {
     <>
       <h2>AI 接入</h2>
       <p className="settings-hint">
-        任一通道就绪即解锁生成工坊、答疑与周点评。<b>不配置也不影响任何学习功能。</b>
+        任一通道就绪即解锁「AI 造句」、答疑与周点评。<b>不配置也不影响任何学习功能。</b>
       </p>
       {CHANNELS.map((c) => {
         const status = statuses[c.id];
@@ -332,7 +332,7 @@ function AiSection() {
                       const result = await ipc.testChannelKey(c.id, (keys[c.id] ?? "").trim());
                       setStatuses((s) => ({ ...s, [c.id]: result }));
                       if (result.state === "ready") {
-                        toast.show("已连通,生成工坊可用");
+                        toast.show("已连通,「AI 造句」可用");
                         setKeys((k) => ({ ...k, [c.id]: "" }));
                       } else if (result.state === "error") {
                         toast.show(result.message);

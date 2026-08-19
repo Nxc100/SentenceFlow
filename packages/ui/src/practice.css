@@ -359,9 +359,21 @@
   color: var(--sf-text);
   margin-bottom: 24px;
 }
+/* 统计卡片行:类名曾从 __stats 改为 __grid,样式漏改导致四张卡竖排
+   (实测缺陷)。两个类名都保留,避免历史用法再次失样。 */
+.sf-completion__grid,
 .sf-completion__stats {
   display: flex;
   justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
+}
+.sf-completion__grid > * {
+  min-width: 128px;
+}
+.sf-completion__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
 }

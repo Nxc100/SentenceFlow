@@ -139,6 +139,34 @@ pub fn delete_user_sentence(state: S<'_>, id: i64) -> CmdResult<()> {
     Ok(())
 }
 
+/// 按场景批量删除「我的句集」里的句子(出厂句库不可删)。
+/// 返回实际删除的条数;`scene` 为空串时删该等级下所有无场景的导入句。
+#[tauri::command]
+pub fn delete_user_sentences_by_scene(
+    state: S<'_>,
+    level: LevelId,
+    scene: String,
+) -> CmdResult<u32> {
+    use sf_pipeline::store::ContentIndex;
+    let content = state.content.lock().expect("content lock");
+    let Some(user) = &content.user else {
+        return Err(CmdError::new("content", "用户句库未初始化"));
+    };
+    // 只删用户库里、该等级、该场景、且不属于场景对话包的句子
+    let victims: Vec<i64> = user
+        .sentences_by_level(level)?
+        .into_iter()
+        .filter(|s| s.scene == scene)
+        .map(|s| s.id)
+        .collect();
+    let n = victims.len() as u32;
+    for id in victims {
+        user.delete_sentence(id)?;
+    }
+    let _ = ContentIndex::USER_ID_OFFSET; // 本地库 id,无需偏移
+    Ok(n)
+}
+
 /// 我的句集导入:"中文 Tab 英文"双列文本 (§4.3). Words/chunks are left empty —
 /// imported sentences practise as typing-only until 解析 is generated for
 /// them via the workshop.
@@ -506,6 +534,24 @@ pub fn start_scenario_session(state: S<'_>, pack: String) -> CmdResult<Session> 
             .collect(),
         overflow_reviews: 0,
     })
+}
+
+/// 批量删除多个自建场景包(按分类清空 / 多选删除)。出厂包自动跳过,
+/// 返回实际删掉的句子总数。
+#[tauri::command]
+pub fn delete_user_scene_packs(state: S<'_>, packs: Vec<String>) -> CmdResult<u32> {
+    let content = state.content.lock().expect("content lock");
+    let Some(user) = &content.user else {
+        return Err(CmdError::new("content", "用户句库未初始化"));
+    };
+    let mut removed = 0u32;
+    for pack in packs {
+        if !content.factory.sentences_by_pack(&pack)?.is_empty() {
+            continue; // 出厂包不可删,静默跳过
+        }
+        removed += user.delete_pack(&pack)?;
+    }
+    Ok(removed)
 }
 
 /// 删除整个用户生成的场景包(出厂包不可删)。

@@ -13,6 +13,9 @@ import type { PracticeLaunch } from "./Practice";
 
 const USER_ID_OFFSET = 1_000_000_000;
 
+/** 每页句数:一屏放得下、翻页成本低(句子多时不再无限长列表) */
+const PAGE_SIZE = 20;
+
 type Tab = "factory" | "mine" | "wrongbook" | "favorites";
 
 export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) => void }) {
@@ -26,6 +29,16 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [importText, setImportText] = useState("");
   const [showImport, setShowImport] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // 换页签/等级/场景后回到第 1 页(否则会停在越界页显示空列表)
+  useEffect(() => {
+    setPage(1);
+  }, [tab, level, scene]);
+
+  const pageCount = Math.max(1, Math.ceil(sentences.length / PAGE_SIZE));
+  const pageSafe = Math.min(page, pageCount);
+  const pageItems = sentences.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
 
   const refresh = useCallback(async () => {
     setExpanded(null);
@@ -62,7 +75,7 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
   return (
     <div className="page page--library">
       <header className="page__header">
-        <h1>内容库</h1>
+        <h1>我的句库</h1>
         <select
           className="level-select"
           value={level}
@@ -151,11 +164,33 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
               {s}
             </button>
           ))}
+          {/* 按场景批量删除:只对「我的句集」开放(出厂句库不可删) */}
+          {tab === "mine" && scene !== null && sentences.length > 0 && (
+            <button
+              type="button"
+              className="library-bulk-del"
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    `确定删除「${scene}」场景下的全部 ${sentences.length} 句吗?此操作不可撤销。`,
+                  )
+                ) {
+                  return;
+                }
+                const n = await ipc.deleteUserSentencesByScene(level, scene);
+                toast.show(`已删除「${scene}」的 ${n} 句`);
+                setScene(null);
+                void refresh();
+              }}
+            >
+              🗑 删除「{scene}」全部 {sentences.length} 句
+            </button>
+          )}
         </div>
       )}
 
       <ul className="library-list">
-        {sentences.map((s) => (
+        {pageItems.map((s) => (
           <li key={s.id} className="library-item">
             <button
               type="button"
@@ -201,6 +236,31 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
         ))}
         {sentences.length === 0 && <li className="library-empty">这里还没有句子。</li>}
       </ul>
+
+      {/* 分页:句子多时不再是无限长列表(§4.3 体验) */}
+      {sentences.length > PAGE_SIZE && (
+        <nav className="library-pager" aria-label="分页">
+          <button
+            type="button"
+            className="practice-nav"
+            disabled={pageSafe <= 1}
+            onClick={() => setPage(pageSafe - 1)}
+          >
+            ‹ 上一页
+          </button>
+          <span className="library-pager__info">
+            第 {pageSafe} / {pageCount} 页 · 共 {sentences.length} 句
+          </span>
+          <button
+            type="button"
+            className="practice-nav"
+            disabled={pageSafe >= pageCount}
+            onClick={() => setPage(pageSafe + 1)}
+          >
+            下一页 ›
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

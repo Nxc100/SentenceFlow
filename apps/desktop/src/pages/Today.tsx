@@ -53,7 +53,7 @@ export function TodayPage({ onStart }: { onStart: (launch: PracticeLaunch) => vo
             </Button>
             {overview.due_count === 0 && overview.new_available === 0 && (
               <p className="today-empty">
-                今天没有待练句子 —— 可切换等级、去内容库自由练,或在生成工坊生成新句集。
+                今天没有待练句子 —— 可切换等级、去「我的句库」自由练,或用「AI 造句」生成新句集。
               </p>
             )}
           </div>

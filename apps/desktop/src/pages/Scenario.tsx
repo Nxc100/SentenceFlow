@@ -60,25 +60,55 @@ export function ScenarioPage({
   return (
     <div className="page page--scenario">
       <header className="page__header">
-        <h1>场景</h1>
+        <h1>情景对话</h1>
         <Button variant="ghost" onClick={onGenerate}>
-          生成我的场景 →
+          用 AI 生成新场景 →
         </Button>
       </header>
       <p className="scenario-intro">
-        围绕真实生活场景的整段对话练习,不分等级——要用哪个场景就练哪个。
+        照着真实生活里的整段对话练:点餐、值机、看病……不分等级,要用哪个练哪个。
       </p>
 
       {packs.length === 0 && (
         <div className="scenario-empty">
-          <p>还没有场景包。去生成工坊选「场景对话」,描述一个场景就能生成。</p>
+          <p>还没有对话场景。去「AI 造句」选「场景对话」,描述一个场景就能生成。</p>
           <Button onClick={onGenerate}>去生成我的场景</Button>
         </div>
       )}
 
-      {categories.map((cat) => (
+      {categories.map((cat) => {
+        const deletable = packs.filter((p) => p.category === cat && p.from_user);
+        return (
         <section key={cat} className="scenario-group">
-          <h2 className="scenario-group__title">{cat}</h2>
+          <h2 className="scenario-group__title">
+            {cat}
+            {/* 批量删除:只清自建场景,出厂场景不受影响 */}
+            {deletable.length > 0 && (
+              <button
+                type="button"
+                className="scenario-group__bulk"
+                onClick={async () => {
+                  const total = deletable.reduce((n, p) => n + p.sentence_count, 0);
+                  if (
+                    !window.confirm(
+                      `确定删除「${cat}」下我生成的 ${deletable.length} 个场景(共 ${total} 句)吗?此操作不可撤销。`,
+                    )
+                  ) {
+                    return;
+                  }
+                  try {
+                    const n = await ipc.deleteUserScenePacks(deletable.map((p) => p.pack));
+                    toast.show(`已删除 ${deletable.length} 个场景、${n} 句`);
+                    void refresh();
+                  } catch (e) {
+                    toast.show(String((e as CmdError).message ?? e));
+                  }
+                }}
+              >
+                🗑 清空我生成的({deletable.length})
+              </button>
+            )}
+          </h2>
           <div className="scenario-grid">
             {packs
               .filter((p) => p.category === cat)
@@ -112,7 +142,8 @@ export function ScenarioPage({
               ))}
           </div>
         </section>
-      ))}
+        );
+      })}
 
       {preview && (
         <div
