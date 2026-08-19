@@ -39,6 +39,8 @@ const HISTORY_WINDOW: u32 = 24;
 const THREAD_MESSAGE_CAP: u32 = 500;
 /// 智能体空转超时:这么久没有任何事件就停掉子进程(权限询问挂起兜底)。
 const AGENT_IDLE_TIMEOUT: Duration = Duration::from_secs(180);
+/// 聊天空转超时:opencode CLI 真机上出现过续聊无限挂起,不能让界面一直转。
+const CHAT_IDLE_TIMEOUT: Duration = Duration::from_secs(120);
 /// 纠错协议标记(生僻括号,避免撞正文 — §3.4)。
 const FIX_MARKER: &str = "⟦fix⟧";
 
@@ -52,6 +54,10 @@ pub struct ChatThreadInfo {
     pub title: String,
     pub role_id: String,
     pub workdir: String,
+    /// 本会话固定的通道/模型(空 = 跟随设置)
+    pub channel: String,
+    pub model: String,
+    pub model_label: String,
     pub updated_at: i64,
 }
 
@@ -63,9 +69,21 @@ impl From<ChatThreadRow> for ChatThreadInfo {
             title: t.title,
             role_id: t.role_id,
             workdir: t.workdir,
+            channel: t.channel,
+            model: t.model,
+            model_label: t.model_label,
             updated_at: t.updated_at,
         }
     }
+}
+
+/// 删除会话的结果(智能体可选连带清理工作目录)。
+#[derive(Debug, Serialize)]
+pub struct DeleteOutcome {
+    /// 工作目录已移入回收站
+    pub workdir_trashed: bool,
+    /// 给用户看的一句话说明(未清理时说明原因)
+    pub note: String,
 }
 
 /// 一条历史消息;fix 为空表示无纠错卡。
@@ -306,17 +324,163 @@ pub fn chat_history(state: S<'_>, thread_id: i64) -> CmdResult<Vec<ChatMessage>>
         .collect())
 }
 
+/// 本会话固定模型(把 opencode 的 `/model` 包成可视化操作):
+/// `channel` 为空 = 恢复跟随全局设置。下一条消息起生效;opencode 会话
+/// 换模型后仍沿用同一 `-s` 会话(实机验证记忆不丢)。
 #[tauri::command]
-pub fn chat_thread_delete(state: S<'_>, thread_id: i64) -> CmdResult<()> {
+pub fn chat_thread_set_model(
+    state: S<'_>,
+    thread_id: i64,
+    channel: Option<ChannelId>,
+    model: String,
+    model_label: String,
+) -> CmdResult<ChatThreadInfo> {
     let progress = state.progress.lock().expect("progress lock");
-    progress.chat_thread_delete(thread_id)
+    let ch = channel.map(channel_key).unwrap_or_default();
+    // 通道为空即"跟随设置",模型一并清掉,避免半吊子状态
+    let (model, label) = if ch.is_empty() {
+        (String::new(), String::new())
+    } else {
+        (model, model_label)
+    };
+    progress.chat_thread_set_model(thread_id, ch, &model, &label)?;
+    let thread = progress
+        .chat_thread_get(thread_id)?
+        .ok_or_else(|| CmdError::new("chat", "会话不存在"))?;
+    Ok(thread.into())
 }
 
-/// [停止]:让所有进行中的聊天/智能体流收尾(保留已收到的部分)。
 #[tauri::command]
-pub fn chat_stop(state: S<'_>) -> CmdResult<()> {
-    state.chat_notify.notify_waiters();
+pub fn chat_thread_delete(
+    state: S<'_>,
+    thread_id: i64,
+    delete_workdir: bool,
+) -> CmdResult<DeleteOutcome> {
+    // 先停掉这个会话可能还在跑的流(不能一边删一边写)
+    state.chat_cancel(thread_id);
+    let workdir = {
+        let progress = state.progress.lock().expect("progress lock");
+        let thread = progress.chat_thread_get(thread_id)?;
+        progress.chat_thread_delete(thread_id)?;
+        thread.filter(|t| t.mode == "agent").map(|t| t.workdir)
+    };
+    if !delete_workdir {
+        return Ok(DeleteOutcome {
+            workdir_trashed: false,
+            note: String::new(),
+        });
+    }
+    let Some(dir) = workdir.filter(|d| !d.trim().is_empty()) else {
+        return Ok(DeleteOutcome {
+            workdir_trashed: false,
+            note: "这个会话没有关联文件夹".into(),
+        });
+    };
+    match trash_workdir(&state, Path::new(&dir)) {
+        Ok(()) => Ok(DeleteOutcome {
+            workdir_trashed: true,
+            note: format!("文件夹已移入回收站:{dir}"),
+        }),
+        Err(why) => Ok(DeleteOutcome {
+            workdir_trashed: false,
+            note: format!("会话已删除,但文件夹保留了:{why}"),
+        }),
+    }
+}
+
+/// 把智能体工作目录移入系统回收站(可从回收站找回,比直接抹掉安全)。
+/// 层层设防:只删真实存在的普通目录,系统目录/用户主目录/桌面文档等
+/// 一律拒绝,应用自身数据目录及其祖先也拒绝。
+fn trash_workdir(state: &AppState, dir: &Path) -> Result<(), String> {
+    let dir = dir
+        .canonicalize()
+        .map_err(|_| "文件夹不存在或已被移走".to_string())?;
+    if !dir.is_dir() {
+        return Err("这不是一个文件夹".into());
+    }
+    if dir.parent().is_none() {
+        return Err("这是磁盘根目录,不能删".into());
+    }
+    for guard in protected_dirs(state) {
+        let Ok(guard) = guard.canonicalize() else {
+            continue;
+        };
+        if dir == guard {
+            return Err("这是系统或个人重要目录,不能删".into());
+        }
+        // 目标是受保护目录的祖先 ⇒ 删它会连带删掉受保护目录
+        if guard.starts_with(&dir) {
+            return Err("这个文件夹里包含系统或应用数据,不能删".into());
+        }
+    }
+    trash::delete(&dir).map_err(|e| format!("系统拒绝了这次删除({e})"))
+}
+
+/// 绝不允许被清理的目录清单。
+fn protected_dirs(state: &AppState) -> Vec<std::path::PathBuf> {
+    let mut dirs = vec![state.paths.root.clone()];
+    if let Some(home) = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")) {
+        let home = std::path::PathBuf::from(home);
+        for sub in [
+            "",
+            "Desktop",
+            "Documents",
+            "Downloads",
+            "Pictures",
+            "Music",
+            "Videos",
+            "OneDrive",
+            "桌面",
+            "文档",
+            "下载",
+        ] {
+            dirs.push(if sub.is_empty() {
+                home.clone()
+            } else {
+                home.join(sub)
+            });
+        }
+    }
+    for var in [
+        "SystemRoot",
+        "ProgramFiles",
+        "ProgramFiles(x86)",
+        "ProgramData",
+    ] {
+        if let Some(v) = std::env::var_os(var) {
+            dirs.push(std::path::PathBuf::from(v));
+        }
+    }
+    if let Some(users) = std::env::var_os("SystemDrive") {
+        let drive = std::path::PathBuf::from(format!("{}\\", users.to_string_lossy()));
+        dirs.push(drive.join("Users"));
+    }
+    if let Ok(exe) = std::env::current_exe()
+        && let Some(parent) = exe.parent()
+    {
+        dirs.push(parent.to_path_buf());
+    }
+    dirs
+}
+
+/// [停止]:只叫停这一个会话的流(其余会话继续),保留已收到的部分。
+#[tauri::command]
+pub fn chat_stop(state: S<'_>, thread_id: i64) -> CmdResult<()> {
+    state.chat_cancel(thread_id);
     Ok(())
+}
+
+/// 仍在生成回复的会话 id —— 前端离开页面再回来时据此恢复「生成中」指示
+/// (回复本身由随后的 `chat://done` 整段补齐)。
+#[tauri::command]
+pub fn chat_active_threads(state: S<'_>) -> CmdResult<Vec<i64>> {
+    Ok(state
+        .chat_cancels
+        .lock()
+        .expect("chat cancels lock")
+        .keys()
+        .copied()
+        .collect())
 }
 
 /// 系统文件夹选择器(智能体工作目录)。返回 None = 用户取消。
@@ -327,6 +491,47 @@ pub async fn pick_folder(title: String) -> CmdResult<Option<String>> {
         .pick_folder()
         .await;
     Ok(picked.map(|h| h.path().to_string_lossy().into_owned()))
+}
+
+// ------------------------------------------------------------- model resolution
+
+pub fn channel_key(c: ChannelId) -> &'static str {
+    match c {
+        ChannelId::Opencode => "opencode",
+        ChannelId::Deepseek => "deepseek",
+        ChannelId::Zen => "zen",
+        ChannelId::Ollama => "ollama",
+    }
+}
+
+pub fn channel_from_key(s: &str) -> Option<ChannelId> {
+    match s {
+        "opencode" => Some(ChannelId::Opencode),
+        "deepseek" => Some(ChannelId::Deepseek),
+        "zen" => Some(ChannelId::Zen),
+        "ollama" => Some(ChannelId::Ollama),
+        _ => None,
+    }
+}
+
+/// 本会话固定的通道/模型优先(每会话切模型);会话没定或定的通道已被
+/// 内容包策略停用 → 回落全局设置。
+fn resolve_channel_model(
+    state: &AppState,
+    thread: &ChatThreadRow,
+) -> CmdResult<(ChannelId, String)> {
+    if let Some(ch) = channel_from_key(&thread.channel)
+        && state.policy.is_enabled(ch)
+        && !thread.model.is_empty()
+    {
+        return Ok((ch, thread.model.clone()));
+    }
+    let settings = state.settings.lock().expect("settings lock");
+    let ch = settings
+        .ai
+        .channel
+        .ok_or_else(|| CmdError::new("no_channel", "未配置 AI 通道"))?;
+    Ok((ch, settings.ai.model.clone().unwrap_or_default()))
 }
 
 // ------------------------------------------------------------- chat send
@@ -343,16 +548,9 @@ pub async fn chat_send(
     if text.is_empty() {
         return Err(CmdError::new("chat", "消息为空"));
     }
-    let (channel, model, level) = {
+    let level = {
         let settings = state.settings.lock().expect("settings lock");
-        (
-            settings
-                .ai
-                .channel
-                .ok_or_else(|| CmdError::new("no_channel", "未配置 AI 通道"))?,
-            settings.ai.model.clone().unwrap_or_default(),
-            settings.level.unwrap_or(LevelId::L1),
-        )
+        settings.level.unwrap_or(LevelId::L1)
     };
     let (thread, turns) = {
         let progress = state.progress.lock().expect("progress lock");
@@ -389,6 +587,8 @@ pub async fn chat_send(
         progress.chat_thread_touch(thread_id, now)?;
         (thread, turns)
     };
+    // 本会话固定的通道/模型优先,否则跟随全局设置(每会话切模型)
+    let (channel, model) = resolve_channel_model(&state, &thread)?;
     let can_do = state
         .spec_for(level)
         .map(|s| s.can_do.join("、"))
@@ -416,6 +616,14 @@ pub async fn chat_send(
     Ok(())
 }
 
+/// 一轮流式的结局。
+enum StreamOutcome {
+    /// 正常收流(或被用户停止),带已收到的正文
+    Finished { text: String, cancelled: bool },
+    /// 传输层失败,带已收到的正文
+    Failed { text: String, error: ChannelError },
+}
+
 async fn run_chat_stream(
     app: AppHandle,
     state: Arc<AppState>,
@@ -423,21 +631,106 @@ async fn run_chat_stream(
     adapter: Box<dyn ChannelAdapter>,
     req: ChatRequest,
 ) {
+    // 本会话专属停止信号:切到别的会话不影响这个流,[停止] 也只掐这一个
+    let cancel_handle = state.chat_cancel_register(thread_id);
+    // 续聊拿到空回复时的重开方案:丢掉服务端会话、用本地历史从头说一遍。
+    // 本地 chat_message 才是事实源,opencode 会话只是省 token 的优化。
+    let retry = req.session.is_some().then(|| ChatRequest {
+        session: None,
+        ..req.clone()
+    });
+
+    let mut outcome = stream_once(
+        &app,
+        &state,
+        thread_id,
+        adapter.as_ref(),
+        req,
+        &cancel_handle,
+    )
+    .await;
+
+    if let StreamOutcome::Finished {
+        text,
+        cancelled: false,
+    } = &outcome
+        && text.trim().is_empty()
+        && let Some(retry_req) = retry
+    {
+        // 实机遇到过:某个 opencode 会话续聊后只回 step_finish、不吐 text
+        // (tokens 照扣)。会话废了就换一个,用户无感。
+        {
+            let progress = state.progress.lock().expect("progress lock");
+            let _ = progress.chat_thread_set_session(thread_id, "");
+        }
+        outcome = stream_once(
+            &app,
+            &state,
+            thread_id,
+            adapter.as_ref(),
+            retry_req,
+            &cancel_handle,
+        )
+        .await;
+    }
+
+    state.chat_cancel_finish(thread_id, &cancel_handle);
+    match outcome {
+        StreamOutcome::Finished { text, cancelled } => {
+            finalize_reply(&app, &state, thread_id, &text, cancelled);
+            if text.trim().is_empty() && !cancelled {
+                // 绝不留白:没有回复也要明说,别让用户以为卡住了
+                let _ = app.emit(
+                    "chat://error",
+                    ErrorPayload {
+                        thread_id,
+                        message: "这次没有收到回复(可能被限速,或这轮上下文太长)——\
+                                  可以再发一次,或在上方换个模型试试"
+                            .into(),
+                        retry_after_secs: None,
+                    },
+                );
+            }
+        }
+        StreamOutcome::Failed { text, error } => {
+            // 出错也不丢已收内容:先落部分回复再报错
+            finalize_reply(&app, &state, thread_id, &text, true);
+            emit_chat_error(&app, thread_id, &error);
+        }
+    }
+}
+
+/// 跑一轮流:把 text 块实时推给前端,返回累计正文。
+async fn stream_once(
+    app: &AppHandle,
+    state: &Arc<AppState>,
+    thread_id: i64,
+    adapter: &dyn ChannelAdapter,
+    req: ChatRequest,
+    cancel_handle: &tokio::sync::Notify,
+) -> StreamOutcome {
     let mut stream = match adapter.chat_stream(req).await {
         Ok(s) => s,
-        Err(e) => {
-            emit_chat_error(&app, thread_id, &e);
-            return;
+        Err(error) => {
+            return StreamOutcome::Failed {
+                text: String::new(),
+                error,
+            };
         }
     };
     let mut full = String::new();
-    let mut cancelled = false;
-    let mut cancel = Box::pin(state.chat_notify.notified());
+    let mut cancel = Box::pin(cancel_handle.notified());
     loop {
         tokio::select! {
             _ = &mut cancel => {
-                cancelled = true;
-                break;
+                return StreamOutcome::Finished { text: full, cancelled: true };
+            }
+            // 彻底没动静的兜底(CLI 真机上出现过无限挂起)
+            _ = tokio::time::sleep(CHAT_IDLE_TIMEOUT) => {
+                return StreamOutcome::Failed {
+                    text: full,
+                    error: ChannelError::Timeout,
+                };
             }
             chunk = stream.next() => match chunk {
                 Some(Ok(GenChunk::Text { text })) => {
@@ -452,17 +745,13 @@ async fn run_chat_stream(
                     let progress = state.progress.lock().expect("progress lock");
                     let _ = progress.spend_add(now_unix(), "chat", prompt_tokens, completion_tokens, 0.0);
                 }
-                Some(Ok(GenChunk::Done)) | None => break,
-                Some(Err(e)) => {
-                    // 出错也不丢已收内容:先落部分回复再报错
-                    finalize_reply(&app, &state, thread_id, &full, true);
-                    emit_chat_error(&app, thread_id, &e);
-                    return;
+                Some(Ok(GenChunk::Done)) | None => {
+                    return StreamOutcome::Finished { text: full, cancelled: false };
                 }
+                Some(Err(error)) => return StreamOutcome::Failed { text: full, error },
             }
         }
     }
-    finalize_reply(&app, &state, thread_id, &full, cancelled);
 }
 
 /// 剥纠错标记 → 落库 → 发 done。partial = 被停止/出错截断。
@@ -598,14 +887,8 @@ pub async fn agent_send(
     if text.is_empty() {
         return Err(CmdError::new("chat", "消息为空"));
     }
-    let (bin_override, proxy, model) = {
+    let (bin_override, proxy, global_model) = {
         let settings = state.settings.lock().expect("settings lock");
-        // 模型:仅当所选模型是 opencode 目录下的名字才透传,否则用 CLI 默认
-        let model = settings
-            .ai
-            .model
-            .clone()
-            .filter(|m| m.starts_with("opencode/"));
         (
             settings.ai.opencode_bin.clone(),
             settings
@@ -613,7 +896,7 @@ pub async fn agent_send(
                 .proxy_url
                 .clone()
                 .filter(|p| !p.trim().is_empty()),
-            model,
+            settings.ai.model.clone(),
         )
     };
     let bin = sf_llm::channels::opencode::locate_binary(bin_override.as_deref().map(Path::new))
@@ -648,6 +931,11 @@ pub async fn agent_send(
             "工作目录不存在或已被移动——请新建会话重新选择",
         ));
     }
+    // 模型:本会话固定的优先,否则全局设置;两者都不是 opencode 目录下的
+    // 名字就交给 CLI 用它自己的默认(智能体跑的就是 opencode)。
+    let model = [thread.model.clone(), global_model.unwrap_or_default()]
+        .into_iter()
+        .find(|m| m.starts_with("opencode/"));
     let state = state.inner().clone();
     tauri::async_runtime::spawn(async move {
         run_agent(app, state, thread, bin, proxy, model, text).await;
@@ -665,6 +953,8 @@ async fn run_agent(
     text: String,
 ) {
     let thread_id = thread.id;
+    // 本会话专属停止信号(切走不打断,[停止] 只掐这一个)
+    let cancel_handle = state.chat_cancel_register(thread_id);
     let mut cmd = sf_llm::channels::opencode::hidden_command(&bin, proxy.as_deref());
     cmd.args(["run", "--format", "json"]);
     if let Some(m) = &model {
@@ -683,6 +973,7 @@ async fn run_agent(
     {
         Ok(c) => c,
         Err(e) => {
+            state.chat_cancel_finish(thread_id, &cancel_handle);
             emit_chat_error(&app, thread_id, &ChannelError::Process(e.to_string()));
             return;
         }
@@ -703,6 +994,7 @@ async fn run_agent(
         })
     });
     let Some(stdout) = child.stdout.take() else {
+        state.chat_cancel_finish(thread_id, &cancel_handle);
         emit_chat_error(
             &app,
             thread_id,
@@ -721,7 +1013,7 @@ async fn run_agent(
     let mut full = String::new();
     let mut session_saved = !thread.oc_session.is_empty();
     let mut tokens = (0u64, 0u64);
-    let mut cancel = Box::pin(state.chat_notify.notified());
+    let mut cancel = Box::pin(cancel_handle.notified());
     let end = loop {
         tokio::select! {
             _ = &mut cancel => break EndReason::Cancelled,
@@ -757,6 +1049,7 @@ async fn run_agent(
             }
         }
     };
+    state.chat_cancel_finish(thread_id, &cancel_handle);
     if tokens.0 + tokens.1 > 0 {
         let progress = state.progress.lock().expect("progress lock");
         let _ = progress.spend_add(now_unix(), "agent", tokens.0, tokens.1, 0.0);
@@ -792,7 +1085,21 @@ async fn run_agent(
                     },
                 );
             } else {
+                let empty = full.trim().is_empty();
                 finalize_agent_reply(&app, &state, thread_id, &full, false);
+                if empty {
+                    // 绝不留白:跑完却没有任何输出时明确告诉用户
+                    let _ = app.emit(
+                        "chat://error",
+                        ErrorPayload {
+                            thread_id,
+                            message: "这次没有返回内容(可能被限速,或这个会话上下文太长)——\
+                                      可以再说一次,或新建一个会话"
+                                .into(),
+                            retry_after_secs: None,
+                        },
+                    );
+                }
             }
         }
         EndReason::Cancelled => {
@@ -911,6 +1218,15 @@ mod tests {
         assert!(s.contains("job interviewer"));
         assert!(s.contains("Stay in character"));
         assert!(s.contains("⟦fix⟧"));
+    }
+
+    #[test]
+    fn channel_keys_roundtrip() {
+        for c in ChannelId::ALL {
+            assert_eq!(channel_from_key(channel_key(c)), Some(c));
+        }
+        assert_eq!(channel_from_key(""), None);
+        assert_eq!(channel_from_key("nope"), None);
     }
 
     #[test]

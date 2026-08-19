@@ -246,7 +246,17 @@ export interface ChatThreadInfo {
   title: string;
   role_id: string;
   workdir: string;
+  /** 本会话固定的通道/模型(空串 = 跟随「设置 · AI 接入」) */
+  channel: ChannelId | "";
+  model: string;
+  model_label: string;
   updated_at: number;
+}
+
+/** 删除会话的结果(智能体可选连带把工作目录移入回收站) */
+export interface DeleteOutcome {
+  workdir_trashed: boolean;
+  note: string;
 }
 
 /** 纠错小卡:更好的说法 + 一句为什么 */
@@ -401,10 +411,22 @@ export const ipc = {
     }),
   chatThreads: () => invoke<ChatThreadInfo[]>("chat_threads"),
   chatHistory: (threadId: number) => invoke<ChatMessage[]>("chat_history", { threadId }),
-  chatThreadDelete: (threadId: number) => invoke<void>("chat_thread_delete", { threadId }),
+  /** deleteWorkdir 仅对智能体会话有意义:把工作目录移入系统回收站 */
+  chatThreadDelete: (threadId: number, deleteWorkdir = false) =>
+    invoke<DeleteOutcome>("chat_thread_delete", { threadId, deleteWorkdir }),
+  /** 本会话固定模型;channel 传 null = 恢复跟随设置。下一条消息起生效 */
+  chatThreadSetModel: (
+    threadId: number,
+    channel: ChannelId | null,
+    model: string,
+    modelLabel: string,
+  ) => invoke<ChatThreadInfo>("chat_thread_set_model", { threadId, channel, model, modelLabel }),
   chatSend: (threadId: number, text: string, fixEnabled: boolean) =>
     invoke<void>("chat_send", { threadId, text, fixEnabled }),
-  chatStop: () => invoke<void>("chat_stop"),
+  /** [停止]:只停这一个会话的流,其他会话继续 */
+  chatStop: (threadId: number) => invoke<void>("chat_stop", { threadId }),
+  /** 仍在生成回复的会话 id(离开页面再回来时恢复「生成中」指示) */
+  chatActiveThreads: () => invoke<number[]>("chat_active_threads"),
   agentSend: (threadId: number, text: string) => invoke<void>("agent_send", { threadId, text }),
   /** 系统文件夹选择器;null = 用户取消 */
   pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),

@@ -31,8 +31,9 @@ pub struct AppState {
     pub gen_cancel: AtomicBool,
     /// 进行中的定级测试(一次一个;开始新测试即丢弃旧的)。
     pub placement: Mutex<Option<sf_core::PlacementTest>>,
-    /// 聊天/智能体流的停止信号(chat_stop → notify_waiters,AI 聊天模块)。
-    pub chat_notify: tokio::sync::Notify,
+    /// 每个聊天会话各自的停止信号:多个会话可同时流式,[停止] 只掐当前这个
+    /// (AI 聊天模块;切到别的会话不打断已在跑的回复)。
+    pub chat_cancels: Mutex<std::collections::HashMap<i64, std::sync::Arc<tokio::sync::Notify>>>,
 }
 
 impl AppState {
@@ -100,7 +101,7 @@ impl AppState {
             tts,
             gen_cancel: AtomicBool::new(false),
             placement: Mutex::new(None),
-            chat_notify: tokio::sync::Notify::new(),
+            chat_cancels: Mutex::new(std::collections::HashMap::new()),
         })
     }
 
@@ -114,6 +115,39 @@ impl AppState {
         let progress = self.progress.lock().expect("progress lock");
         progress.kv_set(SETTINGS_KEY, &serde_json::to_string(settings)?)?;
         Ok(())
+    }
+
+    /// 注册一个会话的停止信号(同一会话再次发送会顶掉旧的)。
+    pub fn chat_cancel_register(&self, thread_id: i64) -> std::sync::Arc<tokio::sync::Notify> {
+        let handle = std::sync::Arc::new(tokio::sync::Notify::new());
+        self.chat_cancels
+            .lock()
+            .expect("chat cancels lock")
+            .insert(thread_id, handle.clone());
+        handle
+    }
+
+    /// [停止]:只叫停这一个会话,其余会话的流继续。
+    pub fn chat_cancel(&self, thread_id: i64) {
+        if let Some(h) = self
+            .chat_cancels
+            .lock()
+            .expect("chat cancels lock")
+            .get(&thread_id)
+        {
+            h.notify_waiters();
+        }
+    }
+
+    /// 流结束时摘掉自己的信号(若已被新一轮顶替则保留对方的)。
+    pub fn chat_cancel_finish(&self, thread_id: i64, mine: &std::sync::Arc<tokio::sync::Notify>) {
+        let mut map = self.chat_cancels.lock().expect("chat cancels lock");
+        if map
+            .get(&thread_id)
+            .is_some_and(|cur| std::sync::Arc::ptr_eq(cur, mine))
+        {
+            map.remove(&thread_id);
+        }
     }
 
     pub fn request_gen_cancel(&self) {

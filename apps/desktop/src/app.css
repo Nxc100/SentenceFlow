@@ -2470,3 +2470,233 @@ select {
   font-size: 13px;
   margin: 0;
 }
+
+/* ---- 顶部条:每会话模型切换 + 智能体工作目录 ---- */
+
+.aichat-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--sf-border);
+  min-height: 40px;
+}
+
+.aichat-model {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.aichat-model__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  background: var(--sf-card);
+  color: var(--sf-text-2);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 280px;
+}
+
+.aichat-model__chip:hover {
+  border-color: var(--sf-primary);
+  color: var(--sf-primary);
+}
+
+.aichat-model__chip--pinned {
+  border-color: var(--sf-blue-200);
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+}
+
+.aichat-model__pin {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--sf-blue-100);
+  color: var(--sf-blue-700);
+}
+
+.aichat-model__pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  width: 300px;
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  box-shadow: 0 12px 32px rgba(16, 20, 30, 0.18);
+  overflow: hidden;
+  animation: sf-fade-in var(--sf-dur-fast) var(--sf-ease-out);
+}
+
+.aichat-model__head {
+  padding: 10px 12px 6px;
+  font-size: 12px;
+  color: var(--sf-text-3);
+}
+
+.aichat-model__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 8px 8px;
+  flex-wrap: wrap;
+}
+
+.aichat-model__tab {
+  padding: 4px 8px;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  background: var(--sf-card);
+  color: var(--sf-text-2);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.aichat-model__tab--on {
+  background: var(--sf-primary-soft);
+  border-color: var(--sf-blue-200);
+  color: var(--sf-primary);
+}
+
+.aichat-model__list {
+  max-height: 260px;
+  overflow-y: auto;
+  border-top: 1px solid var(--sf-border);
+}
+
+.aichat-model__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: var(--sf-text);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.aichat-model__item:hover {
+  background: var(--sf-panel);
+}
+
+.aichat-model__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aichat-model__tag {
+  font-size: 11px;
+  color: var(--sf-text-3);
+  flex-shrink: 0;
+}
+
+.aichat-model__hint {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--sf-text-3);
+}
+
+.aichat-model__foot {
+  padding: 8px 12px;
+  border-top: 1px solid var(--sf-border);
+  font-size: 11px;
+  color: var(--sf-text-3);
+  background: var(--sf-panel);
+}
+
+/* 顶部条里的工作目录:不再自带边框(bar 已有分隔线) */
+.aichat-bar .aichat-workdir {
+  padding: 0;
+  border: none;
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
+/* ---- 生成中指示 ---- */
+
+.aichat-thread__live {
+  color: var(--sf-primary);
+  animation: sf-chat-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes sf-chat-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+[data-motion="reduced"] .aichat-thread__live {
+  animation: none;
+}
+
+.aichat-thinking {
+  color: var(--sf-text-3);
+  font-size: 13px;
+}
+
+/* ---- 删除对话确认 ---- */
+
+.aichat-del__text {
+  margin: 0 0 12px;
+  color: var(--sf-text-2);
+  font-size: 14px;
+}
+
+.aichat-del__opt {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--sf-warning);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-warning-bg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.aichat-del__opt > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.aichat-del__path {
+  font-size: 12px;
+  color: var(--sf-text-2);
+  word-break: break-all;
+}
+
+.aichat-del__warn {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--sf-warning);
+}
+
+.aichat-del__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.aichat-del__danger.sf-btn--primary {
+  background: var(--sf-error);
+}
+
+.aichat-del__danger.sf-btn--primary:hover {
+  background: #B91C1C;
+}

@@ -78,6 +78,9 @@ CREATE TABLE IF NOT EXISTS chat_thread (
     role_system TEXT NOT NULL DEFAULT '',  -- 角色卡的人设描述(发送时组入 system)
     oc_session  TEXT NOT NULL DEFAULT '',  -- opencode 服务端会话 id
     workdir     TEXT NOT NULL DEFAULT '',  -- 智能体工作目录
+    channel     TEXT NOT NULL DEFAULT '',  -- 本会话固定通道(空 = 跟随设置)
+    model       TEXT NOT NULL DEFAULT '',  -- 本会话固定模型(空 = 跟随设置)
+    model_label TEXT NOT NULL DEFAULT '',  -- 模型展示名(界面不露原始 id)
     created_at  INTEGER NOT NULL,
     updated_at  INTEGER NOT NULL
 );
@@ -100,14 +103,47 @@ impl ProgressDb {
     pub fn open(path: &Path) -> CmdResult<Self> {
         let conn = Connection::open(path)?;
         conn.execute_batch(SCHEMA)?;
-        Ok(Self { conn })
+        let db = Self { conn };
+        db.migrate_chat_model_columns()?;
+        Ok(db)
     }
 
     #[cfg(test)]
     pub fn open_in_memory() -> CmdResult<Self> {
         let conn = Connection::open_in_memory()?;
         conn.execute_batch(SCHEMA)?;
-        Ok(Self { conn })
+        let db = Self { conn };
+        db.migrate_chat_model_columns()?;
+        Ok(db)
+    }
+
+    /// 幂等加列:v0.1.0 发出去的库里 `chat_thread` 没有每会话模型三列
+    /// (`CREATE TABLE IF NOT EXISTS` 不会补列)。SQLite 加列是 O(1) 元数据
+    /// 操作,缺哪列补哪列 —— 与 sf-pipeline 的 `pack` 列迁移同一套路。
+    fn migrate_chat_model_columns(&self) -> CmdResult<()> {
+        for (col, ddl) in [
+            (
+                "channel",
+                "ALTER TABLE chat_thread ADD COLUMN channel TEXT NOT NULL DEFAULT ''",
+            ),
+            (
+                "model",
+                "ALTER TABLE chat_thread ADD COLUMN model TEXT NOT NULL DEFAULT ''",
+            ),
+            (
+                "model_label",
+                "ALTER TABLE chat_thread ADD COLUMN model_label TEXT NOT NULL DEFAULT ''",
+            ),
+        ] {
+            let present = self
+                .conn
+                .prepare(&format!("SELECT {col} FROM chat_thread LIMIT 1"))
+                .is_ok();
+            if !present {
+                self.conn.execute_batch(ddl)?;
+            }
+        }
+        Ok(())
     }
 
     // ------------------------------------------------------------- srs
@@ -422,7 +458,7 @@ impl ProgressDb {
     pub fn chat_threads(&self) -> CmdResult<Vec<ChatThreadRow>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, mode, title, role_id, role_system, oc_session, workdir,
-                    created_at, updated_at
+                    channel, model, model_label, updated_at
              FROM chat_thread ORDER BY updated_at DESC, id DESC",
         )?;
         let rows = stmt.query_map([], row_to_chat_thread)?;
@@ -432,11 +468,27 @@ impl ProgressDb {
     pub fn chat_thread_get(&self, id: i64) -> CmdResult<Option<ChatThreadRow>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, mode, title, role_id, role_system, oc_session, workdir,
-                    created_at, updated_at
+                    channel, model, model_label, updated_at
              FROM chat_thread WHERE id = ?1",
         )?;
         let mut rows = stmt.query_map(params![id], row_to_chat_thread)?;
         Ok(rows.next().transpose()?)
+    }
+
+    /// 本会话固定通道/模型(三者同时为空 = 跟随全局设置)。
+    pub fn chat_thread_set_model(
+        &self,
+        id: i64,
+        channel: &str,
+        model: &str,
+        model_label: &str,
+    ) -> CmdResult<()> {
+        self.conn.execute(
+            "UPDATE chat_thread SET channel = ?2, model = ?3, model_label = ?4
+             WHERE id = ?1",
+            params![id, channel, model, model_label],
+        )?;
+        Ok(())
     }
 
     pub fn chat_thread_set_session(&self, id: i64, session: &str) -> CmdResult<()> {
@@ -524,7 +576,11 @@ pub struct ChatThreadRow {
     pub role_system: String,
     pub oc_session: String,
     pub workdir: String,
-    pub created_at: i64,
+    /// 本会话固定通道(空 = 跟随全局设置)
+    pub channel: String,
+    /// 本会话固定模型(空 = 跟随全局设置)
+    pub model: String,
+    pub model_label: String,
     pub updated_at: i64,
 }
 
@@ -547,8 +603,10 @@ fn row_to_chat_thread(r: &rusqlite::Row<'_>) -> rusqlite::Result<ChatThreadRow> 
         role_system: r.get(4)?,
         oc_session: r.get(5)?,
         workdir: r.get(6)?,
-        created_at: r.get(7)?,
-        updated_at: r.get(8)?,
+        channel: r.get(7)?,
+        model: r.get(8)?,
+        model_label: r.get(9)?,
+        updated_at: r.get(10)?,
     })
 }
 
@@ -736,5 +794,61 @@ mod tests {
         db.chat_thread_delete(t1).unwrap();
         assert_eq!(db.chat_message_count(t1).unwrap(), 0);
         assert!(db.chat_thread_get(t1).unwrap().is_none());
+    }
+
+    #[test]
+    fn chat_thread_model_override_roundtrip() {
+        let db = ProgressDb::open_in_memory().unwrap();
+        let id = db.chat_thread_create("free", "t", "", "", "", 1).unwrap();
+        // 默认跟随设置:三列皆空
+        let t = db.chat_thread_get(id).unwrap().unwrap();
+        assert_eq!((t.channel.as_str(), t.model.as_str()), ("", ""));
+
+        db.chat_thread_set_model(id, "opencode", "opencode/hy3-free", "hy3-free")
+            .unwrap();
+        let t = db.chat_thread_get(id).unwrap().unwrap();
+        assert_eq!(t.channel, "opencode");
+        assert_eq!(t.model, "opencode/hy3-free");
+        assert_eq!(t.model_label, "hy3-free");
+
+        // 改回跟随设置
+        db.chat_thread_set_model(id, "", "", "").unwrap();
+        assert_eq!(db.chat_thread_get(id).unwrap().unwrap().model, "");
+    }
+
+    /// v0.1.0 已发出的库里 chat_thread 没有模型三列 —— 打开时必须自动补列,
+    /// 且旧数据完好(真机升级路径)。
+    #[test]
+    fn old_chat_thread_table_gains_model_columns() {
+        let dir = std::env::temp_dir().join(format!("sf-migrate-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("progress.db");
+        let _ = std::fs::remove_file(&path);
+        {
+            // 模拟旧库:老版本的建表语句(无 channel/model/model_label)
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE chat_thread (
+                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     mode TEXT NOT NULL, title TEXT NOT NULL DEFAULT '',
+                     role_id TEXT NOT NULL DEFAULT '', role_system TEXT NOT NULL DEFAULT '',
+                     oc_session TEXT NOT NULL DEFAULT '', workdir TEXT NOT NULL DEFAULT '',
+                     created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+                 INSERT INTO chat_thread (mode, title, oc_session, created_at, updated_at)
+                 VALUES ('free', '老会话', 'ses_old', 10, 10);",
+            )
+            .unwrap();
+        }
+        let db = ProgressDb::open(&path).unwrap();
+        let threads = db.chat_threads().unwrap();
+        assert_eq!(threads.len(), 1);
+        assert_eq!(threads[0].title, "老会话");
+        assert_eq!(threads[0].oc_session, "ses_old");
+        assert_eq!(threads[0].model, ""); // 补列后默认跟随设置
+        db.chat_thread_set_model(threads[0].id, "zen", "opencode/x", "x")
+            .unwrap();
+        assert_eq!(db.chat_threads().unwrap()[0].model, "opencode/x");
+        drop(db);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
