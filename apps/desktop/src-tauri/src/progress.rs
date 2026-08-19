@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS chat_message (
     role      TEXT NOT NULL,               -- user | assistant
     text      TEXT NOT NULL,
     fix_json  TEXT NOT NULL DEFAULT '',    -- 纠错卡 JSON(无纠错为空)
+    todo_json TEXT NOT NULL DEFAULT '',    -- 智能体任务清单快照 JSON
     ts        INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_chat_message_thread ON chat_message(thread_id);
@@ -117,27 +118,35 @@ impl ProgressDb {
         Ok(db)
     }
 
-    /// 幂等加列:v0.1.0 发出去的库里 `chat_thread` 没有每会话模型三列
-    /// (`CREATE TABLE IF NOT EXISTS` 不会补列)。SQLite 加列是 O(1) 元数据
-    /// 操作,缺哪列补哪列 —— 与 sf-pipeline 的 `pack` 列迁移同一套路。
+    /// 幂等加列:已发出去的库里没有后加的聊天列(`CREATE TABLE IF NOT EXISTS`
+    /// 不会补列)。SQLite 加列是 O(1) 元数据操作,缺哪列补哪列 —— 与
+    /// sf-pipeline 的 `pack` 列迁移同一套路。
     fn migrate_chat_model_columns(&self) -> CmdResult<()> {
-        for (col, ddl) in [
+        for (table, col, ddl) in [
             (
+                "chat_thread",
                 "channel",
                 "ALTER TABLE chat_thread ADD COLUMN channel TEXT NOT NULL DEFAULT ''",
             ),
             (
+                "chat_thread",
                 "model",
                 "ALTER TABLE chat_thread ADD COLUMN model TEXT NOT NULL DEFAULT ''",
             ),
             (
+                "chat_thread",
                 "model_label",
                 "ALTER TABLE chat_thread ADD COLUMN model_label TEXT NOT NULL DEFAULT ''",
+            ),
+            (
+                "chat_message",
+                "todo_json",
+                "ALTER TABLE chat_message ADD COLUMN todo_json TEXT NOT NULL DEFAULT ''",
             ),
         ] {
             let present = self
                 .conn
-                .prepare(&format!("SELECT {col} FROM chat_thread LIMIT 1"))
+                .prepare(&format!("SELECT {col} FROM {table} LIMIT 1"))
                 .is_ok();
             if !present {
                 self.conn.execute_batch(ddl)?;
@@ -518,7 +527,7 @@ impl ProgressDb {
 
     pub fn chat_messages(&self, thread_id: i64) -> CmdResult<Vec<ChatMessageRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, role, text, fix_json, ts FROM chat_message
+            "SELECT id, role, text, fix_json, todo_json, ts FROM chat_message
              WHERE thread_id = ?1 ORDER BY id",
         )?;
         let rows = stmt.query_map(params![thread_id], row_to_chat_message)?;
@@ -532,8 +541,8 @@ impl ProgressDb {
         limit: u32,
     ) -> CmdResult<Vec<ChatMessageRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, role, text, fix_json, ts FROM (
-                 SELECT id, role, text, fix_json, ts FROM chat_message
+            "SELECT id, role, text, fix_json, todo_json, ts FROM (
+                 SELECT id, role, text, fix_json, todo_json, ts FROM chat_message
                  WHERE thread_id = ?1 ORDER BY id DESC LIMIT ?2
              ) ORDER BY id",
         )?;
@@ -549,10 +558,23 @@ impl ProgressDb {
         fix_json: &str,
         ts: i64,
     ) -> CmdResult<i64> {
+        self.chat_message_add_full(thread_id, role, text, fix_json, "", ts)
+    }
+
+    /// 带任务清单快照的写入(智能体模式:todo_json 为 TodoItem 数组的 JSON)。
+    pub fn chat_message_add_full(
+        &self,
+        thread_id: i64,
+        role: &str,
+        text: &str,
+        fix_json: &str,
+        todo_json: &str,
+        ts: i64,
+    ) -> CmdResult<i64> {
         self.conn.execute(
-            "INSERT INTO chat_message (thread_id, role, text, fix_json, ts)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
-            params![thread_id, role, text, fix_json, ts],
+            "INSERT INTO chat_message (thread_id, role, text, fix_json, todo_json, ts)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![thread_id, role, text, fix_json, todo_json, ts],
         )?;
         Ok(self.conn.last_insert_rowid())
     }
@@ -591,6 +613,8 @@ pub struct ChatMessageRow {
     pub role: String,
     pub text: String,
     pub fix_json: String,
+    /// 智能体任务清单快照(TodoItem 数组的 JSON;非智能体消息为空)
+    pub todo_json: String,
     pub ts: i64,
 }
 
@@ -616,7 +640,8 @@ fn row_to_chat_message(r: &rusqlite::Row<'_>) -> rusqlite::Result<ChatMessageRow
         role: r.get(1)?,
         text: r.get(2)?,
         fix_json: r.get(3)?,
-        ts: r.get(4)?,
+        todo_json: r.get(4)?,
+        ts: r.get(5)?,
     })
 }
 

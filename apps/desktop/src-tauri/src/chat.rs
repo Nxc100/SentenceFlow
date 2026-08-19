@@ -93,17 +93,21 @@ pub struct ChatMessage {
     pub role: String,
     pub text: String,
     pub fix: Option<FixCard>,
+    /// 智能体这一轮的任务清单(空 = 没有)
+    pub todos: Vec<TodoItem>,
     pub ts: i64,
 }
 
 impl From<ChatMessageRow> for ChatMessage {
     fn from(m: ChatMessageRow) -> Self {
         let fix = serde_json::from_str(&m.fix_json).ok();
+        let todos = serde_json::from_str(&m.todo_json).unwrap_or_default();
         Self {
             id: m.id,
             role: m.role,
             text: m.text,
             fix,
+            todos,
             ts: m.ts,
         }
     }
@@ -130,6 +134,21 @@ struct ToolPayload {
     status: String,
     /// skill = 技能加载(界面用 🧠 单独呈现),tool = 普通工具
     kind: String,
+}
+
+/// 智能体的任务清单快照(opencode `todowrite` 工具;它每推进一步就重发
+/// 一次完整清单,界面按最新一份渲染即可)。
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TodoItem {
+    pub content: String,
+    /// pending | in_progress | completed(照传 opencode 的取值)
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+struct TodoPayload {
+    thread_id: i64,
+    todos: Vec<TodoItem>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -818,6 +837,8 @@ pub enum AgentLineEvent {
         input: u64,
         output: u64,
     },
+    /// 任务清单快照(todowrite 的完整列表)
+    Todos(Vec<TodoItem>),
 }
 
 /// 解析一行 `opencode run --format json` 事件(形状为 2026-08-19 实机
@@ -858,6 +879,33 @@ pub fn parse_agent_line(line: &str) -> Vec<AgentLineEvent> {
                 .pointer("/part/state/status")
                 .and_then(|t| t.as_str())
                 .unwrap_or("running");
+            // 任务清单:整份列表回传,界面渲染成勾选清单(与 TUI 的 Todo 面板
+            // 同源)。实机事件:tool="todowrite",state.input.todos[]。
+            if tool == "todowrite"
+                && let Some(items) = v
+                    .pointer("/part/state/input/todos")
+                    .and_then(|t| t.as_array())
+            {
+                let todos: Vec<TodoItem> = items
+                    .iter()
+                    .filter_map(|it| {
+                        let content = it.get("content")?.as_str()?.trim().to_string();
+                        (!content.is_empty()).then(|| TodoItem {
+                            content,
+                            status: it
+                                .get("status")
+                                .and_then(|s| s.as_str())
+                                .unwrap_or("pending")
+                                .to_string(),
+                        })
+                    })
+                    .collect();
+                if !todos.is_empty() {
+                    out.push(AgentLineEvent::Todos(todos));
+                    // 清单自己就是最好的进度显示,不再多一行「⚙ todowrite」
+                    return out;
+                }
+            }
             // 技能加载单独成一类:界面用「🧠 技能:名字」而不是英文工具名
             // (实机事件:tool="skill",state.input.name / state.metadata.name)
             let skill_name = v
@@ -1051,6 +1099,8 @@ async fn run_agent(
     let mut full = String::new();
     let mut session_saved = !thread.oc_session.is_empty();
     let mut tokens = (0u64, 0u64);
+    // 最新一份任务清单:随消息落库,回头翻会话还能看到这轮干了哪几步
+    let mut todos: Vec<TodoItem> = Vec::new();
     let mut cancel = Box::pin(cancel_handle.notified());
     let end = loop {
         tokio::select! {
@@ -1078,6 +1128,10 @@ async fn run_agent(
                             AgentLineEvent::Tokens { input, output } => {
                                 tokens.0 += input;
                                 tokens.1 += output;
+                            }
+                            AgentLineEvent::Todos(items) => {
+                                todos = items.clone();
+                                let _ = app.emit("chat://todo", TodoPayload { thread_id, todos: items });
                             }
                         }
                     }
@@ -1124,7 +1178,7 @@ async fn run_agent(
                 );
             } else {
                 let empty = full.trim().is_empty();
-                finalize_agent_reply(&app, &state, thread_id, &full, false);
+                finalize_agent_reply(&app, &state, thread_id, &full, false, &todos);
                 if empty {
                     // 绝不留白:跑完却没有任何输出时明确告诉用户
                     let _ = app.emit(
@@ -1142,11 +1196,11 @@ async fn run_agent(
         }
         EndReason::Cancelled => {
             let _ = child.start_kill();
-            finalize_agent_reply(&app, &state, thread_id, &full, true);
+            finalize_agent_reply(&app, &state, thread_id, &full, true, &todos);
         }
         EndReason::Idle => {
             let _ = child.start_kill();
-            finalize_agent_reply(&app, &state, thread_id, &full, true);
+            finalize_agent_reply(&app, &state, thread_id, &full, true, &todos);
             let _ = app.emit(
                 "chat://error",
                 ErrorPayload {
@@ -1158,25 +1212,31 @@ async fn run_agent(
         }
         EndReason::ReadErr(e) => {
             let _ = child.start_kill();
-            finalize_agent_reply(&app, &state, thread_id, &full, true);
+            finalize_agent_reply(&app, &state, thread_id, &full, true, &todos);
             emit_chat_error(&app, thread_id, &ChannelError::Process(e));
         }
     }
 }
 
-/// 智能体回复落库 + done(无纠错协议,原文即正文)。
+/// 智能体回复落库 + done(无纠错协议,原文即正文;任务清单随消息存下来)。
 fn finalize_agent_reply(
     app: &AppHandle,
     state: &Arc<AppState>,
     thread_id: i64,
     full: &str,
     partial: bool,
+    todos: &[TodoItem],
 ) {
     let body = full.trim().to_string();
     if !body.is_empty() {
+        let todo_json = if todos.is_empty() {
+            String::new()
+        } else {
+            serde_json::to_string(todos).unwrap_or_default()
+        };
         let progress = state.progress.lock().expect("progress lock");
         let now = now_unix();
-        let _ = progress.chat_message_add(thread_id, "assistant", &body, "", now);
+        let _ = progress.chat_message_add_full(thread_id, "assistant", &body, "", &todo_json, now);
         let _ = progress.chat_thread_touch(thread_id, now);
     }
     let _ = app.emit(
@@ -1294,6 +1354,39 @@ mod tests {
             vec![AgentLineEvent::Text("plain\n".into())]
         );
         assert!(parse_agent_line("   ").is_empty());
+    }
+
+    /// 任务清单事件(实机形状:tool="todowrite",state.input.todos[];
+    /// 每推进一步重发一次完整清单)。清单自己就是进度显示,不再多一行工具活动。
+    #[test]
+    fn todowrite_event_yields_full_checklist() {
+        let line = r#"{"type":"tool_use","sessionID":"ses_1","part":{"type":"tool","tool":"todowrite","state":{"status":"completed","title":"2 todos","input":{"todos":[{"content":"创建 a.txt","priority":"high","status":"completed"},{"content":"创建 b.txt","priority":"high","status":"in_progress"},{"content":"","status":"pending"}]}}}}"#;
+        let evs = parse_agent_line(line);
+        assert!(
+            evs.iter()
+                .all(|e| !matches!(e, AgentLineEvent::Tool { .. }))
+        );
+        let todos = evs
+            .iter()
+            .find_map(|e| match e {
+                AgentLineEvent::Todos(t) => Some(t),
+                _ => None,
+            })
+            .expect("应解析出任务清单");
+        // 空 content 的条目丢掉,其余保序
+        assert_eq!(todos.len(), 2);
+        assert_eq!(todos[0].content, "创建 a.txt");
+        assert_eq!(todos[0].status, "completed");
+        assert_eq!(todos[1].status, "in_progress");
+    }
+
+    #[test]
+    fn todowrite_without_items_falls_back_to_tool_line() {
+        let line = r#"{"type":"tool_use","part":{"tool":"todowrite","state":{"status":"running","title":"0 todos","input":{"todos":[]}}}}"#;
+        assert!(parse_agent_line(line).iter().any(|e| matches!(
+            e,
+            AgentLineEvent::Tool { kind, .. } if kind == "tool"
+        )));
     }
 
     /// 技能加载事件单独成一类(实机形状:tool="skill",state.input.name,

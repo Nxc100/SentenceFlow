@@ -25,6 +25,7 @@ import type {
   CmdError,
   FixCard,
   ModelInfo,
+  TodoItem,
 } from "../ipc";
 import type { SkillInfo } from "../ipc";
 import { useApp } from "../appState";
@@ -45,6 +46,8 @@ interface UiMsg {
   fix: FixCard | null;
   /** 智能体本轮完成的工具活动(仅当次会话内存,不落库) */
   tools: ToolActivity[];
+  /** 智能体本轮的任务清单(随消息落库) */
+  todos: TodoItem[];
   /** 被停止/超时截断的部分回复 */
   partial?: boolean;
 }
@@ -65,6 +68,8 @@ interface ThreadStream {
   tools: ToolActivity[];
   /** 正在进行的工具活动 */
   activity: ToolActivity | null;
+  /** 最新一份任务清单(todowrite 快照) */
+  todos: TodoItem[];
   /** 后端已 done/error,吐完缓冲即收尾 */
   ended: boolean;
   done: ChatDoneEvent | null;
@@ -139,7 +144,8 @@ export function AiChatPage({
     text: string;
     tools: ToolActivity[];
     activity: ToolActivity | null;
-  }>({ text: "", tools: [], activity: null });
+    todos: TodoItem[];
+  }>({ text: "", tools: [], activity: null, todos: [] });
   /** 技能面板 / 已附加的手动触发技能 */
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [attachedSkill, setAttachedSkill] = useState<SkillInfo | null>(null);
@@ -182,8 +188,8 @@ export function AiChatPage({
     const s = activeIdRef.current !== null ? streamsRef.current.get(activeIdRef.current) : undefined;
     setView(
       s
-        ? { text: stripFix(s.shown), tools: s.tools, activity: s.activity }
-        : { text: "", tools: [], activity: null },
+        ? { text: stripFix(s.shown), tools: s.tools, activity: s.activity, todos: s.todos }
+        : { text: "", tools: [], activity: null, todos: [] },
     );
   }, []);
 
@@ -220,7 +226,7 @@ export function AiChatPage({
     (id: number, s: ThreadStream) => {
       streamsRef.current.delete(id);
       const text = s.done ? s.done.text : stripFix(s.shown).trim();
-      if (id === activeIdRef.current && (text || s.tools.length > 0)) {
+      if (id === activeIdRef.current && (text || s.tools.length > 0 || s.todos.length > 0)) {
         setMessages((m) => [
           ...m,
           {
@@ -228,6 +234,7 @@ export function AiChatPage({
             text,
             fix: s.done?.fix ?? null,
             tools: s.tools,
+            todos: s.todos,
             partial: s.done?.partial,
           },
         ]);
@@ -270,7 +277,15 @@ export function AiChatPage({
     (id: number): ThreadStream => {
       let s = streamsRef.current.get(id);
       if (!s) {
-        s = { buffer: "", shown: "", tools: [], activity: null, ended: false, done: null };
+        s = {
+          buffer: "",
+          shown: "",
+          tools: [],
+          activity: null,
+          todos: [],
+          ended: false,
+          done: null,
+        };
         streamsRef.current.set(id, s);
         syncLive();
         ensureTimer();
@@ -302,6 +317,11 @@ export function AiChatPage({
           } else {
             s.activity = act;
           }
+          syncView();
+        }),
+        await events.onChatTodo((p) => {
+          if (cancelled) return;
+          streamFor(p.thread_id).todos = p.todos;
           syncView();
         }),
         await events.onChatDone((p) => {
@@ -359,6 +379,7 @@ export function AiChatPage({
             text: m.text,
             fix: m.fix,
             tools: [],
+            todos: m.todos,
           })),
         );
         window.setTimeout(scrollToBottom, 0);
@@ -492,7 +513,7 @@ export function AiChatPage({
           delete next[id];
           return next;
         });
-        setMessages((m) => [...m, { role: "user", text, fix: null, tools: [] }]);
+        setMessages((m) => [...m, { role: "user", text, fix: null, tools: [], todos: [] }]);
         setInput("");
         streamFor(id); // 先亮出"正在思考",再发请求
         syncView();
@@ -825,6 +846,7 @@ export function AiChatPage({
                   ))}
                   {busy && (
                     <div className="aichat-msg aichat-msg--ai">
+                      <TodoPanel todos={view.todos} live />
                       {view.tools.map((t, i) => (
                         <div
                           key={i}
@@ -931,6 +953,44 @@ export function AiChatPage({
             toast.show(`已附加「${s.name}」—— 这条消息会按它的指令执行`);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+/**
+ * 智能体任务清单(对齐 opencode TUI 的 Todo 面板):进行中高亮、已完成划掉。
+ * 数据来自 todowrite 事件的完整快照;live 时可折叠、常显进度。
+ */
+function TodoPanel({ todos, live = false }: { todos: TodoItem[]; live?: boolean }) {
+  const [open, setOpen] = useState(true);
+  if (todos.length === 0) return null;
+  const done = todos.filter((t) => t.status === "completed").length;
+  const mark = (s: string) => (s === "completed" ? "☑" : s === "in_progress" ? "◉" : "☐");
+  return (
+    <div className={`aichat-todo${live ? " aichat-todo--live" : ""}`}>
+      <button
+        type="button"
+        className="aichat-todo__head"
+        onClick={() => setOpen((v) => !v)}
+        title={open ? "收起任务清单" : "展开任务清单"}
+      >
+        <span aria-hidden>{open ? "▼" : "▶"}</span> 任务清单
+        <span className="aichat-todo__count">
+          {done}/{todos.length}
+        </span>
+      </button>
+      {open && (
+        <ol className="aichat-todo__list">
+          {todos.map((t, i) => (
+            <li key={i} className={`aichat-todo__item aichat-todo__item--${t.status}`}>
+              <span className="aichat-todo__mark" aria-hidden>
+                {mark(t.status)}
+              </span>
+              {t.content}
+            </li>
+          ))}
+        </ol>
       )}
     </div>
   );
@@ -1150,6 +1210,7 @@ function MsgBubble({
   }
   return (
     <div className="aichat-msg aichat-msg--ai">
+      <TodoPanel todos={msg.todos} />
       {msg.tools.map((t, i) => (
         <div
           key={i}

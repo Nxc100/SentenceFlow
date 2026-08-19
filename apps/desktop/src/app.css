@@ -3081,3 +3081,76 @@ select {
   font-size: 11px;
   color: var(--sf-warning);
 }
+
+/* ---- 智能体任务清单(对齐 opencode TUI 的 Todo 面板) ---- */
+
+.aichat-todo {
+  margin-bottom: 8px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-card);
+  overflow: hidden;
+}
+
+.aichat-todo--live {
+  border-color: var(--sf-blue-200);
+}
+
+.aichat-todo__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  color: var(--sf-text-2);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.aichat-todo__head:hover {
+  background: var(--sf-panel);
+}
+
+.aichat-todo__count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--sf-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.aichat-todo__list {
+  margin: 0;
+  padding: 2px 10px 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.aichat-todo__item {
+  display: flex;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--sf-text-2);
+}
+
+.aichat-todo__mark {
+  flex-shrink: 0;
+  font-family: var(--sf-font-mono, monospace);
+}
+
+.aichat-todo__item--in_progress {
+  color: var(--sf-primary);
+  font-weight: 600;
+}
+
+.aichat-todo__item--completed {
+  color: var(--sf-text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--sf-gray-300);
+}

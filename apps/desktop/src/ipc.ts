@@ -265,12 +265,25 @@ export interface FixCard {
   why: string;
 }
 
+/** 智能体的任务清单条目(opencode todowrite;每步推进重发完整清单) */
+export interface TodoItem {
+  content: string;
+  status: "pending" | "in_progress" | "completed" | string;
+}
+
 export interface ChatMessage {
   id: number;
   role: "user" | "assistant";
   text: string;
   fix: FixCard | null;
+  /** 这一轮的任务清单(空数组 = 没有) */
+  todos: TodoItem[];
   ts: number;
+}
+
+export interface ChatTodoEvent {
+  thread_id: number;
+  todos: TodoItem[];
 }
 
 export interface ChatChunkEvent {
@@ -538,6 +551,8 @@ export const events = {
     listen<ChatChunkEvent>("chat://chunk", (e) => cb(e.payload)),
   onChatTool: (cb: (p: ChatToolEvent) => void): Promise<UnlistenFn> =>
     listen<ChatToolEvent>("chat://tool", (e) => cb(e.payload)),
+  onChatTodo: (cb: (p: ChatTodoEvent) => void): Promise<UnlistenFn> =>
+    listen<ChatTodoEvent>("chat://todo", (e) => cb(e.payload)),
   onChatDone: (cb: (p: ChatDoneEvent) => void): Promise<UnlistenFn> =>
     listen<ChatDoneEvent>("chat://done", (e) => cb(e.payload)),
   onChatError: (cb: (p: ChatErrorEvent) => void): Promise<UnlistenFn> =>

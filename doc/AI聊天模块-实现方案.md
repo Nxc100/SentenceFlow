@@ -178,6 +178,21 @@ opencode TUI 里换模型靠敲 `/model`;这里把它做成聊天窗顶部的模
   未加载 → 可自动调用);删除把整个技能目录移入回收站;
 - 技能加载事件单独渲染:`tool_use` 且 `tool == "skill"` → 「🧠 技能:名字」。
 
+### 3.5c 任务清单面板(v1.2 追加,对齐 TUI 的 Todo 面板)
+
+智能体做多步任务时会用 opencode 的 `todowrite` 工具自己维护任务清单
+(TUI 里就是那个 `▼ Todo` 面板)。实测该事件在非交互 `run --format json`
+下正常发出,`state.input.todos[]` 每次都是**完整清单**(字段 `content` +
+`status`: pending/in_progress/completed),每推进一步重发一次。
+
+- 后端把它解析成 `AgentLineEvent::Todos` → `chat://todo` 事件,并**不再**为
+  todowrite 多发一行工具活动(清单本身就是进度显示);
+- 前端按最新快照渲染勾选清单:进行中高亮 `◉`、已完成 `☑` 且划掉、
+  待办 `☐`,标题栏显示 `已完成/总数` 且可折叠;
+- **比 TUI 多一点**:清单随消息存进 `chat_message.todo_json`(幂等加列),
+  关掉页面、切走再回来仍能看到这轮到底拆了哪几步、做到哪一步;
+  TUI 的面板是会话内临时状态,退出即无。
+
 > 注:`disable-model-invocation` 是 Claude Code 的字段,opencode 当未知字段
 > 忽略(实测带该字段的技能照样被登记),因此不据此分类。
 
