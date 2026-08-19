@@ -42,7 +42,8 @@ export type PracticeLaunch =
 
 interface Tally {
   sentences: number;
-  errors: number;
+  /** 一次打对(无错字、未看答案)的句数 —— 完成页正确率口径 */
+  clean: number;
   wpmSum: number;
   wpmCount: number;
   durMs: number;
@@ -88,7 +89,7 @@ export function PracticeScreen({
   const [done, setDone] = useState(false);
   const [tally, setTally] = useState<Tally>({
     sentences: 0,
-    errors: 0,
+    clean: 0,
     wpmSum: 0,
     wpmCount: 0,
     durMs: 0,
@@ -318,8 +319,9 @@ export function PracticeScreen({
 
   if (done) {
     const avgWpm = tally.wpmCount > 0 ? tally.wpmSum / tally.wpmCount : 0;
-    const accuracy =
-      tally.sentences > 0 ? Math.max(0, 1 - tally.errors / Math.max(1, tally.sentences * 5)) : 0;
+    // 「一次打对的句子占比」:比旧的 1-errors/(句数×5) 更可解释,
+    // 也不会被同一句反复重打的错字打穿到 0(实测缺陷)。
+    const accuracy = tally.sentences > 0 ? tally.clean / tally.sentences : 0;
     return (
       <div className="practice-screen">
         {topBar("练习完成")}
@@ -394,7 +396,7 @@ export function PracticeScreen({
             onComplete={(result) => {
               setTally((t) => ({
                 sentences: t.sentences + 1,
-                errors: t.errors + result.errors,
+                clean: t.clean + (result.errors === 0 && !result.seenAnswer ? 1 : 0),
                 wpmSum: t.wpmSum + (result.wpm > 0 ? result.wpm : 0),
                 wpmCount: t.wpmCount + (result.wpm > 0 ? 1 : 0),
                 durMs: t.durMs + result.durMs,

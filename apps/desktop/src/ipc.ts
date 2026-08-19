@@ -204,6 +204,8 @@ export interface ScenePackInfo {
   /** true = 生成工坊产出的包(可删) */
   from_user: boolean;
   practiced: boolean;
+  /** 从头数连续练过的句数(断点续练用) */
+  practiced_count: number;
 }
 
 /* ---------- 定级测试 (sf-core placement,方案 §3.3) ---------- */

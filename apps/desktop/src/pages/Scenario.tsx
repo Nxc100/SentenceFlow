@@ -31,6 +31,16 @@ export function ScenarioPage({
     void refresh();
   }, [refresh]);
 
+  // Esc 关预览(与项目 Modal 组件手感一致)
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreview(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview]);
+
   const openPreview = async (pack: ScenePackInfo) => {
     const lines = await ipc.listPackSentences(pack.pack);
     setPreview({ pack, lines });
@@ -81,13 +91,23 @@ export function ScenarioPage({
                 >
                   <span className="scenario-card__name">
                     {p.name}
-                    {p.practiced && <span className="scenario-card__done" title="练过">✓</span>}
+                    {p.practiced_count >= p.sentence_count && p.sentence_count > 0 && (
+                      <span className="scenario-card__done" title="已练完">
+                        ✓
+                      </span>
+                    )}
                   </span>
                   {p.intro && <span className="scenario-card__intro">{p.intro}</span>}
                   <span className="scenario-card__meta">
                     {p.sentence_count} 句对话
                     {p.reference_level ? ` · 参考难度 ${levelName(p.reference_level)}` : ""}
                   </span>
+                  {/* 断点提示:练到一半的包一眼看见进度 */}
+                  {p.practiced_count > 0 && p.practiced_count < p.sentence_count && (
+                    <span className="scenario-card__progress">
+                      练到第 {p.practiced_count} 句
+                    </span>
+                  )}
                 </button>
               ))}
           </div>
@@ -95,8 +115,14 @@ export function ScenarioPage({
       ))}
 
       {preview && (
-        <div className="scenario-preview" role="dialog" aria-label={`${preview.pack.name} 预览`}>
-          <div className="scenario-preview__panel">
+        <div
+          className="scenario-preview"
+          role="dialog"
+          aria-label={`${preview.pack.name} 预览`}
+          onClick={() => setPreview(null)}
+        >
+          {/* 点遮罩关闭;点面板本身不关 */}
+          <div className="scenario-preview__panel" onClick={(e) => e.stopPropagation()}>
             <header className="scenario-preview__head">
               <h2>{preview.pack.name}</h2>
               <button
@@ -121,14 +147,42 @@ export function ScenarioPage({
               ))}
             </div>
             <footer className="scenario-preview__foot">
+              {/* 断点续练:练到一半时主按钮变「继续」,并保留「从头开始」 */}
+              {preview.pack.practiced_count > 0 &&
+                preview.pack.practiced_count < preview.pack.sentence_count && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      const launch = { pack: preview.pack.pack, title: preview.pack.name };
+                      setPreview(null);
+                      onPractice(launch);
+                    }}
+                  >
+                    从头开始
+                  </Button>
+                )}
               <Button
                 onClick={() => {
-                  const launch = { pack: preview.pack.pack, title: preview.pack.name };
+                  const resume =
+                    preview.pack.practiced_count < preview.pack.sentence_count
+                      ? preview.pack.practiced_count
+                      : 0;
+                  const launch = {
+                    pack: preview.pack.pack,
+                    title: preview.pack.name,
+                    startIndex: resume,
+                  };
                   setPreview(null);
                   onPractice(launch);
                 }}
               >
-                开始练习 →
+                {preview.pack.practiced_count > 0 &&
+                preview.pack.practiced_count < preview.pack.sentence_count
+                  ? `继续练习(第 ${preview.pack.practiced_count + 1} 句)→`
+                  : preview.pack.practiced_count >= preview.pack.sentence_count &&
+                      preview.pack.sentence_count > 0
+                    ? "再练一遍 →"
+                    : "开始练习 →"}
               </Button>
               {preview.pack.from_user && (
                 <Button

@@ -69,6 +69,8 @@ export function WorkshopPage({
   const [activity, setActivity] = useState<WorkshopActivity | null>(null);
   const [repairing, setRepairing] = useState<string[]>([]);
   const [elapsed, setElapsed] = useState(0);
+  /** 已点停止、等当前请求返回的过渡态(取消只能在请求返回后生效) */
+  const [stopping, setStopping] = useState(false);
   const startTsRef = useRef<number | null>(null);
   const keyRef = useRef(0);
 
@@ -161,6 +163,7 @@ export function WorkshopPage({
         await events.onWorkshopDone((p) => {
           if (cancelled) return;
           setRunning(false);
+          setStopping(false);
           setSummary(p.summary);
           void refreshJobs();
         }),
@@ -193,6 +196,7 @@ export function WorkshopPage({
     setActivity(null);
     setRepairing([]);
     setElapsed(0);
+    setStopping(false);
     startTsRef.current = Date.now();
     setRunning(true);
     try {
@@ -277,8 +281,15 @@ export function WorkshopPage({
           ))}
         </div>
         {running ? (
-          <Button variant="secondary" onClick={() => void ipc.workshopStop()}>
-            停止
+          <Button
+            variant="secondary"
+            disabled={stopping}
+            onClick={() => {
+              setStopping(true);
+              void ipc.workshopStop();
+            }}
+          >
+            {stopping ? "正在停止…" : "停止"}
           </Button>
         ) : (
           <Button onClick={() => void start()}>生成 →</Button>
@@ -328,6 +339,8 @@ export function WorkshopPage({
             <span>
               {(() => {
                 const time = `已用时 ${formatElapsed(elapsed)}`;
+                // 取消只能在当前请求返回后生效,如实说明,别让用户以为没点上
+                if (stopping) return `正在停止(等这一批请求返回)… · ${time}`;
                 if (!activity) return `正在准备… · ${time}`;
                 const batchTag =
                   activity.batches > 1 ? `第 ${activity.batch}/${activity.batches} 批 · ` : "";

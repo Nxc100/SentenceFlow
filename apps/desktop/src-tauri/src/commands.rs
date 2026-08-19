@@ -408,6 +408,9 @@ pub struct ScenePackInfo {
     /// 是否已练过(log 里有该包句子的记录)。
     #[serde(default)]
     pub practiced: bool,
+    /// 已练过的句数(断点续练:从第 practiced_count 句接着练)。
+    #[serde(default)]
+    pub practiced_count: u32,
 }
 
 const SCENARIO_META_KEY: &str = "scenario_packs";
@@ -439,10 +442,14 @@ pub fn list_scene_packs(state: S<'_>) -> CmdResult<Vec<ScenePackInfo>> {
             continue; // 元数据里有、内容包里没有 → 不展示
         }
         info.from_user = false;
-        info.practiced = content
+        // 断点续练:从开头数连续练过的句子数(中间跳过的不算,
+        // 用户回来接着练的位置就是第一个没练过的句子)
+        info.practiced_count = content
             .sentences_by_pack(&info.pack)?
             .iter()
-            .any(|s| practiced_ids.contains(&s.id));
+            .take_while(|s| practiced_ids.contains(&s.id))
+            .count() as u32;
+        info.practiced = info.practiced_count > 0;
         out.push(info.clone());
     }
     // 用户生成包:元数据即席构造(pack 名 = 任务场景名)
@@ -463,6 +470,10 @@ pub fn list_scene_packs(state: S<'_>) -> CmdResult<Vec<ScenePackInfo>> {
             sentence_count: *n,
             from_user: true,
             practiced: sentences.iter().any(|s| practiced_ids.contains(&s.id)),
+            practiced_count: sentences
+                .iter()
+                .take_while(|s| practiced_ids.contains(&s.id))
+                .count() as u32,
         });
     }
     Ok(out)

@@ -672,9 +672,28 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
     }
     // 拿满未遂时诚实收尾:说明原因并给出可行动的建议(§6.1 不甩锅给用户)。
     // 场景模式不走"补足"叙事(它本就不补足,句数少是连贯性的代价)。
-    let summary = if scenario {
+    let stopped = job.state == JobState::Paused;
+    let summary = if job.produced == 0 {
+        // 零产出别给"去开练"这类无效指引(实测:停止后仍提示去练,用户困惑)
+        if stopped {
+            "已停止,这次没有生成句子".to_string()
+        } else if scenario {
+            format!(
+                "没有生成出可用的对话({discarded_total} 句未通过校验)——换个更日常的场景说法再试试"
+            )
+        } else {
+            format!("没有通过校验的句子({discarded_total} 句被丢弃)——换个场景或提高等级再试试")
+        }
+    } else if scenario {
         format!(
-            "{} 句对话已生成 · {} 丢弃 · 去「场景」页开练",
+            "{}{} 句对话已生成 · {} 丢弃 · 去「场景」页开练",
+            if stopped { "已停止 · " } else { "" },
+            job.produced,
+            discarded_total
+        )
+    } else if stopped {
+        format!(
+            "已停止 · {} 通过 · {} 丢弃(已入库)",
             job.produced, discarded_total
         )
     } else if job.state == JobState::Completed && job.shortfall() > 0 {

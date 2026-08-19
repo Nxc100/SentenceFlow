@@ -24,12 +24,16 @@ import { desktopSpeech } from "../speech";
 export interface ScenarioLaunch {
   pack: string;
   title: string;
+  /** 断点续练:从第几句开始(0 起;缺省从头) */
+  startIndex?: number;
 }
 
 interface Turn {
   speaker: string;
   en: string;
   zh: string;
+  /** 跳过的句子在回放里标出来,不计入正确率 */
+  skipped?: boolean;
 }
 
 /** 无标注句兜底(与练习页同款):按空白分词供打字 */
@@ -56,11 +60,18 @@ export function ScenarioPracticeScreen({
   const { settings } = useApp();
   const toast = useToast();
   const [items, setItems] = useState<SessionItem[] | null>(null);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(launch.startIndex ?? 0);
   const [sentence, setSentence] = useState<Sentence | null>(null);
   const [history, setHistory] = useState<Turn[]>([]);
   const [done, setDone] = useState(false);
-  const [tally, setTally] = useState({ sentences: 0, errors: 0, wpmSum: 0, wpmCount: 0, durMs: 0 });
+  /** clean = 一次打对(无错字)的句数 —— 完成页的正确率口径 */
+  const [tally, setTally] = useState({
+    sentences: 0,
+    clean: 0,
+    wpmSum: 0,
+    wpmCount: 0,
+    durMs: 0,
+  });
   const unannotatedRef = useRef(false);
   const historyRef = useRef<HTMLDivElement>(null);
 
@@ -113,7 +124,9 @@ export function ScenarioPracticeScreen({
       ]);
       setTally((t) => ({
         sentences: t.sentences + 1,
-        errors: t.errors + result.errors,
+        // 一次打对(没有错字、没看答案)才算"对";反复重打不再把
+        // 正确率打穿到 0(旧口径 1-errors/(句数×5) 极易归零)
+        clean: t.clean + (result.errors === 0 && !result.seenAnswer ? 1 : 0),
         wpmSum: t.wpmSum + (result.wpm > 0 ? result.wpm : 0),
         wpmCount: t.wpmCount + (result.wpm > 0 ? 1 : 0),
         durMs: t.durMs + result.durMs,
@@ -154,6 +167,36 @@ export function ScenarioPracticeScreen({
     [sentence, items, index, sounds, toast, onExit, settings],
   );
 
+  /** 跳过当前句:不会又不想看答案时的出口(不写日志、不计正确率) */
+  const skipTurn = useCallback(() => {
+    if (!sentence || !items) return;
+    setHistory((h) => [
+      ...h,
+      { speaker: sentence.func || "", en: sentence.en, zh: sentence.zh, skipped: true },
+    ]);
+    if (index + 1 >= items.length) {
+      setDone(true);
+    } else {
+      setIndex((i) => i + 1);
+    }
+  }, [sentence, items, index]);
+
+  // 键盘:Esc 退出整包、Shift+→ 跳到下一句(与等级练习的手感一致)
+  useEffect(() => {
+    if (done) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onExit();
+      } else if (e.key === "ArrowRight" && e.shiftKey) {
+        e.preventDefault();
+        skipTurn();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [done, onExit, skipTurn]);
+
   const topBar = (
     <header className="practice-top">
       <button type="button" className="practice-back" onClick={onExit} aria-label="退出练习">
@@ -168,8 +211,8 @@ export function ScenarioPracticeScreen({
 
   if (done) {
     const avgWpm = tally.wpmCount > 0 ? tally.wpmSum / tally.wpmCount : 0;
-    const accuracy =
-      tally.sentences > 0 ? Math.max(0, 1 - tally.errors / Math.max(1, tally.sentences * 5)) : 0;
+    // 「一次打对的句子占比」——可解释、不会被反复重打打穿
+    const accuracy = tally.sentences > 0 ? tally.clean / tally.sentences : 0;
     return (
       <div className="practice-screen">
         {topBar}
@@ -183,10 +226,15 @@ export function ScenarioPracticeScreen({
               {history.map((t, i) => (
                 <div
                   key={i}
-                  className={`scenario-bubble scenario-bubble--${t.speaker === "B" ? "b" : "a"}`}
+                  className={`scenario-bubble scenario-bubble--${t.speaker === "B" ? "b" : "a"}${
+                    t.skipped ? " scenario-bubble--skipped" : ""
+                  }`}
                 >
                   <span className="scenario-bubble__en">{t.en}</span>
-                  <span className="scenario-bubble__zh">{t.zh}</span>
+                  <span className="scenario-bubble__zh">
+                    {t.zh}
+                    {t.skipped && " · 已跳过"}
+                  </span>
                 </div>
               ))}
             </div>
@@ -215,10 +263,15 @@ export function ScenarioPracticeScreen({
             {history.map((t, i) => (
               <div
                 key={i}
-                className={`scenario-bubble scenario-bubble--${t.speaker === "B" ? "b" : "a"}`}
+                className={`scenario-bubble scenario-bubble--${t.speaker === "B" ? "b" : "a"}${
+                  t.skipped ? " scenario-bubble--skipped" : ""
+                }`}
               >
                 <span className="scenario-bubble__en">{t.en}</span>
-                <span className="scenario-bubble__zh">{t.zh}</span>
+                <span className="scenario-bubble__zh">
+                  {t.zh}
+                  {t.skipped && " · 已跳过"}
+                </span>
               </div>
             ))}
           </div>
@@ -241,8 +294,11 @@ export function ScenarioPracticeScreen({
       </main>
       <footer className="practice-footer">
         <span className="practice-shortcuts">
-          打出这句 · 空格跳到下一词 · Enter 提交 · ↓ 显示答案 · Ctrl 朗读
+          空格 跳到下一词 · Enter 提交 · ↓ 显示答案 · Ctrl 朗读 · Shift+→ 跳过 · Esc 退出
         </span>
+        <button type="button" className="practice-nav" onClick={skipTurn}>
+          跳过这句 ›
+        </button>
       </footer>
     </div>
   );
