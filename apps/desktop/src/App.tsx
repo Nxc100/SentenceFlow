@@ -21,12 +21,15 @@ import { MyLevelPage } from "./pages/MyLevel";
 import { ScenarioPage } from "./pages/Scenario";
 import { ScenarioPracticeScreen } from "./pages/ScenarioPractice";
 import type { ScenarioLaunch } from "./pages/ScenarioPractice";
+import { AiChatPage } from "./pages/AiChat";
+import type { AiChatPrefill } from "./pages/AiChat";
 
 export type NavKey =
   | "today"
   | "library"
   | "scenario"
   | "workshop"
+  | "aichat"
   | "report"
   | "mylevel"
   | "settings";
@@ -40,6 +43,7 @@ const NAV: Array<{ key: NavKey; label: string; icon: string; title: string }> = 
   { key: "library", label: "我的句库", icon: "▤", title: "所有句子:出厂句库、我的句集、错题本、收藏" },
   { key: "scenario", label: "情景对话", icon: "💬", title: "按真实生活场景练整段对话,不分等级" },
   { key: "workshop", label: "AI 造句", icon: "✦", title: "用 AI 为任意场景生成练习句或整段对话" },
+  { key: "aichat", label: "AI 聊天", icon: "🤖", title: "和 AI 用英文聊天、角色扮演;智能体帮你干活" },
   { key: "report", label: "学习报告", icon: "▦", title: "练习统计、热力图与薄弱分析" },
   { key: "mylevel", label: "我的水平", icon: "◎", title: "当前等级、水平测试与手动切换等级" },
   { key: "settings", label: "设置", icon: "⚙", title: "练习、声音、外观、AI 接入、授权与数据" },
@@ -87,6 +91,8 @@ function Shell() {
   const [scenario, setScenario] = useState<ScenarioLaunch | null>(null);
   /** 打开工坊时预置为「场景对话」模式 */
   const [workshopScenarioMode, setWorkshopScenarioMode] = useState(false);
+  /** 从情景对话跳入 AI 聊天的「实战演练」预填 */
+  const [aichatPrefill, setAichatPrefill] = useState<AiChatPrefill | null>(null);
 
   // 定级测试全屏(首启「帮我测一下」/ 设置「重新测一下」都走这里;
   // 必须先于首启分支,首启路径才能进入测试)
@@ -174,6 +180,10 @@ function Shell() {
               setWorkshopScenarioMode(true);
               setNav("workshop");
             }}
+            onRoleplay={(prefill) => {
+              setAichatPrefill(prefill);
+              setNav("aichat");
+            }}
           />
         )}
         {nav === "workshop" && (
@@ -182,6 +192,12 @@ function Shell() {
             onConsumedPrefill={() => setWorkshopPrefill(null)}
             scenarioMode={workshopScenarioMode}
             onConsumedScenarioMode={() => setWorkshopScenarioMode(false)}
+          />
+        )}
+        {nav === "aichat" && (
+          <AiChatPage
+            prefill={aichatPrefill}
+            onConsumedPrefill={() => setAichatPrefill(null)}
           />
         )}
         {nav === "report" && (

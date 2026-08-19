@@ -3,7 +3,9 @@
 
 use crate::adapter::ChannelAdapter;
 use crate::channels::openai_compat::OpenAiCompatClient;
-use crate::types::{ChannelError, ChannelStatus, GenChunk, GenRequest, MeterKind, ModelInfo};
+use crate::types::{
+    ChannelError, ChannelStatus, ChatRequest, GenChunk, GenRequest, MeterKind, ModelInfo,
+};
 use futures::stream::BoxStream;
 use secrecy::SecretString;
 
@@ -63,6 +65,13 @@ impl ChannelAdapter for ZenChannel {
         req: GenRequest,
     ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
         self.client.complete_stream(req).await
+    }
+
+    async fn chat_stream(
+        &self,
+        req: ChatRequest,
+    ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
+        self.client.chat_stream(req).await
     }
 
     fn meter(&self) -> MeterKind {

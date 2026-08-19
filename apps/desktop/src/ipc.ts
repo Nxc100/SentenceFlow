@@ -236,6 +236,58 @@ export interface PlacementStep {
   result: PlacementResult | null;
 }
 
+/* ---------- AI 聊天 (chat.rs,doc/AI聊天模块-实现方案.md) ---------- */
+
+export type ChatMode = "free" | "roleplay" | "agent";
+
+export interface ChatThreadInfo {
+  id: number;
+  mode: ChatMode;
+  title: string;
+  role_id: string;
+  workdir: string;
+  updated_at: number;
+}
+
+/** 纠错小卡:更好的说法 + 一句为什么 */
+export interface FixCard {
+  better: string;
+  why: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  role: "user" | "assistant";
+  text: string;
+  fix: FixCard | null;
+  ts: number;
+}
+
+export interface ChatChunkEvent {
+  thread_id: number;
+  text: string;
+}
+
+export interface ChatToolEvent {
+  thread_id: number;
+  label: string;
+  status: "pending" | "running" | "completed" | "error" | string;
+}
+
+export interface ChatDoneEvent {
+  thread_id: number;
+  text: string;
+  fix: FixCard | null;
+  /** true = 被停止/超时截断的部分回复 */
+  partial: boolean;
+}
+
+export interface ChatErrorEvent {
+  thread_id: number;
+  message: string;
+  retry_after_secs: number | null;
+}
+
 /* ---------- opencode 一键安装 (installer.rs) ---------- */
 
 export interface InstallProgress {
@@ -331,6 +383,32 @@ export const ipc = {
     invoke<void>("ask_ai", { sentenceId, question, history }),
   weeklyReview: () => invoke<string>("weekly_review", { tzOffsetSecs: tzOffsetSecs() }),
 
+  chatThreadCreate: (args: {
+    mode: ChatMode;
+    title: string;
+    roleId?: string;
+    roleSystem?: string;
+    opener?: string;
+    workdir?: string;
+  }) =>
+    invoke<ChatThreadInfo>("chat_thread_create", {
+      mode: args.mode,
+      title: args.title,
+      roleId: args.roleId ?? "",
+      roleSystem: args.roleSystem ?? "",
+      opener: args.opener ?? "",
+      workdir: args.workdir ?? "",
+    }),
+  chatThreads: () => invoke<ChatThreadInfo[]>("chat_threads"),
+  chatHistory: (threadId: number) => invoke<ChatMessage[]>("chat_history", { threadId }),
+  chatThreadDelete: (threadId: number) => invoke<void>("chat_thread_delete", { threadId }),
+  chatSend: (threadId: number, text: string, fixEnabled: boolean) =>
+    invoke<void>("chat_send", { threadId, text, fixEnabled }),
+  chatStop: () => invoke<void>("chat_stop"),
+  agentSend: (threadId: number, text: string) => invoke<void>("agent_send", { threadId, text }),
+  /** 系统文件夹选择器;null = 用户取消 */
+  pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
+
   backupExport: (dest: string) => invoke<string>("backup_export", { dest }),
   backupRestore: (src: string, apply: boolean) =>
     invoke<{ srs_incoming: number; srs_newer: number; logs_incoming: number }>("backup_restore", {
@@ -374,4 +452,12 @@ export const events = {
   onAskDone: (cb: () => void): Promise<UnlistenFn> => listen("ask://done", () => cb()),
   onAskError: (cb: (msg: string) => void): Promise<UnlistenFn> =>
     listen<string>("ask://error", (e) => cb(e.payload)),
+  onChatChunk: (cb: (p: ChatChunkEvent) => void): Promise<UnlistenFn> =>
+    listen<ChatChunkEvent>("chat://chunk", (e) => cb(e.payload)),
+  onChatTool: (cb: (p: ChatToolEvent) => void): Promise<UnlistenFn> =>
+    listen<ChatToolEvent>("chat://tool", (e) => cb(e.payload)),
+  onChatDone: (cb: (p: ChatDoneEvent) => void): Promise<UnlistenFn> =>
+    listen<ChatDoneEvent>("chat://done", (e) => cb(e.payload)),
+  onChatError: (cb: (p: ChatErrorEvent) => void): Promise<UnlistenFn> =>
+    listen<ChatErrorEvent>("chat://error", (e) => cb(e.payload)),
 };

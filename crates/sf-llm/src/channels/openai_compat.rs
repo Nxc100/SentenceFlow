@@ -4,7 +4,7 @@
 //! a thin configuration of this client (base URL, auth, model naming).
 
 use crate::channels::sse::SseParser;
-use crate::types::{ChannelError, GenChunk, GenRequest};
+use crate::types::{ChannelError, ChatRequest, ChatRole, ChatTurn, GenChunk, GenRequest};
 use futures::StreamExt;
 use futures::stream::BoxStream;
 use secrecy::{ExposeSecret, SecretString};
@@ -177,19 +177,41 @@ impl OpenAiCompatClient {
         &self,
         req: GenRequest,
     ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
+        let messages = json!([
+            {"role": "system", "content": req.system},
+            {"role": "user", "content": req.user},
+        ]);
+        self.stream_messages(&req.model, messages, req.max_tokens, req.temperature)
+            .await
+    }
+
+    /// Multi-turn chat as a native `messages` array (AI 聊天模块).
+    pub async fn chat_stream(
+        &self,
+        req: ChatRequest,
+    ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
+        let messages = chat_messages(&req.system, &req.turns);
+        self.stream_messages(&req.model, messages, req.max_tokens, req.temperature)
+            .await
+    }
+
+    async fn stream_messages(
+        &self,
+        model: &str,
+        messages: serde_json::Value,
+        max_tokens: Option<u32>,
+        temperature: Option<f32>,
+    ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
         let mut body = json!({
-            "model": req.model,
+            "model": model,
             "stream": true,
             "stream_options": {"include_usage": true},
-            "messages": [
-                {"role": "system", "content": req.system},
-                {"role": "user", "content": req.user},
-            ],
+            "messages": messages,
         });
-        if let Some(t) = req.temperature {
+        if let Some(t) = temperature {
             body["temperature"] = json!(t);
         }
-        if let Some(m) = req.max_tokens {
+        if let Some(m) = max_tokens {
             body["max_tokens"] = json!(m);
         }
 
@@ -235,6 +257,20 @@ impl OpenAiCompatClient {
     }
 }
 
+/// Build the OpenAI `messages` array for a multi-turn chat. Pure —
+/// unit-testable without HTTP.
+pub fn chat_messages(system: &str, turns: &[ChatTurn]) -> serde_json::Value {
+    let mut messages = vec![json!({"role": "system", "content": system})];
+    for t in turns {
+        let role = match t.role {
+            ChatRole::User => "user",
+            ChatRole::Assistant => "assistant",
+        };
+        messages.push(json!({"role": role, "content": t.text}));
+    }
+    serde_json::Value::Array(messages)
+}
+
 fn map_reqwest_err(e: reqwest::Error) -> ChannelError {
     if e.is_timeout() {
         ChannelError::Timeout
@@ -276,6 +312,33 @@ mod tests {
     #[test]
     fn garbage_is_tolerated() {
         assert!(payload_to_chunks("not json").is_empty());
+    }
+
+    #[test]
+    fn chat_messages_maps_roles_in_order() {
+        let turns = vec![
+            ChatTurn {
+                role: ChatRole::User,
+                text: "Hello".into(),
+            },
+            ChatTurn {
+                role: ChatRole::Assistant,
+                text: "Hi!".into(),
+            },
+            ChatTurn {
+                role: ChatRole::User,
+                text: "How are you?".into(),
+            },
+        ];
+        let v = chat_messages("sys", &turns);
+        let arr = v.as_array().unwrap();
+        assert_eq!(arr.len(), 4);
+        assert_eq!(arr[0]["role"], "system");
+        assert_eq!(arr[0]["content"], "sys");
+        assert_eq!(arr[1]["role"], "user");
+        assert_eq!(arr[2]["role"], "assistant");
+        assert_eq!(arr[3]["role"], "user");
+        assert_eq!(arr[3]["content"], "How are you?");
     }
 
     #[test]

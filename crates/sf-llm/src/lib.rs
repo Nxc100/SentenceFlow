@@ -31,5 +31,6 @@ pub mod keystore;
 
 pub use adapter::ChannelAdapter;
 pub use types::{
-    ChannelError, ChannelId, ChannelStatus, GenChunk, GenRequest, MeterKind, ModelInfo,
+    ChannelError, ChannelId, ChannelStatus, ChatRequest, ChatRole, ChatTurn, GenChunk, GenRequest,
+    MeterKind, ModelInfo,
 };

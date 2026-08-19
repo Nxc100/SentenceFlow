@@ -6,6 +6,7 @@
 //! * sf-core stays pure: commands are thin — load rows, call core, save rows.
 
 mod channels;
+mod chat;
 mod commands;
 mod error;
 mod installer;
@@ -104,6 +105,14 @@ pub fn run() {
             commands::workshop_recover,
             commands::ask_ai,
             commands::weekly_review,
+            chat::chat_thread_create,
+            chat::chat_threads,
+            chat::chat_history,
+            chat::chat_thread_delete,
+            chat::chat_send,
+            chat::chat_stop,
+            chat::agent_send,
+            chat::pick_folder,
             commands::backup_export,
             commands::backup_restore,
             commands::tts_speak,

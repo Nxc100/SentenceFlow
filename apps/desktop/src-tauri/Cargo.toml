@@ -30,6 +30,8 @@ secrecy = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tauri = { version = "2", features = [] }
+# 智能体工作目录的系统文件夹选择器(显式 command,不经插件 — 见 capabilities)
+rfd = { version = "0.15", default-features = false, features = ["gtk3"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 # opencode 一键安装器:npm registry 流式下载 + tgz 解包
 reqwest = { workspace = true }

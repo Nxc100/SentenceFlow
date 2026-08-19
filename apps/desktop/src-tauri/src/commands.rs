@@ -1074,6 +1074,7 @@ pub async fn ask_ai(
                             );
                         }
                         Ok(sf_llm::types::GenChunk::Done) => break,
+                        Ok(_) => {}
                         Err(e) => {
                             let _ = app.emit("ask://error", e.zh_message());
                             return;

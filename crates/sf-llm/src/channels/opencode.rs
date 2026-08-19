@@ -19,9 +19,13 @@
 //! a 3s timeout.
 
 use crate::adapter::ChannelAdapter;
-use crate::types::{ChannelError, ChannelStatus, GenChunk, GenRequest, MeterKind, ModelInfo};
+use crate::types::{
+    ChannelError, ChannelStatus, ChatRequest, GenChunk, GenRequest, MeterKind, ModelInfo,
+    flatten_turns,
+};
 use futures::StreamExt;
 use futures::stream::BoxStream;
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration;
@@ -78,41 +82,56 @@ impl OpencodeChannel {
 
     /// Locate the opencode binary: override → PATH → common install dirs.
     pub fn find_binary(&self) -> Option<PathBuf> {
-        if let Some(p) = &self.cfg.bin_override {
-            return p.exists().then(|| p.clone());
-        }
-        // PATH lookup.
-        if let Ok(path_var) = std::env::var("PATH") {
-            for dir in std::env::split_paths(&path_var) {
-                for name in binary_names() {
-                    let candidate = dir.join(name);
-                    if candidate.is_file() {
-                        return Some(candidate);
-                    }
-                }
-            }
-        }
-        // Common fallback locations (§10: 用户环境差异对策).
-        for dir in common_install_dirs() {
-            for name in binary_names() {
-                let candidate = dir.join(name);
-                if candidate.is_file() {
-                    return Some(candidate);
-                }
-            }
-        }
-        None
+        locate_binary(self.cfg.bin_override.as_deref())
     }
 
-    /// 把用户配置的代理注入 CLI 子进程环境(localhost 排除)。
-    fn apply_proxy(&self, cmd: &mut Command) {
-        if let Some(proxy) = self.cfg.proxy_url.as_deref().map(str::trim)
-            && !proxy.is_empty()
-        {
-            cmd.env("HTTP_PROXY", proxy)
-                .env("HTTPS_PROXY", proxy)
-                .env("NO_PROXY", "localhost,127.0.0.1");
+    /// [`hidden_command`] with this channel's proxy applied.
+    fn command(&self, bin: &Path) -> Command {
+        hidden_command(bin, self.cfg.proxy_url.as_deref())
+    }
+
+    /// Spawn one sandboxed `opencode run --format json` with the prompt on
+    /// stdin — standalone run per request (see module docs for why `--attach`
+    /// is deliberately not used). `session` continues a server-side session.
+    fn spawn_run(
+        &self,
+        model: &str,
+        session: Option<&str>,
+        prompt: &str,
+    ) -> Result<tokio::process::Child, ChannelError> {
+        let bin = self.find_binary().ok_or(ChannelError::NotInstalled)?;
+        std::fs::create_dir_all(&self.cfg.sandbox_dir)
+            .map_err(|e| ChannelError::Process(e.to_string()))?;
+        std::fs::write(
+            self.cfg.sandbox_dir.join("opencode.json"),
+            SANDBOX_OPENCODE_JSON,
+        )
+        .map_err(|e| ChannelError::Process(e.to_string()))?;
+
+        let mut cmd = self.command(&bin);
+        cmd.args(["run", "-m", model, "--format", "json"]);
+        if let Some(id) = session {
+            cmd.args(["-s", id]);
         }
+        let mut child = cmd
+            .current_dir(&self.cfg.sandbox_dir)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .kill_on_drop(true)
+            .spawn()
+            .map_err(|e| ChannelError::Process(e.to_string()))?;
+
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| ChannelError::Process("failed to open opencode stdin".into()))?;
+        let prompt = prompt.to_string();
+        tokio::spawn(async move {
+            let _ = stdin.write_all(prompt.as_bytes()).await;
+            let _ = stdin.shutdown().await;
+        });
+        Ok(child)
     }
 
     async fn run_capture(
@@ -121,8 +140,7 @@ impl OpencodeChannel {
         args: &[&str],
         timeout: Duration,
     ) -> Result<String, ChannelError> {
-        let mut cmd = hidden_command(bin);
-        self.apply_proxy(&mut cmd);
+        let mut cmd = self.command(bin);
         let fut = cmd
             .args(args)
             .stdin(Stdio::null())
@@ -137,12 +155,50 @@ impl OpencodeChannel {
     }
 }
 
+/// Locate an opencode binary: override → PATH → common install dirs.
+/// Shared with the desktop agent shell (智能体模式), which drives the CLI
+/// directly rather than through the adapter.
+pub fn locate_binary(bin_override: Option<&Path>) -> Option<PathBuf> {
+    if let Some(p) = bin_override {
+        return p.exists().then(|| p.to_path_buf());
+    }
+    // PATH lookup.
+    if let Ok(path_var) = std::env::var("PATH") {
+        for dir in std::env::split_paths(&path_var) {
+            for name in binary_names() {
+                let candidate = dir.join(name);
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+        }
+    }
+    // Common fallback locations (§10: 用户环境差异对策).
+    for dir in common_install_dirs() {
+        for name in binary_names() {
+            let candidate = dir.join(name);
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+    }
+    None
+}
+
 /// Windows 下 GUI 进程 spawn `.cmd`(经 cmd.exe)会弹出黑色控制台窗口;
-/// `CREATE_NO_WINDOW` 让子进程静默运行。其余平台为普通 Command。
-fn hidden_command(bin: &Path) -> Command {
+/// `CREATE_NO_WINDOW` 让子进程静默运行。可选代理注入环境变量
+/// (HTTP_PROXY/HTTPS_PROXY;localhost 排除)。与桌面智能体外壳共用。
+pub fn hidden_command(bin: &Path, proxy: Option<&str>) -> Command {
     let mut cmd = Command::new(bin);
     #[cfg(windows)]
     cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    if let Some(proxy) = proxy.map(str::trim)
+        && !proxy.is_empty()
+    {
+        cmd.env("HTTP_PROXY", proxy)
+            .env("HTTPS_PROXY", proxy)
+            .env("NO_PROXY", "localhost,127.0.0.1");
+    }
     cmd
 }
 
@@ -211,83 +267,34 @@ impl ChannelAdapter for OpencodeChannel {
         &self,
         req: GenRequest,
     ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
-        let bin = self.find_binary().ok_or(ChannelError::NotInstalled)?;
-        std::fs::create_dir_all(&self.cfg.sandbox_dir)
-            .map_err(|e| ChannelError::Process(e.to_string()))?;
-        std::fs::write(
-            self.cfg.sandbox_dir.join("opencode.json"),
-            SANDBOX_OPENCODE_JSON,
-        )
-        .map_err(|e| ChannelError::Process(e.to_string()))?;
-
-        // Standalone run per request — see module docs for why --attach is
-        // deliberately not used.
-        let mut cmd = hidden_command(&bin);
-        self.apply_proxy(&mut cmd);
-        let mut child = cmd
-            .args(["run", "-m", &req.model, "--format", "json"])
-            .current_dir(&self.cfg.sandbox_dir)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .kill_on_drop(true)
-            .spawn()
-            .map_err(|e| ChannelError::Process(e.to_string()))?;
-
         // Prompt goes through stdin (§3.4): system + user with a separator.
         let prompt = format!("{}\n\n---\n\n{}", req.system, req.user);
-        let mut stdin = child
-            .stdin
-            .take()
-            .ok_or_else(|| ChannelError::Process("failed to open opencode stdin".into()))?;
-        tokio::spawn(async move {
-            let _ = stdin.write_all(prompt.as_bytes()).await;
-            let _ = stdin.shutdown().await;
-        });
+        let child = self.spawn_run(&req.model, None, &prompt)?;
+        Ok(stream_child_stdout(child, |line| {
+            run_line_to_chunk(line).into_iter().collect()
+        })?)
+    }
 
-        let stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| ChannelError::Process("failed to open opencode stdout".into()))?;
-        let lines = BufReader::new(stdout).lines();
-
-        let stream =
-            futures::stream::unfold((lines, Some(child)), |(mut lines, mut child)| async move {
-                loop {
-                    match lines.next_line().await {
-                        Ok(Some(line)) => {
-                            if let Some(chunk) = run_line_to_chunk(&line) {
-                                return Some((Ok(chunk), (lines, child)));
-                            }
-                            // non-text event line: keep reading
-                        }
-                        Ok(None) => {
-                            // stdout closed: reap the child and finish.
-                            if let Some(c) = child.as_mut() {
-                                match c.wait().await {
-                                    Ok(status) if !status.success() => {
-                                        let err = ChannelError::Process(format!(
-                                            "opencode run exited with {status}"
-                                        ));
-                                        return Some((Err(err), (lines, None)));
-                                    }
-                                    _ => {}
-                                }
-                                child = None;
-                                return Some((Ok(GenChunk::Done), (lines, child)));
-                            }
-                            return None;
-                        }
-                        Err(e) => {
-                            return Some((
-                                Err(ChannelError::Process(e.to_string())),
-                                (lines, None),
-                            ));
-                        }
-                    }
-                }
-            });
-        Ok(stream.boxed())
+    /// Multi-turn chat via server-side session memory (`run -s <id>`,实机
+    /// spike 2026-08-19 验证跨请求记忆可用)。新会话把 system + 上下文塞进
+    /// 首条消息并从事件流捕获 sessionID(经 [`GenChunk::SessionRef`] 回传);
+    /// 续聊只送最新用户消息 —— 上文在 opencode 服务端。
+    async fn chat_stream(
+        &self,
+        req: ChatRequest,
+    ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
+        let prompt = match &req.session {
+            // Continued session: server already has the context.
+            Some(_) => req.turns.last().map(|t| t.text.clone()).unwrap_or_default(),
+            // Fresh session: seed it with the system prompt + any local
+            // history (e.g. thread started on another channel).
+            None => format!("{}\n\n---\n\n{}", req.system, flatten_turns(req.turns)),
+        };
+        let child = self.spawn_run(&req.model, req.session.as_deref(), &prompt)?;
+        let mut session_seen = false;
+        Ok(stream_child_stdout(child, move |line| {
+            chat_line_to_chunks(line, &mut session_seen)
+        })?)
     }
 
     fn meter(&self) -> MeterKind {
@@ -336,6 +343,78 @@ pub fn parse_models_output(out: &str) -> Vec<ModelInfo> {
             needs_proxy: false,
         })
         .collect()
+}
+
+/// Turn a spawned child's stdout lines into a chunk stream: each line maps to
+/// zero or more chunks via `map_line`; stdout close reaps the child (non-zero
+/// exit → error) and finishes with [`GenChunk::Done`].
+fn stream_child_stdout(
+    mut child: tokio::process::Child,
+    map_line: impl FnMut(&str) -> Vec<GenChunk> + Send + 'static,
+) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| ChannelError::Process("failed to open opencode stdout".into()))?;
+    let lines = BufReader::new(stdout).lines();
+    let pending: VecDeque<GenChunk> = VecDeque::new();
+    let stream = futures::stream::unfold(
+        (lines, Some(child), pending, map_line),
+        |(mut lines, mut child, mut pending, mut map_line)| async move {
+            loop {
+                if let Some(chunk) = pending.pop_front() {
+                    return Some((Ok(chunk), (lines, child, pending, map_line)));
+                }
+                match lines.next_line().await {
+                    Ok(Some(line)) => pending.extend(map_line(&line)),
+                    Ok(None) => {
+                        // stdout closed: reap the child and finish.
+                        if let Some(c) = child.as_mut() {
+                            match c.wait().await {
+                                Ok(status) if !status.success() => {
+                                    let err = ChannelError::Process(format!(
+                                        "opencode run exited with {status}"
+                                    ));
+                                    return Some((Err(err), (lines, None, pending, map_line)));
+                                }
+                                _ => {}
+                            }
+                            return Some((Ok(GenChunk::Done), (lines, None, pending, map_line)));
+                        }
+                        return None;
+                    }
+                    Err(e) => {
+                        return Some((
+                            Err(ChannelError::Process(e.to_string())),
+                            (lines, None, pending, map_line),
+                        ));
+                    }
+                }
+            }
+        },
+    );
+    Ok(stream.boxed())
+}
+
+/// Map one chat-mode stdout line to chunks: first sighting of the top-level
+/// `sessionID` (present on every event, W3 spike) becomes a
+/// [`GenChunk::SessionRef`], then normal text mapping applies.
+pub fn chat_line_to_chunks(line: &str, session_seen: &mut bool) -> Vec<GenChunk> {
+    let mut out = Vec::new();
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return out;
+    }
+    if !*session_seen
+        && let Ok(v) = serde_json::from_str::<serde_json::Value>(trimmed)
+        && let Some(id) = v.get("sessionID").and_then(|s| s.as_str())
+        && !id.is_empty()
+    {
+        *session_seen = true;
+        out.push(GenChunk::SessionRef { id: id.to_string() });
+    }
+    out.extend(run_line_to_chunk(line));
+    out
 }
 
 /// Map one `opencode run --format json` stdout line to a chunk.
@@ -411,6 +490,45 @@ mod tests {
                 text: "plain output\n".into()
             })
         );
+    }
+
+    #[test]
+    fn chat_lines_emit_session_ref_once_then_text() {
+        let mut seen = false;
+        let first = chat_line_to_chunks(
+            r#"{"type":"step_start","sessionID":"ses_abc","part":{"messageID":"msg_1"}}"#,
+            &mut seen,
+        );
+        assert_eq!(
+            first,
+            vec![GenChunk::SessionRef {
+                id: "ses_abc".into()
+            }]
+        );
+        let second = chat_line_to_chunks(
+            r#"{"type":"text","sessionID":"ses_abc","part":{"text":"Hello"}}"#,
+            &mut seen,
+        );
+        // session already reported → text only
+        assert_eq!(
+            second,
+            vec![GenChunk::Text {
+                text: "Hello".into()
+            }]
+        );
+    }
+
+    #[test]
+    fn chat_lines_tolerate_plain_text_without_session() {
+        let mut seen = false;
+        assert_eq!(
+            chat_line_to_chunks("plain fallback", &mut seen),
+            vec![GenChunk::Text {
+                text: "plain fallback\n".into()
+            }]
+        );
+        assert!(!seen);
+        assert!(chat_line_to_chunks("   ", &mut seen).is_empty());
     }
 
     #[test]

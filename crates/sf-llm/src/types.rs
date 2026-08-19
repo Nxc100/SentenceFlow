@@ -82,8 +82,87 @@ pub enum GenChunk {
         prompt_tokens: u64,
         completion_tokens: u64,
     },
+    /// Channel-native conversation handle for continuing later (opencode
+    /// `run -s <id>` server-side memory). Emitted at most once per stream;
+    /// channels without native sessions never emit it.
+    SessionRef { id: String },
     /// Stream finished normally.
     Done,
+}
+
+/// Speaker of one prior conversation turn.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChatRole {
+    User,
+    Assistant,
+}
+
+/// One turn of a multi-turn conversation, oldest first in
+/// [`ChatRequest::turns`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ChatTurn {
+    pub role: ChatRole,
+    pub text: String,
+}
+
+/// One multi-turn chat request (AI 聊天模块). `turns` always carries the full
+/// visible context ending with the new user message; channels with native
+/// session memory may ignore everything but the tail (see the opencode
+/// adapter), the rest replay it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ChatRequest {
+    pub model: String,
+    pub system: String,
+    /// Full conversation, oldest first; the last entry must be the new user
+    /// message.
+    pub turns: Vec<ChatTurn>,
+    /// Channel-native session to continue (from an earlier
+    /// [`GenChunk::SessionRef`]). `None` starts a fresh conversation.
+    pub session: Option<String>,
+    pub max_tokens: Option<u32>,
+    pub temperature: Option<f32>,
+}
+
+impl ChatRequest {
+    /// Flatten into a single-turn [`GenRequest`] — the default path for
+    /// channels without native multi-turn support. Earlier turns become a
+    /// labelled transcript above the new message.
+    pub fn into_single_turn(self) -> GenRequest {
+        GenRequest {
+            model: self.model,
+            system: self.system,
+            user: flatten_turns(self.turns),
+            max_tokens: self.max_tokens,
+            temperature: self.temperature,
+        }
+    }
+}
+
+/// Pack turns into one user prompt: bare passthrough for a single user turn,
+/// transcript + new-message sections otherwise.
+pub fn flatten_turns(mut turns: Vec<ChatTurn>) -> String {
+    let last = match turns.last() {
+        Some(t) if t.role == ChatRole::User => turns.pop().map(|t| t.text).unwrap_or_default(),
+        _ => String::new(), // defensive: contract says last turn is the user's
+    };
+    if turns.is_empty() {
+        return last;
+    }
+    let mut s = String::from("[Conversation so far]\n");
+    for t in &turns {
+        let label = match t.role {
+            ChatRole::User => "User",
+            ChatRole::Assistant => "Assistant",
+        };
+        s.push_str(label);
+        s.push_str(": ");
+        s.push_str(&t.text);
+        s.push('\n');
+    }
+    s.push_str("\n[New user message]\n");
+    s.push_str(&last);
+    s
 }
 
 /// Channel errors, mapped to 人话 by [`ChannelError::zh_message`] (§11.E).
@@ -180,5 +259,62 @@ mod tests {
             serde_json::to_string(&s).unwrap(),
             r#"{"state":"ready","models":[]}"#
         );
+    }
+
+    #[test]
+    fn session_ref_serializes_tagged() {
+        let c = GenChunk::SessionRef { id: "ses_1".into() };
+        assert_eq!(
+            serde_json::to_string(&c).unwrap(),
+            r#"{"kind":"session_ref","id":"ses_1"}"#
+        );
+    }
+
+    fn turn(role: ChatRole, text: &str) -> ChatTurn {
+        ChatTurn {
+            role,
+            text: text.into(),
+        }
+    }
+
+    #[test]
+    fn single_user_turn_flattens_bare() {
+        assert_eq!(
+            flatten_turns(vec![turn(ChatRole::User, "Hi there")]),
+            "Hi there"
+        );
+    }
+
+    #[test]
+    fn multi_turn_flattens_to_transcript() {
+        let s = flatten_turns(vec![
+            turn(ChatRole::User, "Hello"),
+            turn(ChatRole::Assistant, "Hi! How are you?"),
+            turn(ChatRole::User, "I am fine"),
+        ]);
+        assert!(s.starts_with("[Conversation so far]\n"));
+        assert!(s.contains("User: Hello\n"));
+        assert!(s.contains("Assistant: Hi! How are you?\n"));
+        assert!(s.ends_with("[New user message]\nI am fine"));
+        // the new message must not appear inside the transcript section
+        assert_eq!(s.matches("I am fine").count(), 1);
+    }
+
+    #[test]
+    fn into_single_turn_carries_request_fields() {
+        let req = ChatRequest {
+            model: "m".into(),
+            system: "sys".into(),
+            turns: vec![turn(ChatRole::User, "hey")],
+            session: Some("ses_x".into()),
+            max_tokens: Some(64),
+            temperature: Some(0.5),
+        };
+        let single = req.into_single_turn();
+        assert_eq!(single.model, "m");
+        assert_eq!(single.system, "sys");
+        assert_eq!(single.user, "hey");
+        assert_eq!(single.max_tokens, Some(64));
+        assert_eq!(single.temperature, Some(0.5));
     }
 }

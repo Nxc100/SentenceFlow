@@ -2022,3 +2022,451 @@ select {
   align-items: center;
   gap: 10px;
 }
+
+/* ============================================================
+   AI 聊天(doc/AI聊天模块-实现方案.md)
+   ============================================================ */
+
+.page--aichat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.aichat-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.aichat-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 14px;
+}
+
+/* ---- 左侧会话列表 ---- */
+
+.aichat-threads {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.aichat-threads__new {
+  padding: 9px 12px;
+  border: 1px dashed var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-card);
+  color: var(--sf-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.aichat-threads__new:hover {
+  background: var(--sf-primary-soft);
+}
+
+.aichat-threads__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aichat-threads__empty {
+  color: var(--sf-text-3);
+  font-size: 12px;
+  padding: 8px 4px;
+}
+
+.aichat-thread {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 26px 8px 10px;
+  border-radius: var(--sf-radius-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.aichat-thread:hover {
+  background: var(--sf-panel);
+}
+
+.aichat-thread--on {
+  background: var(--sf-primary-soft);
+  border-color: var(--sf-blue-100);
+}
+
+.aichat-thread__title {
+  font-size: 13px;
+  color: var(--sf-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aichat-thread__meta {
+  font-size: 11px;
+  color: var(--sf-text-3);
+}
+
+.aichat-thread__del {
+  position: absolute;
+  right: 6px;
+  top: 8px;
+  border: none;
+  background: none;
+  color: var(--sf-text-3);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px;
+  display: none;
+}
+
+.aichat-thread:hover .aichat-thread__del {
+  display: block;
+}
+
+.aichat-thread__del:hover {
+  color: var(--sf-error);
+}
+
+/* ---- 主区 ---- */
+
+.aichat-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-xl);
+  overflow: hidden;
+}
+
+.aichat-workdir {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 12px;
+  color: var(--sf-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aichat-workdir__warn {
+  margin-left: 10px;
+  color: var(--sf-warning);
+}
+
+.aichat-msgs {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aichat-empty {
+  margin: auto;
+  text-align: center;
+  color: var(--sf-text-3);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.aichat-chips {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.aichat-chip {
+  padding: 7px 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: 999px;
+  background: var(--sf-card);
+  color: var(--sf-text-2);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.aichat-chip:hover {
+  border-color: var(--sf-primary);
+  color: var(--sf-primary);
+}
+
+.aichat-msg {
+  max-width: 76%;
+  border-radius: var(--sf-radius-md);
+  padding: 9px 14px;
+  animation: sf-fade-in var(--sf-dur-fast) var(--sf-ease-out);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.aichat-msg--user {
+  align-self: flex-end;
+  background: var(--sf-primary-soft);
+  color: var(--sf-text);
+  white-space: pre-wrap;
+  font-family: var(--sf-font-en);
+}
+
+.aichat-msg--ai {
+  align-self: flex-start;
+  background: var(--sf-panel);
+  color: var(--sf-text);
+}
+
+.aichat-partial {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--sf-text-3);
+}
+
+.aichat-tool {
+  font-size: 12px;
+  color: var(--sf-text-3);
+  font-family: var(--sf-font-mono, monospace);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aichat-tool--done {
+  color: var(--sf-text-2);
+}
+
+.aichat-error {
+  align-self: center;
+  color: var(--sf-error);
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+/* ---- 纠错小卡(§3.4 显式而不打断) ---- */
+
+.aichat-fix {
+  margin-top: 8px;
+  border-top: 1px dashed var(--sf-border);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.aichat-fix__head {
+  font-size: 12px;
+  color: var(--sf-text-3);
+}
+
+.aichat-fix__orig {
+  color: var(--sf-text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--sf-gray-300);
+  font-family: var(--sf-font-en);
+}
+
+.aichat-fix__better {
+  color: var(--sf-success);
+  font-family: var(--sf-font-en);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aichat-fix__speak {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+}
+
+.aichat-fix__why {
+  color: var(--sf-text-2);
+}
+
+/* ---- 底部输入 ---- */
+
+.aichat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--sf-border);
+}
+
+.aichat-fixtoggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--sf-text-2);
+  white-space: nowrap;
+  padding-bottom: 10px;
+  cursor: pointer;
+}
+
+.aichat-input {
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-card);
+  color: var(--sf-text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+.aichat-input:focus {
+  outline: none;
+  border-color: var(--sf-primary);
+}
+
+/* ---- 角色扮演选择墙 ---- */
+
+.aichat-roles {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.aichat-roles h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.aichat-roles__hint {
+  color: var(--sf-text-3);
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.aichat-roles__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.aichat-role {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-card);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.aichat-role:hover {
+  border-color: var(--sf-primary);
+  background: var(--sf-primary-soft);
+}
+
+.aichat-role__emoji {
+  font-size: 22px;
+}
+
+.aichat-role__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sf-text);
+}
+
+.aichat-role__desc {
+  font-size: 12px;
+  color: var(--sf-text-3);
+}
+
+.aichat-custom {
+  display: flex;
+  gap: 8px;
+}
+
+.aichat-custom__input {
+  flex: 1;
+  height: 40px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-card);
+  color: var(--sf-text);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+/* ---- 智能体目录选择 ---- */
+
+.aichat-agentsetup {
+  margin: auto;
+  max-width: 460px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--sf-text-2);
+}
+
+.aichat-agentsetup h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--sf-text);
+}
+
+.aichat-agentsetup__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aichat-agentsetup__dir {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 8px 12px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-panel);
+  font-size: 13px;
+}
+
+.aichat-agentsetup__warn {
+  color: var(--sf-warning);
+  background: var(--sf-warning-bg);
+  border-radius: var(--sf-radius-md);
+  padding: 10px 12px;
+  font-size: 13px;
+  margin: 0;
+}

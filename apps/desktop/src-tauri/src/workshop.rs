@@ -524,6 +524,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                         )?;
                     }
                     Ok(GenChunk::Done) => break,
+                    Ok(_) => {}
                     Err(ChannelError::RateLimited { retry_after_secs }) => {
                         let decision =
                             backoff.on_rate_limited(&backoff_policy, Some(retry_after_secs));

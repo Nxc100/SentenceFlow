@@ -70,6 +70,26 @@ CREATE TABLE IF NOT EXISTS favorite (
     sentence_id INTEGER PRIMARY KEY,
     added_at    INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS chat_thread (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    mode        TEXT NOT NULL,             -- free | roleplay | agent
+    title       TEXT NOT NULL DEFAULT '',
+    role_id     TEXT NOT NULL DEFAULT '',  -- 角色扮演的角色卡 id
+    role_system TEXT NOT NULL DEFAULT '',  -- 角色卡的人设描述(发送时组入 system)
+    oc_session  TEXT NOT NULL DEFAULT '',  -- opencode 服务端会话 id
+    workdir     TEXT NOT NULL DEFAULT '',  -- 智能体工作目录
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS chat_message (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id INTEGER NOT NULL,
+    role      TEXT NOT NULL,               -- user | assistant
+    text      TEXT NOT NULL,
+    fix_json  TEXT NOT NULL DEFAULT '',    -- 纠错卡 JSON(无纠错为空)
+    ts        INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_message_thread ON chat_message(thread_id);
 "#;
 
 pub struct ProgressDb {
@@ -377,6 +397,169 @@ impl ProgressDb {
         let rows = stmt.query_map(params![fingerprint], |r| Ok((r.get(0)?, r.get(1)?)))?;
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
+
+    // ------------------------------------------------------------- chat (AI 聊天模块)
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn chat_thread_create(
+        &self,
+        mode: &str,
+        title: &str,
+        role_id: &str,
+        role_system: &str,
+        workdir: &str,
+        now: i64,
+    ) -> CmdResult<i64> {
+        self.conn.execute(
+            "INSERT INTO chat_thread (mode, title, role_id, role_system, workdir,
+                                      created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
+            params![mode, title, role_id, role_system, workdir, now],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn chat_threads(&self) -> CmdResult<Vec<ChatThreadRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, mode, title, role_id, role_system, oc_session, workdir,
+                    created_at, updated_at
+             FROM chat_thread ORDER BY updated_at DESC, id DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_chat_thread)?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
+    pub fn chat_thread_get(&self, id: i64) -> CmdResult<Option<ChatThreadRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, mode, title, role_id, role_system, oc_session, workdir,
+                    created_at, updated_at
+             FROM chat_thread WHERE id = ?1",
+        )?;
+        let mut rows = stmt.query_map(params![id], row_to_chat_thread)?;
+        Ok(rows.next().transpose()?)
+    }
+
+    pub fn chat_thread_set_session(&self, id: i64, session: &str) -> CmdResult<()> {
+        self.conn.execute(
+            "UPDATE chat_thread SET oc_session = ?2 WHERE id = ?1",
+            params![id, session],
+        )?;
+        Ok(())
+    }
+
+    pub fn chat_thread_touch(&self, id: i64, now: i64) -> CmdResult<()> {
+        self.conn.execute(
+            "UPDATE chat_thread SET updated_at = ?2 WHERE id = ?1",
+            params![id, now],
+        )?;
+        Ok(())
+    }
+
+    /// Delete a thread and its messages.
+    pub fn chat_thread_delete(&self, id: i64) -> CmdResult<()> {
+        self.conn
+            .execute("DELETE FROM chat_message WHERE thread_id = ?1", params![id])?;
+        self.conn
+            .execute("DELETE FROM chat_thread WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    pub fn chat_messages(&self, thread_id: i64) -> CmdResult<Vec<ChatMessageRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, role, text, fix_json, ts FROM chat_message
+             WHERE thread_id = ?1 ORDER BY id",
+        )?;
+        let rows = stmt.query_map(params![thread_id], row_to_chat_message)?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
+    /// Last `limit` messages in chronological order (回放窗口).
+    pub fn chat_recent_messages(
+        &self,
+        thread_id: i64,
+        limit: u32,
+    ) -> CmdResult<Vec<ChatMessageRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, role, text, fix_json, ts FROM (
+                 SELECT id, role, text, fix_json, ts FROM chat_message
+                 WHERE thread_id = ?1 ORDER BY id DESC LIMIT ?2
+             ) ORDER BY id",
+        )?;
+        let rows = stmt.query_map(params![thread_id, limit], row_to_chat_message)?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
+    pub fn chat_message_add(
+        &self,
+        thread_id: i64,
+        role: &str,
+        text: &str,
+        fix_json: &str,
+        ts: i64,
+    ) -> CmdResult<i64> {
+        self.conn.execute(
+            "INSERT INTO chat_message (thread_id, role, text, fix_json, ts)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![thread_id, role, text, fix_json, ts],
+        )?;
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn chat_message_count(&self, thread_id: i64) -> CmdResult<u32> {
+        Ok(self.conn.query_row(
+            "SELECT COUNT(*) FROM chat_message WHERE thread_id = ?1",
+            params![thread_id],
+            |r| r.get(0),
+        )?)
+    }
+}
+
+/// One chat thread (会话) row.
+#[derive(Debug, Clone)]
+pub struct ChatThreadRow {
+    pub id: i64,
+    pub mode: String,
+    pub title: String,
+    pub role_id: String,
+    pub role_system: String,
+    pub oc_session: String,
+    pub workdir: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+/// One chat message row.
+#[derive(Debug, Clone)]
+pub struct ChatMessageRow {
+    pub id: i64,
+    pub role: String,
+    pub text: String,
+    pub fix_json: String,
+    pub ts: i64,
+}
+
+fn row_to_chat_thread(r: &rusqlite::Row<'_>) -> rusqlite::Result<ChatThreadRow> {
+    Ok(ChatThreadRow {
+        id: r.get(0)?,
+        mode: r.get(1)?,
+        title: r.get(2)?,
+        role_id: r.get(3)?,
+        role_system: r.get(4)?,
+        oc_session: r.get(5)?,
+        workdir: r.get(6)?,
+        created_at: r.get(7)?,
+        updated_at: r.get(8)?,
+    })
+}
+
+fn row_to_chat_message(r: &rusqlite::Row<'_>) -> rusqlite::Result<ChatMessageRow> {
+    Ok(ChatMessageRow {
+        id: r.get(0)?,
+        role: r.get(1)?,
+        text: r.get(2)?,
+        fix_json: r.get(3)?,
+        ts: r.get(4)?,
+    })
 }
 
 fn mode_str(m: Mode) -> &'static str {
@@ -508,5 +691,50 @@ mod tests {
         let ranking = db.bench_ranking("fp1").unwrap();
         assert_eq!(ranking[0].0, "b");
         assert_eq!(ranking.len(), 2);
+    }
+
+    #[test]
+    fn chat_thread_and_messages_roundtrip() {
+        let db = ProgressDb::open_in_memory().unwrap();
+        let t1 = db
+            .chat_thread_create("free", "聊聊周末", "", "", "", 100)
+            .unwrap();
+        let t2 = db
+            .chat_thread_create("roleplay", "面试官", "interviewer", "You are…", "", 200)
+            .unwrap();
+        // list ordered by updated_at desc
+        let threads = db.chat_threads().unwrap();
+        assert_eq!(threads.len(), 2);
+        assert_eq!(threads[0].id, t2);
+        assert_eq!(threads[0].role_id, "interviewer");
+
+        db.chat_message_add(t1, "user", "Hello", "", 101).unwrap();
+        db.chat_message_add(t1, "assistant", "Hi!", r#"{"better":"x"}"#, 102)
+            .unwrap();
+        db.chat_thread_touch(t1, 300).unwrap();
+        assert_eq!(db.chat_threads().unwrap()[0].id, t1);
+        assert_eq!(db.chat_message_count(t1).unwrap(), 2);
+        let msgs = db.chat_messages(t1).unwrap();
+        assert_eq!(msgs[0].text, "Hello");
+        assert_eq!(msgs[1].fix_json, r#"{"better":"x"}"#);
+
+        db.chat_thread_set_session(t1, "ses_x").unwrap();
+        assert_eq!(db.chat_thread_get(t1).unwrap().unwrap().oc_session, "ses_x");
+
+        // recent window keeps chronological order of the tail
+        for i in 0..5 {
+            db.chat_message_add(t1, "user", &format!("m{i}"), "", 110 + i)
+                .unwrap();
+        }
+        let recent = db.chat_recent_messages(t1, 3).unwrap();
+        assert_eq!(
+            recent.iter().map(|m| m.text.as_str()).collect::<Vec<_>>(),
+            vec!["m2", "m3", "m4"]
+        );
+
+        // delete cascades to messages
+        db.chat_thread_delete(t1).unwrap();
+        assert_eq!(db.chat_message_count(t1).unwrap(), 0);
+        assert!(db.chat_thread_get(t1).unwrap().is_none());
     }
 }

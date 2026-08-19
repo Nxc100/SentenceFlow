@@ -31,6 +31,8 @@ pub struct AppState {
     pub gen_cancel: AtomicBool,
     /// 进行中的定级测试(一次一个;开始新测试即丢弃旧的)。
     pub placement: Mutex<Option<sf_core::PlacementTest>>,
+    /// 聊天/智能体流的停止信号(chat_stop → notify_waiters,AI 聊天模块)。
+    pub chat_notify: tokio::sync::Notify,
 }
 
 impl AppState {
@@ -98,6 +100,7 @@ impl AppState {
             tts,
             gen_cancel: AtomicBool::new(false),
             placement: Mutex::new(None),
+            chat_notify: tokio::sync::Notify::new(),
         })
     }
 

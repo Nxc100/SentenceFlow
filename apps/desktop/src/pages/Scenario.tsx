@@ -14,10 +14,13 @@ import type { ScenarioLaunch } from "./ScenarioPractice";
 export function ScenarioPage({
   onPractice,
   onGenerate,
+  onRoleplay,
 }: {
   onPractice: (launch: ScenarioLaunch) => void;
   /** 去生成工坊(场景对话模式)自己造一个场景 */
   onGenerate: () => void;
+  /** 去「AI 聊天 · 角色扮演」把这个场景即兴演一遍(AI 演对方) */
+  onRoleplay: (prefill: { title: string; roleSystem: string }) => void;
 }) {
   const toast = useToast();
   const [packs, setPacks] = useState<ScenePackInfo[] | null>(null);
@@ -214,6 +217,19 @@ export function ScenarioPage({
                       preview.pack.sentence_count > 0
                     ? "再练一遍 →"
                     : "开始练习 →"}
+              </Button>
+              {/* 照剧本练完 → 去角色扮演即兴用出来(方案 §3.3 联动) */}
+              <Button
+                variant="ghost"
+                title="AI 演对方,你即兴发挥——把背下来的对话真正用出来"
+                onClick={() => {
+                  const p = preview.pack;
+                  const roleSystem = `The scene: "${p.name}"${p.intro ? ` — ${p.intro}` : ""}. You play the counterpart (the staff / the other side) of this scene; the learner plays themselves. Improvise a realistic conversation within this scene, one short turn at a time.`;
+                  setPreview(null);
+                  onRoleplay({ title: `${p.name} · 实战`, roleSystem });
+                }}
+              >
+                和 AI 实战演练
               </Button>
               {preview.pack.from_user && (
                 <Button

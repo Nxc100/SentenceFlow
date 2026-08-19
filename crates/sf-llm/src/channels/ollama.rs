@@ -5,7 +5,9 @@
 
 use crate::adapter::ChannelAdapter;
 use crate::channels::openai_compat::OpenAiCompatClient;
-use crate::types::{ChannelError, ChannelStatus, GenChunk, GenRequest, MeterKind, ModelInfo};
+use crate::types::{
+    ChannelError, ChannelStatus, ChatRequest, GenChunk, GenRequest, MeterKind, ModelInfo,
+};
 use futures::stream::BoxStream;
 use serde::Deserialize;
 use std::time::Duration;
@@ -96,6 +98,13 @@ impl ChannelAdapter for OllamaChannel {
         req: GenRequest,
     ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
         self.compat().complete_stream(req).await
+    }
+
+    async fn chat_stream(
+        &self,
+        req: ChatRequest,
+    ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
+        self.compat().chat_stream(req).await
     }
 
     fn meter(&self) -> MeterKind {

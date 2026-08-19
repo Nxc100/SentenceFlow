@@ -1019,6 +1019,7 @@ fn gen_cmd(
                     println!("usage: {prompt_tokens} in / {completion_tokens} out");
                 }
                 Ok(GenChunk::Done) => break,
+                Ok(_) => {}
                 Err(e) => bail!("stream error: {e} ({})", e.zh_message()),
             }
         }
