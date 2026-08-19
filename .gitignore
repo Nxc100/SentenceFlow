@@ -26,6 +26,11 @@ content/build/
 dist-portable/
 .playwright-mcp/
 
+# 发布产物本地暂存区:二进制经 GitHub Releases 分发,不进 git 历史
+# (exe 16MB + 安装包 5MB 无法增量压缩,入库会让仓库按提交次数线性膨胀;
+#  发布流程见 doc/构建与发布手册.md §5.1)
+release/
+
 # Secrets — the Ed25519 issuer private key must NEVER enter the repository.
 *.secret
 *.pem

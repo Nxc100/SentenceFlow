@@ -9,6 +9,7 @@
 买断制单机英语整句输出训练软件 · 本地数据 · 离线可用 · 无账号无服务器
 
 [![CI](https://github.com/Nxc100/SentenceFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/Nxc100/SentenceFlow/actions/workflows/ci.yml)
+[![下载](https://img.shields.io/github/v/release/Nxc100/SentenceFlow?label=%E4%B8%8B%E8%BD%BD&color=2E63E7)](https://github.com/Nxc100/SentenceFlow/releases/latest)
 ![Rust](https://img.shields.io/badge/Rust-1.85%2B-orange?logo=rust)
 ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
@@ -19,6 +20,17 @@
 </div>
 
 ---
+
+## 下载
+
+前往 **[Releases](https://github.com/Nxc100/SentenceFlow/releases/latest)** 下载:
+
+- **`SentenceFlow_0.1.0_x64-setup.exe`(推荐)** — Windows 安装包,自带全部内容资源,
+  缺 WebView2 会自动引导安装;
+- **`SentenceFlow.exe`** — 免安装主程序,需与 `content.db`、`channels.json`
+  放在同一目录(单独拷走会闪退)。
+
+系统要求:Windows 10 1809 及以上。
 
 ## 这是什么
 
