@@ -28,7 +28,7 @@
 
 | 产物 | 体积 |
 |---|---|
-| `SentenceFlow_0.1.0_x64-setup.exe`(安装包) | ~5 MB |
+| `SentenceFlow_0.2.0_x64-setup.exe`(安装包) | ~5 MB |
 | `SentenceFlow.exe`(免安装主程序) | ~16 MB |
 
 ### 为什么不直接 `git commit` 这两个文件
@@ -107,7 +107,7 @@ Set-Location ..\..
 ```powershell
 New-Item -ItemType Directory -Force release | Out-Null
 Copy-Item target\release\sentenceflow-desktop.exe release\SentenceFlow.exe -Force
-Copy-Item target\release\bundle\nsis\SentenceFlow_0.1.0_x64-setup.exe release\ -Force
+Copy-Item target\release\bundle\nsis\SentenceFlow_0.2.0_x64-setup.exe release\ -Force
 Copy-Item content\build\content.db  release\content.db  -Force
 Copy-Item content\channels.json     release\channels.json -Force
 ```
@@ -119,20 +119,20 @@ Copy-Item content\channels.json     release\channels.json -Force
 
 ```powershell
 $gh = "C:\Program Files\GitHub CLI\gh.exe"
-& $gh release create v0.1.1 `
-  release\SentenceFlow_0.1.1_x64-setup.exe `
+& $gh release create v0.2.1 `
+  release\SentenceFlow_0.2.1_x64-setup.exe `
   release\SentenceFlow.exe `
   release\content.db `
   release\channels.json `
-  --title "句流 SentenceFlow v0.1.1" `
+  --title "句流 SentenceFlow v0.2.1" `
   --notes "本版改动:…"
 ```
 
 发布说明较长时写文件再引用(避免命令行里塞一大段):
 
 ```powershell
-& $gh release create v0.1.1 release\*.exe release\content.db release\channels.json `
-  --title "句流 SentenceFlow v0.1.1" --notes-file notes.md
+& $gh release create v0.2.1 release\*.exe release\content.db release\channels.json `
+  --title "句流 SentenceFlow v0.2.1" --notes-file notes.md
 ```
 
 ### 4.4 只想刷新最新构建(不发新版本号)
@@ -140,13 +140,13 @@ $gh = "C:\Program Files\GitHub CLI\gh.exe"
 覆盖已有版本的附件:
 
 ```powershell
-& $gh release upload v0.1.0 release\*.exe --clobber
+& $gh release upload v0.2.0 release\*.exe --clobber
 ```
 
 ### 4.5 验证发布成功
 
 ```powershell
-& $gh release view v0.1.0 --json tagName,assets |
+& $gh release view v0.2.0 --json tagName,assets |
   ConvertFrom-Json |
   ForEach-Object { "$($_.tagName): $($_.assets.Count) 个附件" }
 ```
@@ -156,9 +156,9 @@ $gh = "C:\Program Files\GitHub CLI\gh.exe"
 ```powershell
 $tmp = "$env:TEMP\sf-check"
 Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
-& $gh release download v0.1.0 --pattern "*setup.exe" --dir $tmp
-(Get-FileHash "$tmp\SentenceFlow_0.1.0_x64-setup.exe").Hash -eq
-  (Get-FileHash "release\SentenceFlow_0.1.0_x64-setup.exe").Hash
+& $gh release download v0.2.0 --pattern "*setup.exe" --dir $tmp
+(Get-FileHash "$tmp\SentenceFlow_0.2.0_x64-setup.exe").Hash -eq
+  (Get-FileHash "release\SentenceFlow_0.2.0_x64-setup.exe").Hash
 ```
 
 返回 `True` 即一致。
@@ -172,7 +172,9 @@ Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 - [ ] `npm run typecheck` 通过
 - [ ] 内容改过就跑 `sf factory build` 重建 content.db
 - [ ] 在干净环境装一次安装包做冒烟测试(首启定级 → 练一句)
-- [ ] **正式对外发版**:替换 `licensing.rs` 里的开发密钥(见《构建与发布手册》§12)
+- [ ] **确认发行形态**:`licensing.rs` 的 `FREE_EDITION` 当前为 `true`
+      (免费版:装上即全功能,无激活/无试用期/无每日上限)。保持免费则无须
+      处理;仅当改回买断制才需先换生产密钥(见《构建与发布手册》§12)
 
 ---
 
@@ -187,8 +189,8 @@ Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 解决:把 tag 移到清理后的提交上,再强推。
 
 ```powershell
-git tag -f v0.1.0 <干净的commit号>
-git push --force origin v0.1.0
+git tag -f v0.2.0 <干净的commit号>
+git push --force origin v0.2.0
 git reflog expire --expire=now --all
 git gc --prune=now
 ```
@@ -225,12 +227,12 @@ git log --all --oneline -- release/SentenceFlow.exe
 | 目的 | 命令 |
 |---|---|
 | 看所有版本 | `& $gh release list` |
-| 看某版本详情 | `& $gh release view v0.1.0` |
-| 下载某版本附件 | `& $gh release download v0.1.0 --dir .\tmp` |
-| 追加/覆盖附件 | `& $gh release upload v0.1.0 文件 --clobber` |
-| 改标题或说明 | `& $gh release edit v0.1.0 --title "…" --notes "…"` |
-| 删除某版本(附件一并删) | `& $gh release delete v0.1.0 --cleanup-tag` |
-| 标记为预发布 | `& $gh release edit v0.1.0 --prerelease` |
+| 看某版本详情 | `& $gh release view v0.2.0` |
+| 下载某版本附件 | `& $gh release download v0.2.0 --dir .\tmp` |
+| 追加/覆盖附件 | `& $gh release upload v0.2.0 文件 --clobber` |
+| 改标题或说明 | `& $gh release edit v0.2.0 --title "…" --notes "…"` |
+| 删除某版本(附件一并删) | `& $gh release delete v0.2.0 --cleanup-tag` |
+| 标记为预发布 | `& $gh release edit v0.2.0 --prerelease` |
 | 查看仓库体积 | `git count-objects -vH` |
 
 ---

@@ -1,6 +1,6 @@
 {
   "name": "@sentenceflow/ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "句流共享 UI:设计令牌 + 组件 + 练习引擎组件(规范 §5/§6 的唯一实现处)",
   "type": "module",

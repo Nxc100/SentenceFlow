@@ -1,7 +1,7 @@
 {
   "name": "desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "句流桌面端前端(Tauri 2 webview 内运行)",
   "type": "module",
   "scripts": {

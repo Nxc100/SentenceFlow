@@ -25,7 +25,7 @@
 
 前往 **[Releases](https://github.com/Nxc100/SentenceFlow/releases/latest)** 下载:
 
-- **`SentenceFlow_0.1.0_x64-setup.exe`(推荐)** — Windows 安装包,自带全部内容资源,
+- **`SentenceFlow_0.2.0_x64-setup.exe`(推荐)** — Windows 安装包,自带全部内容资源,
   缺 WebView2 会自动引导安装;
 - **`SentenceFlow.exe`** — 免安装主程序,需与 `content.db`、`channels.json`
   放在同一目录(单独拷走会闪退)。
@@ -69,12 +69,13 @@ crates/
   sf-license/    离线授权:.sflic Ed25519 本地验签 + 签发 CLI(feature "issuer")
   sf-wasm/       sf-core 的 wasm-bindgen 绑定(JSON 字符串 ABI)
 apps/
-  desktop/       Tauri 2 桌面端(售卖主体):src-tauri Rust 壳(57 个 command)
+  desktop/       Tauri 2 桌面端(产品主体):src-tauri Rust 壳(63 个 command)
                  + React 前端(今日/句库/情景对话/AI 造句/AI 聊天/报告/水平/设置)
   web-trial/     Web 试用版(纯静态站):L1–L2 各一节,IndexedDB 进度可导出带走
 packages/ui/     共享 React 组件 —— 设计规范(§5/§6)的唯一实现处:
                  设计令牌(浅色/深色/护眼纸色)、练习引擎组件、签名时刻动效
 content/         specs/*.yaml(六级 LevelSpec,单一事实源)· seed/(种子句库)
+                 · scenario/(8 个出厂情景包)· placement/(定级题库)
                  · lexicon/(NGSL 全量词典)· channels.json
 tools/
   audit/         spaCy 离线抽审脚本(纯 QA,不在运行时依赖树)
@@ -89,7 +90,7 @@ doc/             完整开发规范(v5 合订版)· 开发状态与偏差记录 
 git clone https://github.com/Nxc100/SentenceFlow.git
 cd SentenceFlow
 
-# 1. Rust 全量测试(六 crate + Tauri 壳,146 用例)
+# 1. Rust 全量测试(5 个库 crate + Tauri 壳,211 用例)
 cargo test --workspace --all-features
 
 # 2. 从种子句库构建出厂 content.db(全部句子过校验管线)+ 金标回归
@@ -167,7 +168,7 @@ cargo run -p sf-license --features issuer -- issue \
 ## 架构不变量
 
 - **练习路径零网络**:sf-core 与练习 UI 不链接 sf-llm;全部网络请求只出自
-  生成工坊 / 答疑 / 周点评三个入口。
+  生成工坊 / 答疑 / 周点评 / AI 聊天四个入口。
 - **LevelSpec 单一事实源**:生成约束、校验反查、练习行为读同一份 YAML,
   引擎无等级硬编码;spec 快照随 content.db 分发,内容与行为同版。
 - **校验器是契约**:LLM 输出必须过确定性校验才能入库——模型再不可靠也
@@ -182,7 +183,7 @@ cargo run -p sf-license --features issuer -- issue \
 
 | 检查 | 命令 |
 |---|---|
-| Rust 单测(200 用例) | `cargo test --workspace --all-features` |
+| Rust 单测(211 用例) | `cargo test --workspace --all-features` |
 | Lint(拒绝 warning) | `cargo clippy -p sf-core -p sf-license -p sf-pipeline -p sf-llm --all-features -- -D warnings` |
 | 格式 | `cargo fmt --check` |
 | 金标回归 | `cargo run -p sf-pipeline --features factory --bin sf -- gold run` |
@@ -196,8 +197,8 @@ CI(GitHub Actions,Linux + Windows)覆盖以上全部 + wasm32 编译检查。
 ## 项目状态
 
 核心已全栈完成并实测;尚待完成(优先级序):全量 5000 句内容生产、词典
-IPA/释义补全、piper 离线语音包、内容包自动更新通道、代码签名与发卡接入。
-详细里程碑对照、与规范的 8 处有意偏差及理由、opencode 真机 spike 结论:
+IPA/释义补全、piper 离线语音包、内容包自动更新通道、代码签名。
+详细里程碑对照、与规范的 10 处有意偏差及理由、opencode 真机 spike 结论:
 **[doc/开发状态.md](doc/开发状态.md)**。产品完整规范:
 [doc/句流-完整开发文档-v5-合订版.md](doc/句流-完整开发文档-v5-合订版.md)。
 手动测试清单:[doc/手动测试指引.md](doc/手动测试指引.md)。
