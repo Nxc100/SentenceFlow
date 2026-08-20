@@ -276,6 +276,8 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   fix: FixCard | null;
+  /** 中文对照(空串 = 没有) */
+  zh: string;
   /** 这一轮的任务清单(空数组 = 没有) */
   todos: TodoItem[];
   ts: number;
@@ -336,6 +338,8 @@ export interface ChatDoneEvent {
   thread_id: number;
   text: string;
   fix: FixCard | null;
+  /** 中文对照(未开启则为空串) */
+  zh: string;
   /** true = 被停止/超时截断的部分回复 */
   partial: boolean;
 }
@@ -469,8 +473,9 @@ export const ipc = {
     model: string,
     modelLabel: string,
   ) => invoke<ChatThreadInfo>("chat_thread_set_model", { threadId, channel, model, modelLabel }),
-  chatSend: (threadId: number, text: string, fixEnabled: boolean) =>
-    invoke<void>("chat_send", { threadId, text, fixEnabled }),
+  /** fixEnabled = 帮我纠错;translateEnabled = 中文对照(同一次请求带回,不额外发一轮) */
+  chatSend: (threadId: number, text: string, fixEnabled: boolean, translateEnabled: boolean) =>
+    invoke<void>("chat_send", { threadId, text, fixEnabled, translateEnabled }),
   /** [停止]:只停这一个会话的流,其他会话继续 */
   chatStop: (threadId: number) => invoke<void>("chat_stop", { threadId }),
   /** 仍在生成回复的会话 id(离开页面再回来时恢复「生成中」指示) */

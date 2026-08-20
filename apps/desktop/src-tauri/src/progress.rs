@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS chat_message (
     text      TEXT NOT NULL,
     fix_json  TEXT NOT NULL DEFAULT '',    -- 纠错卡 JSON(无纠错为空)
     todo_json TEXT NOT NULL DEFAULT '',    -- 智能体任务清单快照 JSON
+    zh        TEXT NOT NULL DEFAULT '',    -- 中文对照(开了「中文对照」才有)
     ts        INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_chat_message_thread ON chat_message(thread_id);
@@ -142,6 +143,11 @@ impl ProgressDb {
                 "chat_message",
                 "todo_json",
                 "ALTER TABLE chat_message ADD COLUMN todo_json TEXT NOT NULL DEFAULT ''",
+            ),
+            (
+                "chat_message",
+                "zh",
+                "ALTER TABLE chat_message ADD COLUMN zh TEXT NOT NULL DEFAULT ''",
             ),
         ] {
             let present = self
@@ -527,7 +533,7 @@ impl ProgressDb {
 
     pub fn chat_messages(&self, thread_id: i64) -> CmdResult<Vec<ChatMessageRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, role, text, fix_json, todo_json, ts FROM chat_message
+            "SELECT id, role, text, fix_json, todo_json, zh, ts FROM chat_message
              WHERE thread_id = ?1 ORDER BY id",
         )?;
         let rows = stmt.query_map(params![thread_id], row_to_chat_message)?;
@@ -541,8 +547,8 @@ impl ProgressDb {
         limit: u32,
     ) -> CmdResult<Vec<ChatMessageRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, role, text, fix_json, todo_json, ts FROM (
-                 SELECT id, role, text, fix_json, todo_json, ts FROM chat_message
+            "SELECT id, role, text, fix_json, todo_json, zh, ts FROM (
+                 SELECT id, role, text, fix_json, todo_json, zh, ts FROM chat_message
                  WHERE thread_id = ?1 ORDER BY id DESC LIMIT ?2
              ) ORDER BY id",
         )?;
@@ -558,10 +564,10 @@ impl ProgressDb {
         fix_json: &str,
         ts: i64,
     ) -> CmdResult<i64> {
-        self.chat_message_add_full(thread_id, role, text, fix_json, "", ts)
+        self.chat_message_add_full(thread_id, role, text, fix_json, "", "", ts)
     }
 
-    /// 带任务清单快照的写入(智能体模式:todo_json 为 TodoItem 数组的 JSON)。
+    /// 带附加内容的写入(todo_json = 智能体任务清单;zh = 中文对照)。
     pub fn chat_message_add_full(
         &self,
         thread_id: i64,
@@ -569,12 +575,13 @@ impl ProgressDb {
         text: &str,
         fix_json: &str,
         todo_json: &str,
+        zh: &str,
         ts: i64,
     ) -> CmdResult<i64> {
         self.conn.execute(
-            "INSERT INTO chat_message (thread_id, role, text, fix_json, todo_json, ts)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![thread_id, role, text, fix_json, todo_json, ts],
+            "INSERT INTO chat_message (thread_id, role, text, fix_json, todo_json, zh, ts)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![thread_id, role, text, fix_json, todo_json, zh, ts],
         )?;
         Ok(self.conn.last_insert_rowid())
     }
@@ -615,6 +622,8 @@ pub struct ChatMessageRow {
     pub fix_json: String,
     /// 智能体任务清单快照(TodoItem 数组的 JSON;非智能体消息为空)
     pub todo_json: String,
+    /// 中文对照(开了「中文对照」的 AI 回复才有)
+    pub zh: String,
     pub ts: i64,
 }
 
@@ -641,7 +650,8 @@ fn row_to_chat_message(r: &rusqlite::Row<'_>) -> rusqlite::Result<ChatMessageRow
         text: r.get(2)?,
         fix_json: r.get(3)?,
         todo_json: r.get(4)?,
-        ts: r.get(5)?,
+        zh: r.get(5)?,
+        ts: r.get(6)?,
     })
 }
 

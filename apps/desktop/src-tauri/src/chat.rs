@@ -10,8 +10,9 @@
 //!   安全警告在会话创建时无条件展示,不提供 `--auto`(有意偏离方案 §3.5,
 //!   记录于 doc/开发状态.md)。
 //!
-//! 纠错协议(§3.4):AI 正文末尾附加一行 `⟦fix⟧{json}`;[`split_fix`] 容错
-//! 剥离 —— 解析失败时整段按纯文本保留,绝不丢内容。
+//! 标注协议(§3.4):AI 正文末尾可附 `⟦fix⟧{json}`(纠错卡)与 `⟦zh⟧…`
+//! (中文对照)各一行,由 [`split_annotations`] 容错剥离 —— 模型没按协议
+//! 输出时整段按纯文本保留,绝不丢内容。
 //!
 //! 聊天不写 SRS、不计练习日志、不占试用限额;用量照记 spend(§4.6)。
 
@@ -41,8 +42,9 @@ const THREAD_MESSAGE_CAP: u32 = 500;
 const AGENT_IDLE_TIMEOUT: Duration = Duration::from_secs(180);
 /// 聊天空转超时:opencode CLI 真机上出现过续聊无限挂起,不能让界面一直转。
 const CHAT_IDLE_TIMEOUT: Duration = Duration::from_secs(120);
-/// 纠错协议标记(生僻括号,避免撞正文 — §3.4)。
+/// 标注协议标记(生僻括号,避免撞正文 — §3.4):纠错卡与中文对照。
 const FIX_MARKER: &str = "⟦fix⟧";
+const ZH_MARKER: &str = "⟦zh⟧";
 
 // ------------------------------------------------------------- ipc payloads
 
@@ -93,6 +95,8 @@ pub struct ChatMessage {
     pub role: String,
     pub text: String,
     pub fix: Option<FixCard>,
+    /// 中文对照(空 = 没有)
+    pub zh: String,
     /// 智能体这一轮的任务清单(空 = 没有)
     pub todos: Vec<TodoItem>,
     pub ts: i64,
@@ -107,6 +111,7 @@ impl From<ChatMessageRow> for ChatMessage {
             role: m.role,
             text: m.text,
             fix,
+            zh: m.zh,
             todos,
             ts: m.ts,
         }
@@ -156,6 +161,8 @@ struct DonePayload {
     thread_id: i64,
     text: String,
     fix: Option<FixCard>,
+    /// 中文对照(未开启则为空串)
+    zh: String,
     /// true = 被用户停止/超时截断的部分回复
     partial: bool,
 }
@@ -192,8 +199,14 @@ if the learner's last message was natural, correct English, or:
 ⟦fix⟧{"ok":false,"better":"<corrected, natural version of their sentence>","why":"<一句简体中文,说明为什么这样更好>"}
 if it had mistakes or sounded unnatural. Judge only the learner's most recent message. Never mention this line or the correction inside your conversational reply."#;
 
+/// 中文对照协议段(§3.4b):给看不懂英文回复的初学者兜底。
+/// 单独一行,内容是**整段回复**的自然中文翻译(不是逐词直译)。
+const ZH_PROTOCOL: &str = r#"Also add one extra final line in exactly this format:
+⟦zh⟧<你这段英文回复的简体中文意思>
+Translate your own reply naturally (not word-by-word) so a beginner can follow. Keep it to one line. Never mention this line inside your conversational reply, and never write Chinese in the reply itself."#;
+
 /// 自由聊天 system(§3.2:全英文、2–4 句、追问收尾、难度自适应)。
-fn build_free_system(level: LevelId, can_do: &str, fix_enabled: bool) -> String {
+fn build_free_system(level: LevelId, can_do: &str, opts: ReplyOptions) -> String {
     let mut s = format!(
         "You are a friendly, patient English conversation partner helping a Chinese learner practice everyday English.\n\
          Learner level: {}.{}\n\
@@ -205,7 +218,7 @@ fn build_free_system(level: LevelId, can_do: &str, fix_enabled: bool) -> String 
         level_descriptor(level),
         can_do_line(can_do),
     );
-    push_fix_rule(&mut s, fix_enabled);
+    push_annotation_rules(&mut s, opts);
     s
 }
 
@@ -214,7 +227,7 @@ fn build_roleplay_system(
     role_system: &str,
     level: LevelId,
     can_do: &str,
-    fix_enabled: bool,
+    opts: ReplyOptions,
 ) -> String {
     let mut s = format!(
         "You are role-playing in English with a Chinese learner practicing real-life conversation.\n\
@@ -228,7 +241,7 @@ fn build_roleplay_system(
         level_descriptor(level),
         can_do_line(can_do),
     );
-    push_fix_rule(&mut s, fix_enabled);
+    push_annotation_rules(&mut s, opts);
     s
 }
 
@@ -240,30 +253,116 @@ fn can_do_line(can_do: &str) -> String {
     }
 }
 
-fn push_fix_rule(s: &mut String, fix_enabled: bool) {
-    s.push('\n');
-    if fix_enabled {
-        s.push_str(FIX_PROTOCOL);
-    } else {
-        s.push_str("- Do not correct the learner's English unless they explicitly ask.");
-    }
+/// 用户为这轮对话开启的两个开关(界面上的「帮我纠错」「中文对照」)。
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ReplyOptions {
+    pub fix: bool,
+    pub translate: bool,
 }
 
-// ------------------------------------------------------------- fix parsing
+fn push_annotation_rules(s: &mut String, opts: ReplyOptions) {
+    s.push('\n');
+    s.push_str(&annotation_rules(opts));
+}
 
-/// 从完整回复剥离纠错标记(§3.4)。返回(正文, 纠错卡)。
-/// 容错:标记缺失或 JSON 坏 → 整段原样返回、无卡,绝不丢内容;
-/// `ok:true` → 只剥标记行,无卡。
-pub fn split_fix(text: &str) -> (String, Option<FixCard>) {
-    let Some(idx) = text.rfind(FIX_MARKER) else {
-        return (text.trim().to_string(), None);
+/// 标注规则正文 —— 既进 system(首轮),也作为 `per_turn` 每轮重申。
+///
+/// 为什么要每轮重申:opencode 通道用 `-s` 续聊时**只发用户消息**,system
+/// 仅在建会话那次送达。用户中途关掉「中文对照」/「帮我纠错」,旧会话会
+/// 按老规矩继续输出(真机实测过)。把规则随每条消息带上就即时生效了。
+fn annotation_rules(opts: ReplyOptions) -> String {
+    let mut s = String::new();
+    if opts.fix {
+        s.push_str(FIX_PROTOCOL);
+    } else {
+        s.push_str("Do not correct the learner's English unless they explicitly ask, and never output a ⟦fix⟧ line.");
+    }
+    s.push('\n');
+    if opts.translate {
+        s.push_str(ZH_PROTOCOL);
+    } else {
+        s.push_str("Do not translate your reply, and never output a ⟦zh⟧ line.");
+    }
+    s
+}
+
+// ------------------------------------------------------------- 标注剥离
+
+/// 一条回复剥出来的附加信息。
+#[derive(Debug, Default, PartialEq)]
+pub struct Annotations {
+    /// 纠错卡(§3.4)
+    pub fix: Option<FixCard>,
+    /// 中文对照(§3.4b)
+    pub zh: String,
+}
+
+/// 从完整回复剥离所有标注,返回(正文, 标注)。
+///
+/// 协议:正文之后可跟 `⟦fix⟧{json}` 与 `⟦zh⟧中文` 各一行,顺序不限。
+/// 容错:**绝不丢内容** —— 只有当标记确实解析出东西时才切正文;
+/// 模型没按协议输出(标记缺失、JSON 坏、⟦zh⟧ 后面空着)则整段当正文,
+/// 宁可让用户看到一行奇怪的标记,也不能把回复截没了。
+pub fn split_annotations(text: &str) -> (String, Annotations) {
+    let raw = || (text.trim().to_string(), Annotations::default());
+    // 正文到第一个标记为止(哪个标记先出现都一样)
+    let Some(cut) = [FIX_MARKER, ZH_MARKER]
+        .iter()
+        .filter_map(|m| text.find(m))
+        .min()
+    else {
+        return raw();
     };
-    let after = &text[idx + FIX_MARKER.len()..];
+    let fix = marker_segment(text, FIX_MARKER).map(parse_fix_json);
+    let zh = marker_segment(text, ZH_MARKER)
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    // 一个可用标注都没解析出来 ⇒ 这些「标记」多半是模型胡乱输出的正文
+    let usable = matches!(fix, Some(FixParse::Card(_)) | Some(FixParse::None)) || zh.is_some();
+    if !usable {
+        return raw();
+    }
+    (
+        text[..cut].trim().to_string(),
+        Annotations {
+            fix: match fix {
+                Some(FixParse::Card(c)) => Some(c),
+                _ => None,
+            },
+            zh: zh.unwrap_or_default(),
+        },
+    )
+}
+
+/// 取某个标记之后、下一个标记之前的原文。
+fn marker_segment<'a>(text: &'a str, marker: &str) -> Option<&'a str> {
+    let start = text.rfind(marker)? + marker.len();
+    let rest = &text[start..];
+    let end = [FIX_MARKER, ZH_MARKER]
+        .iter()
+        .filter_map(|m| rest.find(m))
+        .min()
+        .unwrap_or(rest.len());
+    Some(&rest[..end])
+}
+
+/// 纠错标记的解析结果:要区分「没问题」和「没看懂」——
+/// 前者说明模型守了协议(正文可以放心切),后者不能当协议输出处理。
+enum FixParse {
+    Card(FixCard),
+    /// 合法 JSON,但这句没毛病(`ok:true`)
+    None,
+    Broken,
+}
+
+fn parse_fix_json(seg: &str) -> FixParse {
     // 模型偶尔会在 JSON 后再带空白/杂尾:取首个 '{' 到末个 '}' 之间。
-    let json_slice = match (after.find('{'), after.rfind('}')) {
-        (Some(a), Some(b)) if a < b => &after[a..=b],
-        _ => return (text.trim().to_string(), None),
+    let (Some(a), Some(b)) = (seg.find('{'), seg.rfind('}')) else {
+        return FixParse::Broken;
     };
+    if a >= b {
+        return FixParse::Broken;
+    }
     #[derive(Deserialize)]
     struct FixWire {
         ok: Option<bool>,
@@ -272,15 +371,17 @@ pub fn split_fix(text: &str) -> (String, Option<FixCard>) {
         #[serde(default)]
         why: String,
     }
-    let Ok(wire) = serde_json::from_str::<FixWire>(json_slice) else {
-        return (text.trim().to_string(), None);
+    let Ok(wire) = serde_json::from_str::<FixWire>(&seg[a..=b]) else {
+        return FixParse::Broken;
     };
-    let body = text[..idx].trim().to_string();
-    let fix = (wire.ok == Some(false) && !wire.better.trim().is_empty()).then(|| FixCard {
-        better: wire.better.trim().to_string(),
-        why: wire.why.trim().to_string(),
-    });
-    (body, fix)
+    if wire.ok == Some(false) && !wire.better.trim().is_empty() {
+        FixParse::Card(FixCard {
+            better: wire.better.trim().to_string(),
+            why: wire.why.trim().to_string(),
+        })
+    } else {
+        FixParse::None
+    }
 }
 
 // ------------------------------------------------------------- thread commands
@@ -564,6 +665,7 @@ pub async fn chat_send(
     thread_id: i64,
     text: String,
     fix_enabled: bool,
+    translate_enabled: bool,
 ) -> CmdResult<()> {
     let text = text.trim().to_string();
     if text.is_empty() {
@@ -614,9 +716,13 @@ pub async fn chat_send(
         .spec_for(level)
         .map(|s| s.can_do.join("、"))
         .unwrap_or_default();
+    let opts = ReplyOptions {
+        fix: fix_enabled,
+        translate: translate_enabled,
+    };
     let system = match thread.mode.as_str() {
-        "roleplay" => build_roleplay_system(&thread.role_system, level, &can_do, fix_enabled),
-        _ => build_free_system(level, &can_do, fix_enabled),
+        "roleplay" => build_roleplay_system(&thread.role_system, level, &can_do, opts),
+        _ => build_free_system(level, &can_do, opts),
     };
     // opencode 服务端会话只在仍用 opencode 通道时续用(换通道后回放本地历史)
     let session = (channel == ChannelId::Opencode && !thread.oc_session.is_empty())
@@ -626,6 +732,9 @@ pub async fn chat_send(
         system,
         turns,
         session,
+        // 每轮重申两个开关的规则:opencode 续聊不重发 system,不带这个
+        // 开关切换对老会话就不生效(见 annotation_rules 注释)
+        per_turn: annotation_rules(opts),
         max_tokens: Some(1024),
         temperature: Some(0.7),
     };
@@ -783,15 +892,24 @@ fn finalize_reply(
     full: &str,
     partial: bool,
 ) {
-    let (body, fix) = split_fix(full);
+    let (body, ann) = split_annotations(full);
     if !body.is_empty() {
-        let fix_json = fix
+        let fix_json = ann
+            .fix
             .as_ref()
             .and_then(|f| serde_json::to_string(f).ok())
             .unwrap_or_default();
         let progress = state.progress.lock().expect("progress lock");
         let now = now_unix();
-        let _ = progress.chat_message_add(thread_id, "assistant", &body, &fix_json, now);
+        let _ = progress.chat_message_add_full(
+            thread_id,
+            "assistant",
+            &body,
+            &fix_json,
+            "",
+            &ann.zh,
+            now,
+        );
         let _ = progress.chat_thread_touch(thread_id, now);
     }
     let _ = app.emit(
@@ -799,7 +917,8 @@ fn finalize_reply(
         DonePayload {
             thread_id,
             text: body,
-            fix,
+            fix: ann.fix,
+            zh: ann.zh,
             partial,
         },
     );
@@ -1236,7 +1355,8 @@ fn finalize_agent_reply(
         };
         let progress = state.progress.lock().expect("progress lock");
         let now = now_unix();
-        let _ = progress.chat_message_add_full(thread_id, "assistant", &body, "", &todo_json, now);
+        let _ =
+            progress.chat_message_add_full(thread_id, "assistant", &body, "", &todo_json, "", now);
         let _ = progress.chat_thread_touch(thread_id, now);
     }
     let _ = app.emit(
@@ -1245,6 +1365,7 @@ fn finalize_agent_reply(
             thread_id,
             text: body,
             fix: None,
+            zh: String::new(),
             partial,
         },
     );
@@ -1256,17 +1377,17 @@ mod tests {
 
     #[test]
     fn fix_ok_true_strips_marker_without_card() {
-        let (body, fix) = split_fix("Nice! What did you eat?\n⟦fix⟧{\"ok\":true}");
+        let (body, ann) = split_annotations("Nice! What did you eat?\n⟦fix⟧{\"ok\":true}");
         assert_eq!(body, "Nice! What did you eat?");
-        assert!(fix.is_none());
+        assert!(ann.fix.is_none());
     }
 
     #[test]
     fn fix_ok_false_yields_card() {
         let raw = "Sounds fun! Where did you go?\n⟦fix⟧{\"ok\":false,\"better\":\"I went to the park yesterday.\",\"why\":\"过去的事用过去式 went\"}";
-        let (body, fix) = split_fix(raw);
+        let (body, ann) = split_annotations(raw);
         assert_eq!(body, "Sounds fun! Where did you go?");
-        let fix = fix.unwrap();
+        let fix = ann.fix.unwrap();
         assert_eq!(fix.better, "I went to the park yesterday.");
         assert!(fix.why.contains("过去式"));
     }
@@ -1274,35 +1395,127 @@ mod tests {
     #[test]
     fn fix_bad_json_keeps_full_text() {
         let raw = "Hello!\n⟦fix⟧{broken json";
-        let (body, fix) = split_fix(raw);
+        let (body, ann) = split_annotations(raw);
         assert_eq!(body, raw);
-        assert!(fix.is_none());
+        assert!(ann.fix.is_none());
     }
 
     #[test]
     fn fix_missing_marker_passthrough() {
-        let (body, fix) = split_fix("  Just a plain reply.  ");
+        let (body, ann) = split_annotations("  Just a plain reply.  ");
         assert_eq!(body, "Just a plain reply.");
-        assert!(fix.is_none());
+        assert!(ann.fix.is_none());
+    }
+
+    // ---- 中文对照(§3.4b) ----
+
+    #[test]
+    fn zh_marker_yields_translation() {
+        let raw = "Great goal! How many times a week can you come?\n⟦zh⟧目标不错!你一周能来几次?";
+        let (body, ann) = split_annotations(raw);
+        assert_eq!(body, "Great goal! How many times a week can you come?");
+        assert_eq!(ann.zh, "目标不错!你一周能来几次?");
+        assert!(ann.fix.is_none());
+    }
+
+    /// 两个标注同时出现,顺序不限;正文一律切在第一个标记之前。
+    #[test]
+    fn both_annotations_parse_in_either_order() {
+        let fix_first =
+            "Nice!\n⟦fix⟧{\"ok\":false,\"better\":\"I am fine.\",\"why\":\"要用 am\"}\n⟦zh⟧不错!";
+        let zh_first =
+            "Nice!\n⟦zh⟧不错!\n⟦fix⟧{\"ok\":false,\"better\":\"I am fine.\",\"why\":\"要用 am\"}";
+        for raw in [fix_first, zh_first] {
+            let (body, ann) = split_annotations(raw);
+            assert_eq!(body, "Nice!", "raw = {raw}");
+            assert_eq!(ann.zh, "不错!", "raw = {raw}");
+            assert_eq!(
+                ann.fix.as_ref().unwrap().better,
+                "I am fine.",
+                "raw = {raw}"
+            );
+        }
+    }
+
+    /// ⟦zh⟧ 后面空着 = 模型没真给翻译:不切正文,免得把回复吞掉。
+    #[test]
+    fn empty_zh_marker_keeps_full_text() {
+        let raw = "Hello there!\n⟦zh⟧";
+        let (body, ann) = split_annotations(raw);
+        assert_eq!(body, raw);
+        assert!(ann.zh.is_empty());
+    }
+
+    /// 纠错卡坏了但翻译在:翻译照用,正文照切,坏卡丢弃。
+    #[test]
+    fn broken_fix_with_good_zh_still_cleans_body() {
+        let raw = "Hello!\n⟦fix⟧{oops\n⟦zh⟧你好!";
+        let (body, ann) = split_annotations(raw);
+        assert_eq!(body, "Hello!");
+        assert_eq!(ann.zh, "你好!");
+        assert!(ann.fix.is_none());
     }
 
     #[test]
     fn fix_tolerates_trailing_junk_after_json() {
         let raw = "Great!\n⟦fix⟧ {\"ok\":false,\"better\":\"He goes to school.\",\"why\":\"三单加 s\"} \n";
-        let (body, fix) = split_fix(raw);
+        let (body, ann) = split_annotations(raw);
         assert_eq!(body, "Great!");
-        assert_eq!(fix.unwrap().better, "He goes to school.");
+        assert_eq!(ann.fix.unwrap().better, "He goes to school.");
     }
 
     #[test]
-    fn free_system_toggles_fix_protocol() {
-        let with = build_free_system(LevelId::L1, "打招呼、自我介绍", true);
-        assert!(with.contains("⟦fix⟧"));
-        assert!(with.contains("absolute beginner"));
-        assert!(with.contains("打招呼、自我介绍"));
-        let without = build_free_system(LevelId::L3, "", false);
-        assert!(!without.contains("⟦fix⟧"));
-        assert!(without.contains("Do not correct"));
+    fn free_system_toggles_annotation_protocols() {
+        let both = build_free_system(
+            LevelId::L1,
+            "打招呼、自我介绍",
+            ReplyOptions {
+                fix: true,
+                translate: true,
+            },
+        );
+        // 协议段各有独一无二的片段,用它判断"这段规则在不在"
+        assert!(both.contains(r#"⟦fix⟧{"ok":true}"#));
+        assert!(both.contains("⟦zh⟧<"));
+        assert!(both.contains("absolute beginner"));
+        assert!(both.contains("打招呼、自我介绍"));
+
+        // 两个开关互不影响;关掉时不是"省略规则",而是明确禁止输出该标记
+        let neither = build_free_system(LevelId::L3, "", ReplyOptions::default());
+        assert!(!neither.contains(r#"⟦fix⟧{"ok":true}"#));
+        assert!(!neither.contains("⟦zh⟧<"));
+        assert!(neither.contains("never output a ⟦fix⟧ line"));
+        assert!(neither.contains("never output a ⟦zh⟧ line"));
+
+        let zh_only = build_free_system(
+            LevelId::L2,
+            "",
+            ReplyOptions {
+                fix: false,
+                translate: true,
+            },
+        );
+        assert!(zh_only.contains("never output a ⟦fix⟧ line"));
+        assert!(zh_only.contains("⟦zh⟧<"));
+    }
+
+    /// 回归:关掉开关时不能只是"不加规则",要明确禁止 —— 否则 opencode
+    /// 续聊里模型会按建会话时的老规矩继续输出标记(真机实测到过)。
+    #[test]
+    fn disabled_toggles_explicitly_forbid_markers() {
+        let off = annotation_rules(ReplyOptions::default());
+        assert!(off.contains("never output a ⟦fix⟧ line"));
+        assert!(off.contains("never output a ⟦zh⟧ line"));
+
+        let on = annotation_rules(ReplyOptions {
+            fix: true,
+            translate: true,
+        });
+        assert!(on.contains(r#"⟦fix⟧{"ok":true}"#));
+        assert!(on.contains("⟦zh⟧<"));
+        assert!(!on.contains("never output"));
+        // 开着时两段规则都在,且不含互相矛盾的禁令
+        assert!(on.contains("Judge only the learner's most recent message"));
     }
 
     #[test]
@@ -1311,7 +1524,10 @@ mod tests {
             "You are a job interviewer at a tech company.",
             LevelId::L4,
             "电话沟通",
-            true,
+            ReplyOptions {
+                fix: true,
+                translate: false,
+            },
         );
         assert!(s.contains("job interviewer"));
         assert!(s.contains("Stay in character"));

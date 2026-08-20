@@ -3190,3 +3190,20 @@ select {
   text-decoration: line-through;
   text-decoration-color: var(--sf-gray-300);
 }
+
+/* 中文对照:压低存在感,英文仍是主角 */
+.aichat-zh {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--sf-border);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--sf-text-3);
+}
+
+.aichat-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 6px;
+}

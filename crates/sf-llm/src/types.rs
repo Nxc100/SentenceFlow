@@ -120,6 +120,14 @@ pub struct ChatRequest {
     /// Channel-native session to continue (from an earlier
     /// [`GenChunk::SessionRef`]). `None` starts a fresh conversation.
     pub session: Option<String>,
+    /// Instructions that must hold for **this turn** and cannot be assumed
+    /// to persist server-side. Channels that resend `system` every turn
+    /// (the OpenAI-compatible ones) ignore it — it is already in `system`.
+    /// Channels that only send `system` when the session is created
+    /// (opencode `-s`) prepend it to each continued message, so toggling a
+    /// per-turn option mid-conversation actually takes effect.
+    #[serde(default)]
+    pub per_turn: String,
     pub max_tokens: Option<u32>,
     pub temperature: Option<f32>,
 }
@@ -307,6 +315,7 @@ mod tests {
             system: "sys".into(),
             turns: vec![turn(ChatRole::User, "hey")],
             session: Some("ses_x".into()),
+            per_turn: String::new(),
             max_tokens: Some(64),
             temperature: Some(0.5),
         };

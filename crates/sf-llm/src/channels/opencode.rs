@@ -283,13 +283,7 @@ impl ChannelAdapter for OpencodeChannel {
         &self,
         req: ChatRequest,
     ) -> Result<BoxStream<'static, Result<GenChunk, ChannelError>>, ChannelError> {
-        let prompt = match &req.session {
-            // Continued session: server already has the context.
-            Some(_) => req.turns.last().map(|t| t.text.clone()).unwrap_or_default(),
-            // Fresh session: seed it with the system prompt + any local
-            // history (e.g. thread started on another channel).
-            None => format!("{}\n\n---\n\n{}", req.system, flatten_turns(req.turns)),
-        };
+        let prompt = build_chat_prompt(&req);
         let child = self.spawn_run(&req.model, req.session.as_deref(), &prompt)?;
         let mut session_seen = false;
         Ok(stream_child_stdout(child, move |line| {
@@ -343,6 +337,30 @@ pub fn parse_models_output(out: &str) -> Vec<ModelInfo> {
             needs_proxy: false,
         })
         .collect()
+}
+
+/// 组装喂给 `opencode run` 的提示词(纯函数,可测)。
+///
+/// * 新会话:system + 本地历史一起送,给服务端会话打底;
+/// * 续聊:上文在服务端,只送最新用户消息 —— 但 `per_turn` 必须随行,
+///   因为 system 不会重发,用户中途改的开关否则不生效(真机踩坑)。
+pub fn build_chat_prompt(req: &ChatRequest) -> String {
+    match &req.session {
+        Some(_) => {
+            let last = req.turns.last().map(|t| t.text.as_str()).unwrap_or("");
+            let rules = req.per_turn.trim();
+            if rules.is_empty() {
+                last.to_string()
+            } else {
+                format!("{rules}\n\n---\n\n{last}")
+            }
+        }
+        None => format!(
+            "{}\n\n---\n\n{}",
+            req.system,
+            flatten_turns(req.turns.clone())
+        ),
+    }
 }
 
 /// Turn a spawned child's stdout lines into a chunk stream: each line maps to
@@ -516,6 +534,54 @@ mod tests {
                 text: "Hello".into()
             }]
         );
+    }
+
+    /// 续聊时 `per_turn` 必须随消息带上:opencode 只在建会话那次收到
+    /// system,不重申的话「关掉某个开关」对老会话不生效(真机踩坑)。
+    #[test]
+    fn continued_session_prompt_carries_per_turn_rules() {
+        let req = ChatRequest {
+            model: "m".into(),
+            system: "SYSTEM SETUP".into(),
+            turns: vec![crate::types::ChatTurn {
+                role: crate::types::ChatRole::User,
+                text: "hello there".into(),
+            }],
+            session: Some("ses_1".into()),
+            per_turn: "RULES FOR THIS TURN".into(),
+            max_tokens: None,
+            temperature: None,
+        };
+        let prompt = build_chat_prompt(&req);
+        assert!(prompt.starts_with("RULES FOR THIS TURN"));
+        assert!(prompt.ends_with("hello there"));
+        // 续聊不重发 system(上文在服务端,重发只是浪费 token)
+        assert!(!prompt.contains("SYSTEM SETUP"));
+
+        // 没有 per_turn 时就是干净的用户消息
+        let bare = build_chat_prompt(&ChatRequest {
+            per_turn: String::new(),
+            ..req.clone()
+        });
+        assert_eq!(bare, "hello there");
+    }
+
+    #[test]
+    fn fresh_session_prompt_carries_system() {
+        let prompt = build_chat_prompt(&ChatRequest {
+            model: "m".into(),
+            system: "SYSTEM SETUP".into(),
+            turns: vec![crate::types::ChatTurn {
+                role: crate::types::ChatRole::User,
+                text: "hi".into(),
+            }],
+            session: None,
+            per_turn: "RULES".into(),
+            max_tokens: None,
+            temperature: None,
+        });
+        assert!(prompt.starts_with("SYSTEM SETUP"));
+        assert!(prompt.ends_with("hi"));
     }
 
     #[test]

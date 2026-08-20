@@ -44,6 +44,8 @@ interface UiMsg {
   role: "user" | "ai";
   text: string;
   fix: FixCard | null;
+  /** 中文对照(空串 = 没有) */
+  zh: string;
   /** 智能体本轮完成的工具活动(仅当次会话内存,不落库) */
   tools: ToolActivity[];
   /** 智能体本轮的任务清单(随消息落库) */
@@ -100,6 +102,7 @@ const TICK_MS = 33;
 const CHARS_PER_TICK = 2;
 
 const FIX_TOGGLE_KEY = "sf-chat-fix";
+const ZH_TOGGLE_KEY = "sf-chat-zh";
 
 /** 流式展示时藏起纠错标记之后的内容(完整正文由 done 事件给出) */
 const stripFix = (t: string) => {
@@ -136,6 +139,10 @@ export function AiChatPage({
   const [input, setInput] = useState("");
   const [fixEnabled, setFixEnabled] = useState(
     () => localStorage.getItem(FIX_TOGGLE_KEY) !== "0",
+  );
+  // 中文对照:默认开,小白第一眼就看得懂 AI 说了什么
+  const [translateEnabled, setTranslateEnabled] = useState(
+    () => localStorage.getItem(ZH_TOGGLE_KEY) !== "0",
   );
   /** 正在生成的会话 id(侧栏小圆点 + 当前会话的发送/停止切换) */
   const [liveIds, setLiveIds] = useState<number[]>([]);
@@ -233,6 +240,7 @@ export function AiChatPage({
             role: "ai",
             text,
             fix: s.done?.fix ?? null,
+            zh: s.done?.zh ?? "",
             tools: s.tools,
             todos: s.todos,
             partial: s.done?.partial,
@@ -378,6 +386,7 @@ export function AiChatPage({
             role: m.role === "user" ? "user" : "ai",
             text: m.text,
             fix: m.fix,
+            zh: m.zh,
             tools: [],
             todos: m.todos,
           })),
@@ -513,7 +522,7 @@ export function AiChatPage({
           delete next[id];
           return next;
         });
-        setMessages((m) => [...m, { role: "user", text, fix: null, tools: [], todos: [] }]);
+        setMessages((m) => [...m, { role: "user", text, fix: null, zh: "", tools: [], todos: [] }]);
         setInput("");
         streamFor(id); // 先亮出"正在思考",再发请求
         syncView();
@@ -523,7 +532,7 @@ export function AiChatPage({
           await ipc.agentSend(id, text, attachedSkill?.path ?? "");
           setAttachedSkill(null);
         } else {
-          await ipc.chatSend(id, text, fixEnabled);
+          await ipc.chatSend(id, text, fixEnabled, translateEnabled);
         }
       } catch (e) {
         const id = thread?.id;
@@ -549,6 +558,7 @@ export function AiChatPage({
       liveIds,
       mode,
       fixEnabled,
+      translateEnabled,
       attachedSkill,
       applyPending,
       refreshThreads,
@@ -620,6 +630,13 @@ export function AiChatPage({
   const toggleFix = useCallback(() => {
     setFixEnabled((v) => {
       localStorage.setItem(FIX_TOGGLE_KEY, v ? "0" : "1");
+      return !v;
+    });
+  }, []);
+
+  const toggleTranslate = useCallback(() => {
+    setTranslateEnabled((v) => {
+      localStorage.setItem(ZH_TOGGLE_KEY, v ? "0" : "1");
       return !v;
     });
   }, []);
@@ -889,13 +906,26 @@ export function AiChatPage({
                 )}
                 <div className="aichat-composer">
                   {mode !== "agent" && (
-                    <label
-                      className="aichat-fixtoggle"
-                      title="AI 在每条回复下方指出你这句英文可以怎么说更好"
-                    >
-                      <input type="checkbox" checked={fixEnabled} onChange={toggleFix} />
-                      帮我纠错
-                    </label>
+                    <div className="aichat-toggles">
+                      <label
+                        className="aichat-fixtoggle"
+                        title="AI 在每条回复下方指出你这句英文可以怎么说更好"
+                      >
+                        <input type="checkbox" checked={fixEnabled} onChange={toggleFix} />
+                        帮我纠错
+                      </label>
+                      <label
+                        className="aichat-fixtoggle"
+                        title="AI 回复下方附一行中文意思,看不懂英文时不至于卡住"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={translateEnabled}
+                          onChange={toggleTranslate}
+                        />
+                        中文对照
+                      </label>
+                    </div>
                   )}
                   <textarea
                     className="aichat-input"
@@ -1220,6 +1250,8 @@ function MsgBubble({
         </div>
       ))}
       <Markdown text={msg.text} />
+      {/* 中文对照:排在英文下方、样式压低,英文始终是主角 */}
+      {msg.zh && <div className="aichat-zh">{msg.zh}</div>}
       {msg.partial && <div className="aichat-partial">(已停止,回复不完整)</div>}
       {msg.fix && (
         <div className="aichat-fix">
