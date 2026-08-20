@@ -13,12 +13,26 @@ use serde::{Deserialize, Serialize};
 use sf_license::trial::{LAPSED_DAILY_SENTENCES, TrialState, TrialVerdict};
 use sf_license::{LicensePayload, verify};
 
+/// 发行形态开关。
+///
+/// * `true` = **免费版**:装上即全功能,无试用倒计时、无每日句数上限、
+///   无需激活。[`current_state`] 直接返回 [`LicenseState::Free`],下游的
+///   每日额度闸(`commands::submit_attempt`)与顶栏试用胶囊因此自然失效;
+///   试用锚点(`trial.json` / 钥匙串)完全不再读写。
+/// * `false` = **买断制**:`.sflic` 激活 + 14 天试用 + 到期体验模式(§4.6)。
+///
+/// 授权体系的其余代码原样保留 —— 改回 `false` 并重新打包即恢复买断制
+/// (届时**必须**先把 [`LICENSE_PUBLIC_KEY_B64`] 换成生产公钥,见其文档)。
+pub const FREE_EDITION: bool = true;
+
 /// This build's product major version (license `major_max` gate).
 pub const APP_MAJOR: u32 = 1;
 
-/// DEV public key — replaced with the production key before release
-/// (`sf-license keygen`; private half lives offline, §7.6). The matching dev
-/// private key sits in `tools/dev-keys/` so activation is testable end-to-end.
+/// **已作废的开发测试公钥**:配对私钥曾经入过仓库(文件已删,但留在 git
+/// 历史里,一律视为已泄漏)。[`FREE_EDITION`] 为 `true` 时这把钥匙不参与
+/// 任何判定,留着无妨;一旦改回买断制,**必须**先用 `sf-license keygen`
+/// 生成全新密钥对、把公钥换到这里、私钥离线保管(§7.6)——否则任何人
+/// 都能从 git 历史翻出旧私钥自签许可证。
 pub const LICENSE_PUBLIC_KEY_B64: &str = "fTCckVC7QsQqP+nM6wu8PhVfTafuBgON8vf0+fv0eSM=";
 
 const TRIAL_KEYRING_SERVICE: &str = "sentenceflow";
@@ -27,6 +41,8 @@ const TRIAL_KEYRING_ACCOUNT: &str = "trial-anchor";
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum LicenseState {
+    /// 免费版([`FREE_EDITION`]):全功能无限制,无需激活、不计试用。
+    Free,
     Licensed {
         email_masked: String,
         edition: String,
@@ -109,6 +125,10 @@ pub fn activate(paths: &AppPaths, sflic_json: &str) -> CmdResult<LicensePayload>
 
 /// Current licensing state, advancing the trial clock as a side effect.
 pub fn current_state(paths: &AppPaths, now: i64) -> CmdResult<LicenseState> {
+    // 免费版:不读许可证、不碰试用锚点(也就不会弹钥匙串授权框)。
+    if FREE_EDITION {
+        return Ok(LicenseState::Free);
+    }
     if let Ok(raw) = std::fs::read_to_string(paths.license_file())
         && let Ok(key) = sf_license::parse_public_key(LICENSE_PUBLIC_KEY_B64)
         && let Ok(payload) = verify(&raw, &key)
@@ -137,4 +157,26 @@ pub fn current_state(paths: &AppPaths, now: i64) -> CmdResult<LicenseState> {
 pub fn export_license(paths: &AppPaths) -> CmdResult<String> {
     std::fs::read_to_string(paths.license_file())
         .map_err(|_| CmdError::new("license", "尚未激活,没有可导出的许可证"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 前端 `LicenseState` 联合类型按 `kind` 判别,免费版必须是 `"free"`。
+    #[test]
+    fn free_state_serializes_as_tagged_free() {
+        assert_eq!(
+            serde_json::to_string(&LicenseState::Free).unwrap(),
+            r#"{"kind":"free"}"#
+        );
+    }
+
+    /// 免费版不得落进「到期体验模式」分支 —— 每日 5 句上限的唯一触发条件
+    /// 是 `Lapsed`(见 `commands::submit_attempt`)。
+    #[test]
+    fn free_state_is_not_lapsed() {
+        assert!(!matches!(LicenseState::Free, LicenseState::Lapsed { .. }));
+        assert!(FREE_EDITION, "本构建应为免费版;改回买断制时同步改这个断言");
+    }
 }

@@ -6,7 +6,7 @@
 
 **看中文、打英文 —— 答对瞬间，句子自动展开成「音标 + 词性 + 句子成分」的彩色解析。**
 
-买断制单机英语整句输出训练软件 · 本地数据 · 离线可用 · 无账号无服务器
+免费的单机英语整句输出训练软件 · 本地数据 · 离线可用 · 无账号无服务器
 
 [![CI](https://github.com/Nxc100/SentenceFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/Nxc100/SentenceFlow/actions/workflows/ci.yml)
 [![下载](https://img.shields.io/github/v/release/Nxc100/SentenceFlow?label=%E4%B8%8B%E8%BD%BD&color=2E63E7)](https://github.com/Nxc100/SentenceFlow/releases/latest)
@@ -78,7 +78,6 @@ content/         specs/*.yaml(六级 LevelSpec,单一事实源)· seed/(种子�
                  · lexicon/(NGSL 全量词典)· channels.json
 tools/
   audit/         spaCy 离线抽审脚本(纯 QA,不在运行时依赖树)
-  dev-keys/      开发测试签名密钥(⚠ 发布前必须更换,见下)
 doc/             完整开发规范(v5 合订版)· 开发状态与偏差记录 · 手动测试指引
 ```
 
@@ -138,7 +137,14 @@ cargo run -p sf-pipeline --features factory --bin sf -- export trial
 词性/成分闭合枚举、IPA 字符集、lemma 词典对账覆写、simhash 近重复——
 不合格的句子进不了任何数据库。
 
-## 授权(离线,无激活服务器)
+## 授权:当前为**免费版**
+
+发行形态由 `apps/desktop/src-tauri/src/licensing.rs` 的 `FREE_EDITION` 常量决定,
+当前是 `true`:**装上即全功能,无需激活、无试用倒计时、无每日句数上限**,
+也不读写试用锚点。
+
+买断制的整套实现(`.sflic` Ed25519 本地验签、14 天试用、到期体验模式、签发 CLI)
+原样保留在 `crates/sf-license`,把 `FREE_EDITION` 改回 `false` 重新打包即恢复:
 
 ```bash
 # 厂商侧:生成密钥对(私钥离线保存,绝不入仓库)
@@ -150,12 +156,13 @@ cargo run -p sf-license --features issuer -- issue \
   --key-file ./keys/sf-license-private.secret
 ```
 
-客户端内嵌公钥本地 Ed25519 验签;不绑设备,换机 = 拷贝 `.sflic` 文件。
-试用 14 天全功能(时钟回拨即到期),到期转体验模式(每日 5 句,不清数据、不弹窗)。
+不绑设备,换机 = 拷贝 `.sflic` 文件。
 
-> ⚠ **发布前必做**:`apps/desktop/src-tauri/src/licensing.rs` 中的
-> `LICENSE_PUBLIC_KEY_B64` 当前是**开发测试公钥**(配对私钥在 `tools/dev-keys/`,
-> 仅用于本地端到端验证激活流),上线前必须换成离线生成的生产密钥。
+> ⚠ **若改回买断制,必做**:`LICENSE_PUBLIC_KEY_B64` 当前仍是一把**已作废的
+> 开发测试公钥** —— 它的配对私钥曾经入过本仓库(已删除,但留在 git 历史里,
+> 视为已泄漏)。免费版下这把钥匙不参与任何判定;一旦转收费,必须先
+> `sf-license keygen` 生成全新密钥对、把公钥换到这里、私钥离线保管,
+> 否则任何人都能翻历史拿到旧私钥自签许可证。
 
 ## 架构不变量
 
@@ -203,5 +210,8 @@ IPA/释义补全、piper 离线语音包、内容包自动更新通道、代码�
 
 ## 许可
 
-本仓库为**专有软件**源码(买断制商业产品),保留所有权利;
-不接受未经协商的再分发。词典数据的 NGSL 部分依其 CC BY 3.0 条款使用并署名如上。
+**发行的软件包免费提供给所有人使用**(见「授权」一节)。
+
+**源码仍为专有软件**,保留所有权利,不接受未经协商的再分发 ——
+"二进制免费"与"源码开放"是两件事,本仓库只做了前者。
+词典数据的 NGSL 部分依其 CC BY 3.0 条款使用并署名如上。

@@ -65,6 +65,8 @@ export interface Settings {
 /* ---------- licensing ---------- */
 
 export type LicenseState =
+  /** 免费版:全功能无限制,无需激活(licensing.rs 的 FREE_EDITION) */
+  | { kind: "free" }
   | { kind: "licensed"; email_masked: string; edition: string; major_max: number }
   | { kind: "trial"; days_left: number }
   | { kind: "lapsed"; clock_rollback: boolean; daily_limit: number };

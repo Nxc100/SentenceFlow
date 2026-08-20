@@ -32,9 +32,15 @@ dist-portable/
 release/
 
 # Secrets — the Ed25519 issuer private key must NEVER enter the repository.
+# 教训:早期的开发签名私钥叫 dev-signing-key.b64,`*.secret` 挡不住它,
+# 于是私钥随仓库公开了(已删除,见 doc/开发状态.md 2026-08-20 条目)。
+# 现在按后缀 + 文件名双保险。
 *.secret
 *.pem
 private-key*
+*signing-key*
+*.b64
+tools/dev-keys/
 
 # Editor/OS noise
 .DS_Store

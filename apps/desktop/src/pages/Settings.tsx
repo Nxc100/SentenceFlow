@@ -586,6 +586,19 @@ function LicenseSection() {
   const [shake, setShake] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // 免费版(licensing.rs 的 FREE_EDITION):没有可激活的东西,说清楚即可。
+  if (license.kind === "free") {
+    return (
+      <div className="license-card license-card--active">
+        <span className="license-stamp">免费版</span>
+        <p className="license-edition">全部功能已解锁,无需激活、无使用期限。</p>
+        <p className="settings-hint">
+          学习数据只存这台电脑上,可在「数据」页导出备份带走。
+        </p>
+      </div>
+    );
+  }
+
   if (license.kind === "licensed") {
     return (
       <div className="license-card license-card--active">
