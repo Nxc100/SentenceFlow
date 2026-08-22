@@ -1,8 +1,8 @@
 {
   "name": "sentenceflow-monorepo",
   "private": true,
-  "version": "0.2.0",
-  "description": "句流 SentenceFlow — 买断制英语整句打字训练软件 (monorepo)",
+  "version": "0.3.0",
+  "description": "句流 SentenceFlow — 免费的英语整句打字训练软件 (monorepo)",
   "workspaces": [
     "packages/*",
     "apps/web-trial",

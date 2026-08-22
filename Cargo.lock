@@ -3257,7 +3257,7 @@ dependencies = [
 
 [[package]]
 name = "sentenceflow-desktop"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "flate2",
  "futures",
@@ -3467,7 +3467,7 @@ dependencies = [
 
 [[package]]
 name = "sf-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3477,7 +3477,7 @@ dependencies = [
 
 [[package]]
 name = "sf-license"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -3491,7 +3491,7 @@ dependencies = [
 
 [[package]]
 name = "sf-llm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "futures",
@@ -3508,7 +3508,7 @@ dependencies = [
 
 [[package]]
 name = "sf-pipeline"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -3526,7 +3526,7 @@ dependencies = [
 
 [[package]]
 name = "sf-wasm"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
