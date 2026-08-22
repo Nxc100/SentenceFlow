@@ -6,7 +6,6 @@
 //! scene, count, avoid-fingerprints). Stability buys output consistency on
 //! free channels and prefix-cache hits on paid ones (同一设计双重红利, §8).
 
-use crate::simhash::fingerprint16;
 use sf_core::spec::LevelSpec;
 
 /// Version tag baked into the prefix; bump when few-shots/rules change so the
@@ -16,17 +15,49 @@ pub const PROMPT_VERSION: &str = "v1";
 /// Output schema description embedded verbatim in the prefix.
 const SCHEMA: &str = r#"[{"en":"英文句","zh":"中文翻译","pattern":"句型公式","words":[{"w":"单词","ipa":"英式音标(无斜杠)","pos":"pron|n|v|aux|modal|adj|wh|adv|prep|art|conj|num|propn|part"}],"chunks":[{"r":"subj|pred|link|obj|comp|advl|objc|marker","i":[词序号,从0起]}],"note":"一句话讲解"}]"#;
 
-/// Three positive few-shots + two negatives (越级/翻译腔), per §11.D.
-const FEW_SHOTS: &str = r#"合格示例 1:
-{"en":"May I see your passport, please?","zh":"请出示您的护照。","pattern":"情态动词疑问句","words":[{"w":"May","ipa":"meɪ","pos":"modal"},{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"see","ipa":"siː","pos":"v"},{"w":"your","ipa":"jɔː","pos":"pron"},{"w":"passport","ipa":"ˈpɑːspɔːt","pos":"n"},{"w":"please","ipa":"pliːz","pos":"adv"}],"chunks":[{"r":"marker","i":[0]},{"r":"subj","i":[1]},{"r":"pred","i":[2]},{"r":"obj","i":[3,4]},{"r":"marker","i":[5]}],"note":"May I…? 是礼貌请求的固定句式。"}
+/// 入门档 few-shots(L1/L2 用):**每个词都在 500 词带内、句长 ≤8**,
+/// 所以在最严的 L1 也能原样通过校验。
+///
+/// 为什么要卡这条线:旧例句里 `passport` 根本不在词表、`grade`(1612)与
+/// `counter`(2539)在 L1–L3 全部越级 —— 等于拿"会被自己校验器拒掉的句子"
+/// 教模型,模型照着学、再被拒掉。旧例 2 的中英文还对不上(英文 "I am…"、
+/// 中文"我们…")。`sf gold run` 现在会逐条校验这些例句,防止再退化。
+const FEW_SHOTS_BASIC: &str = r#"合格示例 1:
+{"en":"May I have some water, please?","zh":"请给我一杯水。","pattern":"情态动词疑问句","words":[{"w":"May","ipa":"meɪ","pos":"modal"},{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"have","ipa":"hæv","pos":"v"},{"w":"some","ipa":"səm","pos":"adj"},{"w":"water","ipa":"ˈwɔːtə","pos":"n"},{"w":"please","ipa":"pliːz","pos":"adv"}],"chunks":[{"r":"marker","i":[0]},{"r":"subj","i":[1]},{"r":"pred","i":[2]},{"r":"obj","i":[3,4]},{"r":"marker","i":[5]}],"note":"May I…? 是礼貌请求的固定句式。"}
 合格示例 2:
-{"en":"I am in the same grade.","zh":"我们在同一个年级。","pattern":"主+系+介词短语","words":[{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"am","ipa":"æm","pos":"aux"},{"w":"in","ipa":"ɪn","pos":"prep"},{"w":"the","ipa":"ðə","pos":"art"},{"w":"same","ipa":"seɪm","pos":"adj"},{"w":"grade","ipa":"ɡreɪd","pos":"n"}],"chunks":[{"r":"subj","i":[0]},{"r":"link","i":[1]},{"r":"advl","i":[2,3,4,5]}],"note":"in the same… 表示\"在同一个…\"。"}
+{"en":"I am here with my friend.","zh":"我和朋友一起在这儿。","pattern":"主+系+表+介词短语","words":[{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"am","ipa":"æm","pos":"aux"},{"w":"here","ipa":"hɪə","pos":"adv"},{"w":"with","ipa":"wɪð","pos":"prep"},{"w":"my","ipa":"maɪ","pos":"pron"},{"w":"friend","ipa":"frend","pos":"n"}],"chunks":[{"r":"subj","i":[0]},{"r":"link","i":[1]},{"r":"comp","i":[2]},{"r":"advl","i":[3,4,5]}],"note":"with… 说明跟谁一起。"}
 合格示例 3:
-{"en":"Where is the check-in counter?","zh":"值机柜台在哪里?","pattern":"特殊疑问句","words":[{"w":"Where","ipa":"weə","pos":"wh"},{"w":"is","ipa":"ɪz","pos":"aux"},{"w":"the","ipa":"ðə","pos":"art"},{"w":"check-in","ipa":"ˈtʃekɪn","pos":"n"},{"w":"counter","ipa":"ˈkaʊntə","pos":"n"}],"chunks":[{"r":"marker","i":[0]},{"r":"link","i":[1]},{"r":"subj","i":[2,3,4]}],"note":"Where is…? 用于询问位置。"}
-反例 1(越级——低级别出现超纲词,禁止):
+{"en":"How much is this book?","zh":"这本书多少钱?","pattern":"特殊疑问句","words":[{"w":"How","ipa":"haʊ","pos":"wh"},{"w":"much","ipa":"mʌtʃ","pos":"adv"},{"w":"is","ipa":"ɪz","pos":"aux"},{"w":"this","ipa":"ðɪs","pos":"pron"},{"w":"book","ipa":"bʊk","pos":"n"}],"chunks":[{"r":"marker","i":[0,1]},{"r":"link","i":[2]},{"r":"subj","i":[3,4]}],"note":"How much…? 用于问价钱。"}
+反例 1(越级——用了该等级词表外的词,禁止):
 {"en":"The bureaucracy expedited my visa application."}
 反例 2(翻译腔——中文生硬直译,禁止):
 {"zh":"我可以看你的护照吗,请?"}"#;
+
+/// 进阶档 few-shots(L3 及以上):词带 ≤1500、句长 ≤12,在 L3 也合法。
+/// 高等级如果只看入门档的 5 词短句,会被带得过于简单 —— 所以分两档。
+const FEW_SHOTS_ADVANCED: &str = r#"合格示例 1:
+{"en":"May I have some water, please?","zh":"请给我一杯水。","pattern":"情态动词疑问句","words":[{"w":"May","ipa":"meɪ","pos":"modal"},{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"have","ipa":"hæv","pos":"v"},{"w":"some","ipa":"səm","pos":"adj"},{"w":"water","ipa":"ˈwɔːtə","pos":"n"},{"w":"please","ipa":"pliːz","pos":"adv"}],"chunks":[{"r":"marker","i":[0]},{"r":"subj","i":[1]},{"r":"pred","i":[2]},{"r":"obj","i":[3,4]},{"r":"marker","i":[5]}],"note":"May I…? 是礼貌请求的固定句式。"}
+合格示例 2:
+{"en":"I would like to change my flight, please.","zh":"我想改签航班。","pattern":"would like to + 动词原形","words":[{"w":"I","ipa":"aɪ","pos":"pron"},{"w":"would","ipa":"wʊd","pos":"modal"},{"w":"like","ipa":"laɪk","pos":"v"},{"w":"to","ipa":"tə","pos":"part"},{"w":"change","ipa":"tʃeɪndʒ","pos":"v"},{"w":"my","ipa":"maɪ","pos":"pron"},{"w":"flight","ipa":"flaɪt","pos":"n"},{"w":"please","ipa":"pliːz","pos":"adv"}],"chunks":[{"r":"subj","i":[0]},{"r":"pred","i":[1,2]},{"r":"objc","i":[3,4]},{"r":"obj","i":[5,6]},{"r":"marker","i":[7]}],"note":"would like to… 比 want to 更客气。"}
+合格示例 3:
+{"en":"Could you tell me where to check in?","zh":"能告诉我在哪里办理登机吗?","pattern":"礼貌请求 + 宾语从句","words":[{"w":"Could","ipa":"kʊd","pos":"modal"},{"w":"you","ipa":"juː","pos":"pron"},{"w":"tell","ipa":"tel","pos":"v"},{"w":"me","ipa":"miː","pos":"pron"},{"w":"where","ipa":"weə","pos":"wh"},{"w":"to","ipa":"tə","pos":"part"},{"w":"check","ipa":"tʃek","pos":"v"},{"w":"in","ipa":"ɪn","pos":"part"}],"chunks":[{"r":"marker","i":[0]},{"r":"subj","i":[1]},{"r":"pred","i":[2]},{"r":"objc","i":[3]},{"r":"obj","i":[4,5,6,7]}],"note":"Could you tell me…? 问路问事都好用。"}
+反例 1(越级——用了该等级词表外的词,禁止):
+{"en":"The bureaucracy expedited my visa application."}
+反例 2(翻译腔——中文生硬直译,禁止):
+{"zh":"我可以看你的护照吗,请?"}"#;
+
+/// 按等级挑 few-shot 档位:词带 ≤1000(L1/L2)用入门档,其余用进阶档。
+/// 前缀本来就逐等级不同(内嵌 LevelSpec),分档不影响前缀缓存。
+fn few_shots_for(spec: &LevelSpec) -> &'static str {
+    if spec.vocab_band > 0 && spec.vocab_band <= 1000 {
+        FEW_SHOTS_BASIC
+    } else {
+        FEW_SHOTS_ADVANCED
+    }
+}
+
+/// 供 gold 回归逐条校验用:所有 few-shot 档位与其"必须能通过的最低等级词带"。
+pub const FEW_SHOT_TIERS: [(&str, u32); 2] = [(FEW_SHOTS_BASIC, 500), (FEW_SHOTS_ADVANCED, 1500)];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PromptParts {
@@ -40,41 +71,71 @@ pub struct PromptParts {
 /// teaching the model anything and just burns tokens.
 const MAX_BANNED_WORDS: usize = 30;
 
+/// 尾部"已经写过、别重复"的例句条数上限。
+///
+/// 此前这里传的是 simhash 的 16 位十六进制**指纹**。模型算不出 simhash,
+/// 那串东西对它毫无意义 —— 既起不到避重作用,又每批白烧几十 token。
+/// 换成真句子后模型才真的知道要避开什么;条数压在 8 条以内,长了同样是浪费。
+const MAX_AVOID_EXAMPLES: usize = 8;
+
+/// 拼出尾部的"避开已有句"段落。空表时整段不出现。
+fn avoid_section(avoid: &[&str]) -> String {
+    let lines: Vec<&str> = avoid
+        .iter()
+        .copied()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .take(MAX_AVOID_EXAMPLES)
+        .collect();
+    if lines.is_empty() {
+        return String::new();
+    }
+    format!(
+        "\n这些句子已经写过,不要重复、也不要只换一两个词:\n{}",
+        lines
+            .iter()
+            .map(|s| format!("- {s}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    )
+}
+
 /// Build the full prompt for a generation request.
 ///
 /// * `spec` — target level (its YAML re-serialization is embedded verbatim).
 /// * `scene` — 用户场景描述 (自由文本) or factory scene tag.
 /// * `count` — 句数.
-/// * `avoid` — simhash fingerprints of already-accepted sentences.
+/// * `avoid` — 已接受句子的英文原文(尾部据此提示模型避开)。
 /// * `banned` — 失败样本回灌 (§8 的运行时形态):本次任务里已被词表校验拒绝的
 ///   单词,显式禁用以提高补足批通过率。空则不出现在 prompt 中。
 pub fn build_prompt(
     spec: &LevelSpec,
     scene: &str,
     count: u32,
-    avoid: &[u64],
+    avoid: &[&str],
     banned: &[String],
 ) -> PromptParts {
     let spec_yaml = serde_yaml::to_string(spec).expect("spec serialization cannot fail");
+    let few_shots = few_shots_for(spec);
     let system = format!(
         "你是英语教研内容生成器,只输出 JSON 数组,不输出任何其他文字。\n\
          [prompt-version: {PROMPT_VERSION}]\n\n\
          ## 等级规格(必须严格遵守词表带、语法白名单与句长上限)\n{spec_yaml}\n\
          ## 输出 schema\n{SCHEMA}\n\n\
-         ## 示例\n{FEW_SHOTS}\n\n\
+         ## 示例\n{few_shots}\n\n\
          ## 规则\n\
          - 句子必须是自然口语,场景真实可用;\n\
          - 中文必须是日常表达,禁止翻译腔;\n\
+         - **只用该等级词表带内的常见词**;想不出常见说法就换个说法,\n\
+           不要为了凑场景硬塞生僻名词(校验器会按词表带逐词卡);\n\
+         - 人名/地名/品牌名请标 pos 为 propn(它们不受词表带限制);\n\
          - 音标用英式 IPA,不带斜杠;\n\
          - words 必须与 en 逐词一致(句末标点不算词);\n\
          - chunks 必须覆盖每个词恰好一次;\n\
          - 只输出 JSON 数组。"
     );
     let mut user = format!("场景:{scene};等级 {};生成 {count} 句。", spec.id);
-    if !avoid.is_empty() {
-        let fps: Vec<String> = avoid.iter().map(|h| fingerprint16(*h)).collect();
-        user.push_str(&format!("\n避开与以下指纹相似的句子:{}", fps.join(",")));
-    }
+    user.push_str(&avoid_section(avoid));
     if !banned.is_empty() {
         let words: Vec<&str> = banned
             .iter()
@@ -109,7 +170,7 @@ const SCENARIO_FEW_SHOTS: &str = r#"合格示例(咖啡店点单,片段):
 pub fn build_scenario_prompt(
     scene: &str,
     count: u32,
-    avoid: &[u64],
+    avoid: &[&str],
     banned: &[String],
 ) -> PromptParts {
     let system = format!(
@@ -128,10 +189,7 @@ pub fn build_scenario_prompt(
          - 只输出 JSON 数组。"
     );
     let mut user = format!("场景:{scene};生成 {count} 句连续对话(A/B 交替)。");
-    if !avoid.is_empty() {
-        let fps: Vec<String> = avoid.iter().map(|h| fingerprint16(*h)).collect();
-        user.push_str(&format!("\n避开与以下指纹相似的句子:{}", fps.join(",")));
-    }
+    user.push_str(&avoid_section(avoid));
     if !banned.is_empty() {
         let words: Vec<&str> = banned
             .iter()
@@ -191,19 +249,49 @@ practice:
     #[test]
     fn prefix_is_stable_across_requests() {
         let s = spec();
-        let a = build_prompt(&s, "机场值机", 10, &[1, 2], &[]);
-        let b = build_prompt(&s, "餐厅点餐", 30, &[9], &["burger".into()]);
+        let a = build_prompt(&s, "机场值机", 10, &["I am here."], &[]);
+        let b = build_prompt(&s, "餐厅点餐", 30, &["Where is it?"], &["burger".into()]);
         assert_eq!(a.system, b.system, "prefix must be byte-stable for caching");
         assert_ne!(a.user, b.user);
     }
 
+    /// 尾部带的是**真句子**,不是 simhash 指纹 —— 模型算不出 simhash,
+    /// 指纹既不能避重又白烧 token(见 MAX_AVOID_EXAMPLES 的说明)。
     #[test]
-    fn tail_carries_scene_count_and_fingerprints() {
-        let p = build_prompt(&spec(), "机场值机", 10, &[0xABCD], &[]);
+    fn tail_carries_scene_count_and_real_examples() {
+        let p = build_prompt(&spec(), "机场值机", 10, &["Where is the gate?"], &[]);
         assert!(p.user.contains("机场值机"));
         assert!(p.user.contains("10"));
-        assert!(p.user.contains("000000000000abcd"));
+        assert!(p.user.contains("Where is the gate?"), "避重段应给出原句");
         assert!(!p.user.contains("禁止使用"), "无禁用词时不出现该段");
+    }
+
+    #[test]
+    fn avoid_examples_are_capped_and_skipped_when_empty() {
+        let many: Vec<String> = (0..20).map(|i| format!("Sentence number {i}.")).collect();
+        let refs: Vec<&str> = many.iter().map(String::as_str).collect();
+        let p = build_prompt(&spec(), "机场值机", 10, &refs, &[]);
+        assert!(p.user.contains("Sentence number 0."));
+        assert!(
+            !p.user.contains("Sentence number 8."),
+            "超过 MAX_AVOID_EXAMPLES 的例句应被截断"
+        );
+        let empty = build_prompt(&spec(), "机场值机", 10, &[], &[]);
+        assert!(!empty.user.contains("已经写过"), "无例句时整段不出现");
+    }
+
+    /// few-shot 按等级分档:低等级不能看到高带例句(否则模型照抄就越级)。
+    #[test]
+    fn few_shots_are_tiered_by_level() {
+        let mut low = spec();
+        low.vocab_band = 500;
+        let mut high = spec();
+        high.vocab_band = 2800;
+        let a = build_prompt(&low, "s", 5, &[], &[]);
+        let b = build_prompt(&high, "s", 5, &[], &[]);
+        assert!(a.system.contains("How much is this book?"));
+        assert!(b.system.contains("would like to change my flight"));
+        assert_ne!(a.system, b.system);
     }
 
     #[test]

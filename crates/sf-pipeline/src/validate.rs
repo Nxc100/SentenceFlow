@@ -11,9 +11,11 @@
 //!   (音标漂移归零 — recorded as an auto-fix, not a failure);
 //! * dedupe: simhash near-duplicate against already-accepted fingerprints.
 
+pub use crate::dedupe::DedupeIndex;
+use crate::dedupe::{DedupeKey, NEAR_DUP_MIN_SIMILARITY};
 use crate::lexicon::Lexicon;
 use crate::parse::DraftSentence;
-use crate::simhash::{NEAR_DUP_MAX_DISTANCE, hamming_distance, simhash64};
+use crate::simhash::simhash64;
 use serde::{Deserialize, Serialize};
 use sf_core::spec::LevelSpec;
 use sf_core::{Chunk, PosTag, RoleTag, Sentence, Word};
@@ -74,7 +76,8 @@ pub enum ValidationIssue {
     },
     // ---- dedupe ----
     NearDuplicate {
-        distance: u32,
+        /// 与场景内最像的一句的相似度(见 [`crate::dedupe`] 的标定)。
+        similarity: f64,
     },
     // ---- auto-fixes actually applied (informational) ----
     IpaReconciled {
@@ -161,33 +164,6 @@ pub struct ValidationReport {
     /// (OverLevel/Duplicate sentences back the 丢弃可捞回 UI, §4.4.)
     pub sentence: Option<Sentence>,
     pub simhash: u64,
-}
-
-/// Fingerprints of already-accepted sentences (per generation job + target
-/// library). The caller adds a hash only after a sentence is truly accepted.
-#[derive(Debug, Default, Clone)]
-pub struct DedupeIndex {
-    hashes: Vec<u64>,
-}
-
-impl DedupeIndex {
-    pub fn new(existing: impl IntoIterator<Item = u64>) -> Self {
-        Self {
-            hashes: existing.into_iter().collect(),
-        }
-    }
-
-    pub fn add(&mut self, hash: u64) {
-        self.hashes.push(hash);
-    }
-
-    pub fn nearest_distance(&self, hash: u64) -> Option<u32> {
-        self.hashes.iter().map(|h| hamming_distance(*h, hash)).min()
-    }
-
-    pub fn recent(&self, n: usize) -> impl Iterator<Item = u64> + '_ {
-        self.hashes.iter().rev().take(n).copied()
-    }
 }
 
 pub struct Validator<'a> {
@@ -343,9 +319,8 @@ impl<'a> Validator<'a> {
                 max: self.spec.max_words,
             });
         }
-        for dw in &draft.words {
-            let is_propn = dw.pos == "propn";
-            if is_propn || self.open_vocabulary {
+        for (i, dw) in draft.words.iter().enumerate() {
+            if self.open_vocabulary || vocabulary_exempt(&dw.w, &dw.pos, i) {
                 continue;
             }
             match self.lexicon.band_of(&dw.w) {
@@ -357,15 +332,22 @@ impl<'a> Validator<'a> {
                     });
                 }
                 Some(_) => {}
+                // `vocab_band == 0` = 该等级不设词表带上限(L6 的 spec 注释:
+                // "2800+短语动词:不设词表带上限,由抽审把关")。此前词表外
+                // 仍旧拦截,等于上限根本没放开 —— 与规格自相矛盾。
+                None if self.spec.vocab_band == 0 => {}
                 None => issues.push(ValidationIssue::UnknownWord { word: dw.w.clone() }),
             }
         }
 
         // ---- dedupe ----
-        if let Some(d) = dedupe.nearest_distance(hash)
-            && d <= NEAR_DUP_MAX_DISTANCE
+        // 精确词形相似度,只跟**同场景**已接受的句子比(见 crate::dedupe)。
+        // 旧实现用 simhash 汉明距离 ≤16 判全库近重,阈值落在"不同句"分布
+        // 内部,库到 5000 句时会误杀约四成好句。
+        if let Some(sim) = dedupe.nearest_similarity(&DedupeKey::of(&draft.en))
+            && sim >= NEAR_DUP_MIN_SIMILARITY
         {
-            issues.push(ValidationIssue::NearDuplicate { distance: d });
+            issues.push(ValidationIssue::NearDuplicate { similarity: sim });
         }
 
         // ---- verdict ----
@@ -404,6 +386,25 @@ impl<'a> Validator<'a> {
             simhash: hash,
         }
     }
+}
+
+/// 免词表判定的 token —— 这些不属于"该等级该不该认识的单词"。
+///
+/// ① 模型标成 `propn` 的专有名词(原有行为);
+/// ② **句中**(非首词)首字母大写的词:英语正字法里几乎只可能是专名。
+///    实测模型常把 English / French / Friday 标成 adj/n,凭 pos 一项判不出来,
+///    结果整句因"词表外"被丢 —— 大小写是比模型标注更可靠的信号。
+///    首词不能用这条(每句首字母都大写),所以只对 `index > 0` 生效;
+/// ③ 不含字母的 token:数字、时刻 `10:30`、航班号里的纯数字段。它们不是
+///    词汇,却会被 normalize 抹成空串进而判"词表外"。
+fn vocabulary_exempt(word: &str, pos: &str, index: usize) -> bool {
+    if pos == "propn" {
+        return true;
+    }
+    if !word.chars().any(|c| c.is_ascii_alphabetic()) {
+        return true;
+    }
+    index > 0 && word.chars().next().is_some_and(char::is_uppercase)
 }
 
 /// Split `en` into typable tokens + trailing punctuation (句末标点直显不输入).
@@ -614,7 +615,7 @@ practice:
     #[test]
     fn near_duplicate_detected() {
         let mut dedupe = DedupeIndex::default();
-        dedupe.add(simhash64("I am fine."));
+        dedupe.add("I am fine.");
         let spec = spec();
         let lex = lexicon();
         let r = Validator::new(&spec, &lex).validate(&good_draft(), "s", "f", &dedupe);

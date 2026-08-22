@@ -4,7 +4,7 @@
 //! |--------------|---------------------------------|-----------------------------|
 //! | Pass         | accept                          | accept                      |
 //! | NeedsRepair  | repair call (仅传差异)           | repair call                 |
-//! | OverLevel    | relevel to the fitting level    | discard, 可捞回             |
+//! | OverLevel    | relevel to the fitting level    | relevel;无处可放才丢弃      |
 //! | Duplicate    | discard                         | discard, 可捞回             |
 //! | Broken       | discard (回灌反例库)             | discard                     |
 
@@ -33,7 +33,7 @@ pub enum TriageOutcome {
         sentence: Sentence,
         issues: Vec<ValidationIssue>,
     },
-    /// Factory only: the sentence belongs to a different level.
+    /// 句子属于另一个等级(两档通用):按 `new_level` 入库。
     Relevel {
         sentence: Sentence,
         new_level: LevelId,
@@ -83,18 +83,18 @@ pub fn triage(
             let sentence = report
                 .sentence
                 .expect("OverLevel always carries a sentence");
-            match profile {
-                GenProfile::Factory => match fitting_level(&report.issues, &sentence, all_specs) {
-                    Some(new_level) => TriageOutcome::Relevel {
-                        sentence,
-                        new_level,
-                    },
-                    None => TriageOutcome::Discard {
-                        recoverable: Some(sentence),
-                        reason: reason(),
-                    },
+            // 两档同样先试改级:句子本身没毛病,只是**词对这一级偏难**。
+            // 工坊此前一律丢弃(可捞回),等于把好句子挡在库外还要用户手动
+            // 捞 —— 实测里这是词表修完之后最大的一块损失(L3 餐厅场景约两成
+            // 句子卡在 dessert/fries 这类词上)。存进真正合适的等级,句子留下,
+            // 等级契约也没破;界面按 `sentence.level` 与任务等级不同来标注。
+            // 词表外的词改级也解决不了(见 fitting_level),那才丢弃可捞回。
+            match fitting_level(&report.issues, &sentence, all_specs) {
+                Some(new_level) => TriageOutcome::Relevel {
+                    sentence,
+                    new_level,
                 },
-                GenProfile::User => TriageOutcome::Discard {
+                None => TriageOutcome::Discard {
                     recoverable: Some(sentence),
                     reason: reason(),
                 },
@@ -196,10 +196,8 @@ practice:
         .unwrap()
     }
 
-    fn over_level_report() -> ValidationReport {
-        let specs = all_specs();
-        let lex = lexicon();
-        let draft = DraftSentence {
+    fn over_level_draft() -> DraftSentence {
+        DraftSentence {
             en: "I am passport.".into(),
             zh: "护照句。".into(),
             pattern: String::new(),
@@ -236,8 +234,18 @@ practice:
             ],
             note: String::new(),
             speaker: String::new(),
-        };
-        Validator::new(&specs[0], &lex).validate(&draft, "s", "f", &DedupeIndex::default())
+        }
+    }
+
+    fn over_level_report() -> ValidationReport {
+        let specs = all_specs();
+        let lex = lexicon();
+        Validator::new(&specs[0], &lex).validate(
+            &over_level_draft(),
+            "s",
+            "f",
+            &DedupeIndex::default(),
+        )
     }
 
     #[test]
@@ -251,17 +259,29 @@ practice:
         }
     }
 
+    /// 工坊(user 档)现在也改级入库:句子没毛病,只是词对这一级偏难,
+    /// 丢掉纯属浪费 —— 改存到合适的等级即可。
     #[test]
-    fn user_discards_over_level_recoverably() {
+    fn user_relevels_over_level_instead_of_discarding() {
         let out = triage(over_level_report(), GenProfile::User, &all_specs());
         match out {
-            TriageOutcome::Discard {
-                recoverable,
-                reason,
-            } => {
-                assert!(recoverable.is_some());
-                assert!(reason.contains("passport"), "reason = {reason}");
-            }
+            TriageOutcome::Relevel { new_level, .. } => assert_eq!(new_level, LevelId::L5),
+            other => panic!("expected Relevel, got {other:?}"),
+        }
+    }
+
+    /// 改级救不了的(词表外的生词)仍旧丢弃,但可捞回。
+    #[test]
+    fn unknown_word_still_discards_recoverably() {
+        let specs = all_specs();
+        let lex = lexicon();
+        let mut draft = over_level_draft();
+        draft.en = "I am zzzz.".into();
+        draft.words[2].w = "zzzz".into();
+        let report =
+            Validator::new(&specs[0], &lex).validate(&draft, "s", "f", &DedupeIndex::default());
+        match triage(report, GenProfile::User, &specs) {
+            TriageOutcome::Discard { recoverable, .. } => assert!(recoverable.is_some()),
             other => panic!("expected Discard, got {other:?}"),
         }
     }

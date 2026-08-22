@@ -13,6 +13,22 @@ use serde::{Deserialize, Serialize};
 /// (如 L1 写快餐食物词)无限烧额度。
 pub const MAX_TOPUP_BATCHES: usize = 4;
 
+/// 还没有实测样本时假定的通过率。
+///
+/// 2026-08-23 修完词表/prompt/查重之后重测:同一批模型产出的入库率从
+/// 78.75% 升到 100%,打包应用里真跑一次是 12/13(唯一的丢弃是真·完全同文
+/// 重复)。残余损失主要来自"这个场景写得差不多了"的重复,而不是格式或词表。
+/// 所以先验取 0.9 —— 取低了每批都白要一成句子,取高了不过是多跑一个补足批。
+const ASSUMED_ACCEPT_RATE: f64 = 0.90;
+
+/// 通过率的可信下限:再低也不按更低的值放大请求量。
+/// 0.6 对应最多 1.67× 的超额请求 —— 20 句的微批最多要到 34 句,
+/// 按实测每句 ~150 token 算仍远在 `max_tokens = 8192` 之内,不会被截断。
+const MIN_ACCEPT_RATE: f64 = 0.60;
+
+/// 估算通过率前至少要有的样本量(句)。太少的样本会把一两次意外放大。
+const MIN_RATE_SAMPLE: u32 = 8;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BatchState {
@@ -67,6 +83,11 @@ pub struct GenJob {
     pub batches: Vec<BatchState>,
     /// Sentences accepted so far (已过校验先行入库, §6.3).
     pub produced: u32,
+    /// 本任务累计**向模型要过**多少句。与 `produced` 一起给出实测通过率,
+    /// 让后续批次按需超额请求(见 [`GenJob::request_size`])。
+    /// 老任务的持久化记录没有这个字段,反序列化后为 0 = 尚无样本。
+    #[serde(default)]
+    pub requested: u32,
     pub created_at: i64,
 }
 
@@ -81,6 +102,7 @@ impl GenJob {
             state: JobState::Running,
             batches: vec![BatchState::Pending; n.max(1)],
             produced: 0,
+            requested: 0,
             created_at: now,
         }
     }
@@ -131,16 +153,42 @@ impl GenJob {
         }
     }
 
-    /// Sentences to *ask the model for* in batch `idx`. Planned batches follow
-    /// the original split; top-up batches ask for the current shortfall plus
-    /// 50% headroom (the discard rate is unknown), clamped to the microbatch.
-    pub fn request_size(&self, idx: usize) -> u32 {
-        if idx < self.planned_batches() {
-            self.batch_size(idx)
-        } else {
-            let want = self.shortfall();
-            (want + want.div_ceil(2)).clamp(2, self.params.microbatch.max(2))
+    /// 本任务到目前为止的实测通过率(入库句数 ÷ 要过的句数)。
+    /// 样本不足时用先验值 [`ASSUMED_ACCEPT_RATE`]。
+    pub fn accept_rate(&self) -> f64 {
+        if self.requested < MIN_RATE_SAMPLE {
+            return ASSUMED_ACCEPT_RATE;
         }
+        (self.produced as f64 / self.requested as f64).clamp(MIN_ACCEPT_RATE, 1.0)
+    }
+
+    /// 记下这一批向模型要了多少句(通过率的分母)。
+    pub fn record_request(&mut self, asked: u32) {
+        self.requested = self.requested.saturating_add(asked);
+    }
+
+    /// Sentences to *ask the model for* in batch `idx`。
+    ///
+    /// 一律按"还差多少 ÷ 实测通过率"要,并以"一个微批的量 ÷ 通过率"封顶:
+    /// 微批是**交付**粒度(进度点),要多少才能交付这么多得看通过率。
+    ///
+    /// 为什么要改:原来规划批一句不多要,注定差一截,于是几乎每个任务都要
+    /// 额外跑补足批 —— 而补足批要重发整个 system prompt(约 2500 字符),
+    /// 补一次的开销比多要几句大得多。按通过率一次要够,常见情况下 20 句的
+    /// 任务从"2 次请求"降到"1 次"。
+    ///
+    /// 反过来也不会浪费:通过率高时公式自然退化成"还差多少要多少",
+    /// 已经拿满就不再要(返回 0,调用方据此收尾)。
+    pub fn request_size(&self, idx: usize) -> u32 {
+        let _ = idx; // 规划批与补足批用同一套规则,自我校正
+        let remaining = self.shortfall();
+        if remaining == 0 {
+            return 0;
+        }
+        let rate = self.accept_rate();
+        let inflate = |n: u32| ((n as f64 / rate).ceil() as u32).max(n);
+        let microbatch = self.params.microbatch.max(1);
+        inflate(remaining).min(inflate(microbatch)).max(2)
     }
 
     /// Next batch to run, if the job is runnable.
@@ -303,8 +351,9 @@ mod tests {
         assert_eq!(job.state, JobState::Running);
         assert_eq!(job.topup_count(), 1);
         assert_eq!(job.next_pending(), Some(1));
-        // 补足批按缺口 + 50% 超量索要,夹在 microbatch 内:8+4=12 → 10。
-        assert_eq!(job.request_size(1), 10);
+        // 这个用例没调 record_request,样本为 0 → 用先验 0.9:
+        // 缺 8 句要 ceil(8/0.9)=9,不超过一个微批的量 ceil(10/0.9)=12。
+        assert_eq!(job.request_size(1), 9);
 
         job.start_batch(1);
         job.finish_batch(1, 7);
@@ -315,7 +364,48 @@ mod tests {
         job.start_batch(2);
         job.finish_batch(2, 1);
         assert_eq!(job.shortfall(), 0);
+        // 拿满之后不再索要 —— 调用方据此收尾,不会白跑一批。
+        assert_eq!(job.request_size(3), 0);
         assert_eq!(job.state, JobState::Completed);
+    }
+
+    /// 规划批就按通过率超额索要:20 句的任务在 0.8 的先验下一次要 25 句,
+    /// 常见情况下一个请求就拿满,不必再跑补足批(补足批要重发整个
+    /// system prompt,比多要几句贵得多)。
+    #[test]
+    fn planned_batch_over_asks_by_accept_rate() {
+        let job = GenJob::new(1, params(20, 20), 0);
+        assert_eq!(job.accept_rate(), 0.90, "无样本时用先验");
+        assert_eq!(job.request_size(0), 23); // ceil(20 / 0.9)
+    }
+
+    /// 有了实测样本就按实测走;通过率高时自然退化成"还差多少要多少",
+    /// 不会无谓超额。
+    #[test]
+    fn request_size_follows_measured_rate() {
+        let mut job = GenJob::new(1, params(40, 20), 0);
+        job.record_request(20);
+        job.start_batch(0);
+        job.finish_batch(0, 20); // 20/20 = 100%
+        assert_eq!(job.accept_rate(), 1.0);
+        assert_eq!(job.request_size(1), 20, "全过时不多要一句");
+
+        let mut job = GenJob::new(2, params(40, 20), 0);
+        job.record_request(20);
+        job.start_batch(0);
+        job.finish_batch(0, 10); // 10/20 = 50% → 夹到下限 0.6
+        assert_eq!(job.accept_rate(), 0.60);
+        // 还缺 30 句,但一批只按"交付一个微批"索要:ceil(20/0.6)=34。
+        assert_eq!(job.request_size(1), 34);
+    }
+
+    /// 样本太少不做估算,免得一两次意外把请求量带偏。
+    #[test]
+    fn tiny_sample_falls_back_to_prior() {
+        let mut job = GenJob::new(1, params(20, 20), 0);
+        job.record_request(4);
+        job.finish_batch(0, 0);
+        assert_eq!(job.accept_rate(), 0.90);
     }
 
     #[test]

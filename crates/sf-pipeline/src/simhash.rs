@@ -1,5 +1,10 @@
-//! 64-bit simhash over normalized words — near-duplicate detection for
-//! generated sentences (spec §7.4 查重) and the "避开指纹" prompt tail (§11.D).
+//! 64-bit simhash over normalized words.
+//!
+//! **近重判定已不在这里** —— 短句压进 64 bit 分辨率不够,判定搬到了
+//! [`crate::dedupe`](crate::dedupe)(精确 Jaccard,附标定数据)。
+//! 这里留下的用途只有两个,都只需要"稳定的句子指纹":
+//! * `sentence.simhash` 列(已落库多版,不改格式);
+//! * 「帮我选模型」微基准的名单指纹。
 //!
 //! Self-contained and deterministic: the same sentence always hashes to the
 //! same value on every platform and release, because fingerprints are stored
@@ -27,17 +32,11 @@ fn normalize_words(text: &str) -> Vec<String> {
         .collect()
 }
 
-/// Simhash over word unigrams + bigrams (bigrams capture word order, so
-/// "the cat chased the dog" and "the dog chased the cat" differ).
+/// Simhash over word unigrams + bigrams(bigram 承载词序,所以
+/// "the cat chased the dog" 与 "the dog chased the cat" 不同)。
 ///
-/// Feature weights and the [`NEAR_DUP_MAX_DISTANCE`] threshold were picked
-/// empirically on short practice sentences: true near-duplicates (one word
-/// dropped/swapped) land at distance 6–16, while distinct sentences bottom
-/// out at 17 (short 4–6-word sentences have few features, so even unrelated
-/// ones sit closer than long-text simhash intuition suggests). The threshold
-/// sits at 16 — the rare near-dup at 17+ slips through on purpose: a false
-/// "duplicate" silently discards a good sentence, a false "unique" is caught
-/// by 人工抽审 (§8) or bothers no one.
+/// 输出会落库(`sentence.simhash`),因此**算法不可变** —— 变了旧库里的
+/// 指纹就对不上了。
 pub fn simhash64(text: &str) -> u64 {
     let words = normalize_words(text);
     if words.is_empty() {
@@ -69,15 +68,7 @@ pub fn simhash64(text: &str) -> u64 {
     out
 }
 
-pub fn hamming_distance(a: u64, b: u64) -> u32 {
-    (a ^ b).count_ones()
-}
-
-/// Default near-duplicate threshold used by the validator (see the
-/// calibration note on [`simhash64`]).
-pub const NEAR_DUP_MAX_DISTANCE: u32 = 16;
-
-/// Short hex fingerprint for the prompt tail (指纹列表,§11.D).
+/// 短十六进制指纹 —— 用于「帮我选模型」微基准的名单指纹。
 pub fn fingerprint16(hash: u64) -> String {
     format!("{hash:016x}")
 }
@@ -91,45 +82,23 @@ mod tests {
         assert_eq!(simhash64("I am fine."), simhash64("i am FINE"));
     }
 
+    /// simhash 已落库(`sentence.simhash`)且跨版本比对,算法**不可改**。
+    /// 这里把几个固定输入的哈希值钉死 —— 一旦有人动了归一化或特征权重,
+    /// 这个测试立刻炸,而不是等到旧库指纹对不上才发现。
+    ///
+    /// (近重判定不再看这个值,搬去了 crate::dedupe —— 短句压进 64 bit
+    ///  分辨率不够,实测"不同句"与"真近重"的距离分布首尾相叠。)
     #[test]
-    fn near_duplicates_are_close() {
-        let pairs = [
-            (
-                "May I see your passport, please?",
-                "May I see your passport?",
-            ),
-            (
-                "May I see your passport, please?",
-                "Could I see your passport, please?",
-            ),
-            (
-                "I would like a cup of coffee.",
-                "I would like a cup of tea.",
-            ),
-            ("Can you help me with this?", "Could you help me with that?"),
-        ];
-        for (a, b) in pairs {
-            let d = hamming_distance(simhash64(a), simhash64(b));
-            assert!(d <= NEAR_DUP_MAX_DISTANCE, "d = {d} for {a:?} vs {b:?}");
-        }
-    }
-
-    #[test]
-    fn different_sentences_are_far() {
-        let pairs = [
-            (
-                "May I see your passport, please?",
-                "The weather is really nice today.",
-            ),
-            (
-                "I went to school yesterday.",
-                "She plays tennis every weekend.",
-            ),
-            ("The meeting starts at nine.", "Our flight leaves at noon."),
-        ];
-        for (a, b) in pairs {
-            let d = hamming_distance(simhash64(a), simhash64(b));
-            assert!(d > NEAR_DUP_MAX_DISTANCE, "d = {d} for {a:?} vs {b:?}");
+    fn hash_values_are_frozen() {
+        for (text, expected) in [
+            ("May I see your passport, please?", 0xc07f_4e4d_86a7_3003u64),
+            ("I am fine.", 0xaad7_a54c_b621_ea6du64),
+        ] {
+            let got = simhash64(text);
+            assert_eq!(
+                got, expected,
+                "simhash({text:?}) = {got:#018x};算法变了会让已落库的指纹全部失效"
+            );
         }
     }
 

@@ -96,6 +96,21 @@ impl ContentStore {
 
     /// Open read-write without recreating meta (user_content.db at runtime).
     /// 老用户库缺 `pack` 列时就地做加列迁移(additive,行为完全兼容)。
+    /// 把一批写操作包进一个事务提交。
+    ///
+    /// SQLite 默认每条语句自动提交 = 每行一次 fsync。出厂构建要写约 2900 条
+    /// 词条 + 上百句,逐行提交实测要 **5 分 46 秒**;包成一个事务后是秒级。
+    /// 内容生产要反复重建,这个差别很实在。
+    ///
+    /// 闭包返回 `Err` 时事务自动回滚(`Transaction` 的 Drop 默认回滚),
+    /// 半截的库不会留在磁盘上。
+    pub fn in_transaction<T>(&self, f: impl FnOnce(&Self) -> Result<T>) -> Result<T> {
+        let tx = self.conn.unchecked_transaction()?;
+        let out = f(self)?;
+        tx.commit()?;
+        Ok(out)
+    }
+
     pub fn open_rw(path: &Path) -> Result<Self> {
         let conn = Connection::open(path)?;
         conn.execute_batch(SCHEMA)?;
@@ -336,6 +351,21 @@ impl ContentStore {
         Ok(())
     }
 
+    /// 某场景已有句子的英文原文 —— 生成查重的比较范围(见 `crate::dedupe`
+    /// "比较范围")。`scene` 为空串时返回空表(不退化成整库扫描)。
+    ///
+    /// 场景包(pack)与等级句共用 scene 列,所以两种模式都走这一个查询。
+    pub fn sentences_en_in_scene(&self, scene: &str) -> Result<Vec<String>> {
+        if scene.trim().is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut stmt = self
+            .conn
+            .prepare("SELECT en FROM sentence WHERE scene = ?1 OR pack = ?1")?;
+        let rows = stmt.query_map(params![scene], |r| r.get::<_, String>(0))?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
     pub fn all_simhashes(&self) -> Result<Vec<u64>> {
         let mut stmt = self.conn.prepare("SELECT simhash FROM sentence")?;
         let rows = stmt.query_map([], |r| r.get::<_, i64>(0))?;
@@ -421,6 +451,15 @@ impl ContentIndex {
         } else {
             self.factory.sentence_by_id(id)
         }
+    }
+
+    /// 两库中该场景已有句子的英文原文(生成查重的比较范围)。
+    pub fn sentences_en_in_scene(&self, scene: &str) -> Result<Vec<String>> {
+        let mut out = self.factory.sentences_en_in_scene(scene)?;
+        if let Some(user) = &self.user {
+            out.extend(user.sentences_en_in_scene(scene)?);
+        }
+        Ok(out)
     }
 
     /// 场景包内容:出厂包在前,用户同名包续在其后(id 已按库偏移)。

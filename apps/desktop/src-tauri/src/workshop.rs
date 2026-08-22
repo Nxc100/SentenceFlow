@@ -208,14 +208,16 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
         serde_json::from_value(serde_json::Value::String(job.params.channel.clone()))
             .map_err(|_| CmdError::new("workshop", format!("未知通道 {}", job.params.channel)))?;
 
-    // Dedupe against everything already in the user library + this job.
+    // 查重范围 = **本场景**已有的句子(出厂库 + 用户库),外加本次任务新产出的。
+    //
+    // 此前拿整库比对 + simhash 距离阈值,句库一大就大面积误杀:随机两句距离
+    // ≤16 的概率约 1e-4,库到 5000 句时约四成好句会被判"与已有句重复"
+    // (标定见 sf_pipeline::dedupe)。硬承诺本来就只是"每个场景内不重复",
+    // 缩到场景内既符合承诺,又把比较基数从数千降到几十。
+    // 跨场景的完全同文另有 `exists_by_en` 全局兜底。
     let mut dedupe = {
         let content = state.content.lock().expect("content lock");
-        let mut hashes = content.factory.all_simhashes()?;
-        if let Some(user) = &content.user {
-            hashes.extend(user.all_simhashes()?);
-        }
-        DedupeIndex::new(hashes)
+        DedupeIndex::new(content.sentences_en_in_scene(job.params.scene.trim())?)
     };
 
     // Money metering only where money can burn (§5.5 双形态).
@@ -257,7 +259,16 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
             );
 
             let batch_size = job.request_size(batch_idx);
-            let avoid: Vec<u64> = dedupe.recent(16).collect();
+            // 已经拿满:后面的批次不必再跑(规划批按通过率超额索要之后,
+            // 早批多产出就会把后批的需求清零 —— 直接标完成,省下整次请求)。
+            if batch_size == 0 {
+                job.finish_batch(batch_idx, 0);
+                continue 'batches;
+            }
+            job.record_request(batch_size);
+            // 尾部给模型看**真句子**(此前传 simhash 十六进制指纹,模型无从理解,
+            // 既避不了重又每批白烧 token)。
+            let avoid = dedupe.recent(8);
             let banned: Vec<String> = banned_words.iter().cloned().collect();
             let parts = if scenario {
                 sf_pipeline::prompt::build_scenario_prompt(
@@ -409,8 +420,21 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                             banned_words.insert(word.to_lowercase());
                                         }
                                     }
-                                    let hash = report.simhash;
-                                    match triage(report, GenProfile::User, &all_specs) {
+                                    let outcome = triage(report, GenProfile::User, &all_specs);
+                                    // 改级 = 入库,只是换个等级归属:句子本身合格,
+                                    // 只有词对当前等级偏难。前端按 sentence.level
+                                    // 与任务等级不同来标「存入 Lx」。
+                                    let outcome = match outcome {
+                                        TriageOutcome::Relevel {
+                                            mut sentence,
+                                            new_level,
+                                        } => {
+                                            sentence.level = new_level;
+                                            TriageOutcome::Accept { sentence }
+                                        }
+                                        other => other,
+                                    };
+                                    match outcome {
                                         TriageOutcome::Accept { mut sentence } => {
                                             let content =
                                                 state.content.lock().expect("content lock");
@@ -432,7 +456,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                                 );
                                                 continue;
                                             }
-                                            dedupe.add(hash);
+                                            dedupe.add(sentence.en.as_str());
                                             if let Some(user) = &content.user {
                                                 let rid = user.insert_sentence_in_pack(
                                                     &sentence, "", 1, &pack,
@@ -462,6 +486,8 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                                 issues.iter().map(|i| i.zh_reason()).collect();
                                             pending_repairs.push((sentence, reasons));
                                         }
+                                        // 改级已在上面转成 Accept;走到这里的只剩
+                                        // 改级也救不了的(词表外生词)与重复句。
                                         TriageOutcome::Relevel { sentence, .. }
                                         | TriageOutcome::Discard {
                                             recoverable: Some(sentence),
@@ -474,7 +500,8 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                                 CardEvent::Discarded {
                                                     job_id,
                                                     en: sentence.en.clone(),
-                                                    reason: "超出当前等级或与已有句重复".into(),
+                                                    reason: "含词表外的生词,或与本场景已有句重复"
+                                                        .into(),
                                                     recoverable: true,
                                                     sentence: Some(Box::new(sentence.clone())),
                                                 },
@@ -619,7 +646,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                 );
                                 continue;
                             }
-                            dedupe.add(fixed.simhash);
+                            dedupe.add(fixed.en.as_str());
                             if let Some(user) = &content.user {
                                 let rid = user.insert_sentence_in_pack(&fixed, "", 1, &pack)?;
                                 fixed.id = sf_pipeline::store::ContentIndex::USER_ID_OFFSET + rid;

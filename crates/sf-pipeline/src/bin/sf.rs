@@ -63,6 +63,34 @@ enum FactoryCmd {
         #[arg(long, default_value = "content")]
         content_dir: PathBuf,
     },
+    /// 入库率探针:跑一批(或回放已存的产出),报出各类拒因的占比。
+    ///
+    /// 内容生产前先用它摸底 —— 通过率低到底是"模型不行"还是"词表缺词/
+    /// 例句越级"这类自己人的问题,直方图一眼看得出。`--save` 存下原始产出,
+    /// 之后改校验器可以用 `--replay` 零成本复测同一批。
+    Yield {
+        #[arg(long)]
+        level: String,
+        /// 现场生成模式:场景描述
+        #[arg(long)]
+        scene: Option<String>,
+        #[arg(long, default_value_t = 20)]
+        count: u32,
+        #[arg(long, default_value = "opencode")]
+        channel: String,
+        #[arg(long, default_value = "opencode/hy3-free")]
+        model: String,
+        /// 把本次原始产出存到这个文件(供以后 --replay)
+        #[arg(long)]
+        save: Option<PathBuf>,
+        /// 回放模式:读这些文件里的原始产出,不调模型(可多次给出)
+        #[arg(long)]
+        replay: Vec<PathBuf>,
+        #[arg(long, default_value = "content")]
+        content_dir: PathBuf,
+        #[arg(long)]
+        api_key: Option<String>,
+    },
     /// Generate sentences over an AI channel into a content database.
     Gen {
         #[arg(long)]
@@ -145,6 +173,27 @@ fn main() -> Result<()> {
                 run_placement(&content_dir)?;
                 run_scenario_packs(&content_dir, None, 1).map(|_| ())
             }
+            FactoryCmd::Yield {
+                level,
+                scene,
+                count,
+                channel,
+                model,
+                save,
+                replay,
+                content_dir,
+                api_key,
+            } => yield_cmd(
+                &level,
+                scene.as_deref(),
+                count,
+                &channel,
+                &model,
+                save.as_deref(),
+                &replay,
+                &content_dir,
+                api_key,
+            ),
             FactoryCmd::Gen {
                 scene,
                 level,
@@ -209,11 +258,31 @@ fn load_specs(content_dir: &Path) -> Result<BTreeMap<LevelId, (LevelSpec, String
     Ok(specs)
 }
 
+/// 词表源文件,按加载顺序:`base.tsv`(NGSL)在前,`supplement.tsv`
+/// (教学补充,可缺)在后 —— 同名词条以后者为准。
+pub const LEXICON_FILES: [&str; 2] = ["base.tsv", "supplement.tsv"];
+
+/// 读齐所有词表源文件,拼成一份 TSV(缺失的补充表不算错)。
+fn lexicon_tsv(content_dir: &Path) -> Result<String> {
+    let dir = content_dir.join("lexicon");
+    let mut tsv = String::new();
+    for (i, name) in LEXICON_FILES.iter().enumerate() {
+        let path = dir.join(name);
+        match std::fs::read_to_string(&path) {
+            Ok(text) => {
+                tsv.push_str(&text);
+                tsv.push('\n');
+            }
+            // base.tsv 必须在;supplement.tsv 可选。
+            Err(e) if i > 0 && e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e).with_context(|| format!("reading {}", path.display())),
+        }
+    }
+    Ok(tsv)
+}
+
 fn load_lexicon(content_dir: &Path) -> Result<Lexicon> {
-    let path = content_dir.join("lexicon").join("base.tsv");
-    let tsv =
-        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    Lexicon::from_tsv(&tsv).map_err(|e| anyhow::anyhow!(e))
+    Lexicon::from_tsv(&lexicon_tsv(content_dir)?).map_err(|e| anyhow::anyhow!(e))
 }
 
 fn seed_files(content_dir: &Path) -> Result<Vec<PathBuf>> {
@@ -254,8 +323,8 @@ fn run_seeds(content_dir: &Path) -> Result<SeedRun> {
             let report = validator.validate(&s.to_draft(), &s.scene, &s.func, &dedupe);
             match report.verdict {
                 VerdictKind::Pass => {
-                    dedupe.add(report.simhash);
                     let mut sentence = report.sentence.expect("Pass carries a sentence");
+                    dedupe.add(sentence.en.as_str());
                     sentence.note = s.note.clone();
                     accepted.push(sentence);
                 }
@@ -473,9 +542,9 @@ fn run_scenario_packs(
             let report = validator.validate(&line.to_draft(), &sf.name, &speaker, &dedupe);
             match report.verdict {
                 VerdictKind::Pass => {
-                    dedupe.add(report.simhash);
+                    let mut s = report.sentence.expect("Pass carries a sentence");
+                    dedupe.add(s.en.as_str());
                     if let Some(store) = store {
-                        let mut s = report.sentence.expect("Pass carries a sentence");
                         s.note = line.note.clone();
                         s.level = sf.reference_level.unwrap_or(LevelId::L3);
                         store
@@ -607,8 +676,8 @@ fn run_placement(content_dir: &Path) -> Result<Option<sf_core::PlacementBank>> {
         let report = validator.validate(&ps.seed.to_draft(), &ps.seed.scene, "", &dedupe);
         match report.verdict {
             VerdictKind::Pass => {
-                dedupe.add(report.simhash);
                 let mut s = report.sentence.expect("Pass carries a sentence");
+                dedupe.add(s.en.as_str());
                 s.id = idx as i64 + 1;
                 s.note = ps.seed.note.clone();
                 *per_level.entry(ps.level).or_default() += 1;
@@ -734,29 +803,33 @@ fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
         .map_err(|e| anyhow::anyhow!(e.to_string()))?;
 
     // Lemma table doubles as the client-side dictionary (§7.7).
-    let lex_path = content_dir.join("lexicon").join("base.tsv");
-    for line in std::fs::read_to_string(&lex_path)?.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let cols: Vec<&str> = line.split('\t').collect();
-        store
-            .insert_lemma(
-                cols[0],
-                cols[1].parse().unwrap_or(0),
-                cols.get(2).unwrap_or(&""),
-                cols.get(3).unwrap_or(&""),
-                cols.get(4).unwrap_or(&""),
-            )
-            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    }
-
-    for s in &run.accepted {
-        store
-            .insert_sentence(s, "", rev)
-            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    }
+    // 桌面端只读 content.db 的 lemma 表,所以补充词表必须在这里一并写进去,
+    // 否则 CLI 校验通过的句子到了应用里会因"词表外"被拒。
+    //
+    // 词表与句子一起包进一个事务:逐行自动提交时整个 build 要近 6 分钟。
+    let lemma_tsv = lexicon_tsv(content_dir)?;
+    store
+        .in_transaction(|store| {
+            for line in lemma_tsv.lines() {
+                let line = line.trim();
+                if line.is_empty() || line.starts_with('#') {
+                    continue;
+                }
+                let cols: Vec<&str> = line.split('\t').collect();
+                store.insert_lemma(
+                    cols[0],
+                    cols[1].parse().unwrap_or(0),
+                    cols.get(2).unwrap_or(&""),
+                    cols.get(3).unwrap_or(&""),
+                    cols.get(4).unwrap_or(&""),
+                )?;
+            }
+            for s in &run.accepted {
+                store.insert_sentence(s, "", rev)?;
+            }
+            Ok(())
+        })
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
 
     // 出厂场景包(《场景练习模块-实现方案》§3.3):句子按对话顺序入
     // sentence 表(带 pack),包元信息进 meta["scenario_packs"]。
@@ -794,7 +867,114 @@ fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
 
 // ---------------------------------------------------------------- gold
 
+/// 词表分层自检:`supplement.tsv` 不得重定义 `base.tsv` 已有的词。
+///
+/// 补充表本意是"补 NGSL 没有的词"。一旦它悄悄给已有词换了 band,等级归属
+/// 就会莫名其妙地漂移 —— 实测踩过:补充表把 `noodle` 从 1500 改成 1550,
+/// 种子句 "We ordered two bowls of noodles." 当场在 L3 判越级。
+fn check_lexicon_layers(content_dir: &Path) -> Result<()> {
+    let dir = content_dir.join("lexicon");
+    let read = |name: &str| -> Result<Vec<(String, u32)>> {
+        let path = dir.join(name);
+        let text = match std::fs::read_to_string(&path) {
+            Ok(t) => t,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(e) => return Err(e).with_context(|| format!("reading {}", path.display())),
+        };
+        Ok(text
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .filter_map(|l| {
+                let mut it = l.split('\t');
+                let w = it.next()?.trim().to_lowercase();
+                let b: u32 = it.next()?.trim().parse().ok()?;
+                Some((w, b))
+            })
+            .collect())
+    };
+    let base: std::collections::HashMap<String, u32> = read("base.tsv")?.into_iter().collect();
+    let mut clashes = Vec::new();
+    for (w, b) in read("supplement.tsv")? {
+        if let Some(&bb) = base.get(&w) {
+            clashes.push(format!("{w}: supplement {b} / base {bb}"));
+        }
+    }
+    if clashes.is_empty() {
+        println!("lexicon layers: ok ({} base 词条)", base.len());
+        Ok(())
+    } else {
+        for c in &clashes {
+            println!("  ✕ supplement.tsv 重定义了 base.tsv 的词 — {c}");
+        }
+        bail!("lexicon layers: {} 处冲突", clashes.len())
+    }
+}
+
+/// few-shot 示例自检:prompt 里挂着的"合格示例"必须真的能过校验器。
+///
+/// 踩过的坑:旧例句用了 `passport`(不在词表)、`grade`(1612)、
+/// `counter`(2539),在 L1–L3 一律判越级 —— 等于拿"会被自己拒掉的句子"
+/// 教模型。模型照着学,再被拒掉,入库率就是这么掉下去的。
+fn check_few_shots(content_dir: &Path) -> Result<()> {
+    use sf_pipeline::parse::parse_single_draft;
+    use sf_pipeline::validate::{DedupeIndex, VerdictKind};
+
+    let lexicon = load_lexicon(content_dir)?;
+    let specs = load_specs(content_dir)?;
+    let mut problems = Vec::new();
+    let mut checked = 0usize;
+
+    for (block, max_band) in sf_pipeline::prompt::FEW_SHOT_TIERS {
+        // 该档必须在"词带正好等于 max_band"的最低等级上成立
+        let spec = specs
+            .values()
+            .map(|(s, _)| s)
+            .filter(|s| s.vocab_band > 0 && s.vocab_band <= max_band)
+            .max_by_key(|s| s.vocab_band)
+            .with_context(|| format!("no spec with vocab_band <= {max_band}"))?;
+        let validator = Validator::new(spec, &lexicon);
+        for line in block.lines() {
+            let line = line.trim();
+            // 只校验"合格示例"的 JSON 行;反例是故意写坏的
+            if !line.starts_with('{') || !line.contains("\"words\"") {
+                continue;
+            }
+            let draft = parse_single_draft(line)
+                .map_err(|e| anyhow::anyhow!("few-shot 不是合法 JSON: {e}"))?;
+            checked += 1;
+            let report = validator.validate(&draft, "示例", "", &DedupeIndex::default());
+            if report.verdict != VerdictKind::Pass {
+                let reasons: Vec<String> = report
+                    .issues
+                    .iter()
+                    .filter(|i| i.severity() != sf_pipeline::validate::Severity::AutoFixed)
+                    .map(|i| i.zh_reason())
+                    .collect();
+                problems.push(format!(
+                    "  ✕ [{}] 在 {} 上 {:?}: {}",
+                    draft.en,
+                    spec.id,
+                    report.verdict,
+                    reasons.join("；")
+                ));
+            }
+        }
+    }
+    if problems.is_empty() {
+        println!("few-shot 示例: {checked}/{checked} 通过各自档位的最低等级校验");
+        Ok(())
+    } else {
+        for p in &problems {
+            println!("{p}");
+        }
+        bail!("few-shot 示例有 {} 条过不了自己的校验器", problems.len())
+    }
+}
+
 fn gold_run(content_dir: &Path) -> Result<()> {
+    check_lexicon_layers(content_dir)?;
+    check_few_shots(content_dir)?;
     // Gold = seeds for now; the harness (pass-rate report + non-zero exit on
     // regression) is what W1's 出口标准 needs.
     let run = run_seeds(content_dir)?;
@@ -879,53 +1059,23 @@ fn export_trial(content_dir: &Path, out: &Path, levels: &str, per_level: u32) ->
 // ---------------------------------------------------------------- gen
 
 #[allow(clippy::too_many_arguments)]
-fn gen_cmd(
-    scene: &str,
-    level: &str,
-    count: u32,
+/// 按名字构造一个通道适配器(CLI 侧共用)。
+/// 代理走 `SF_PROXY`,Key 走 `--api-key` 或 `SF_API_KEY`。
+fn build_adapter(
     channel: &str,
-    model: &str,
-    content_dir: &Path,
-    db: &Path,
     api_key: Option<String>,
-) -> Result<()> {
-    use futures::StreamExt;
-    use sf_llm::ChannelAdapter;
+) -> Result<Box<dyn sf_llm::ChannelAdapter>> {
     use sf_llm::channels::{DeepseekChannel, OllamaChannel, OpencodeChannel, ZenChannel};
     use sf_llm::meter::PriceTable;
-    use sf_llm::types::GenChunk;
-    use sf_pipeline::parse::StreamScanner;
-    use sf_pipeline::prompt::build_prompt;
-
-    let level: LevelId = level.parse().map_err(|e: String| anyhow::anyhow!(e))?;
-    let specs = load_specs(content_dir)?;
-    let (spec, _) = specs.get(&level).context("no spec for level")?;
-    let all_specs: Vec<LevelSpec> = specs.values().map(|(s, _)| s.clone()).collect();
-    let lexicon = load_lexicon(content_dir)?;
-
-    let store = if db.exists() {
-        ContentStore::open_rw(db).map_err(|e| anyhow::anyhow!(e.to_string()))?
-    } else {
-        if let Some(parent) = db.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        ContentStore::create(db, "factory", 1).map_err(|e| anyhow::anyhow!(e.to_string()))?
-    };
-    let mut dedupe = DedupeIndex::new(
-        store
-            .all_simhashes()
-            .map_err(|e| anyhow::anyhow!(e.to_string()))?,
-    );
 
     let key = api_key.or_else(|| std::env::var("SF_API_KEY").ok());
-    // CLI 的 AI 代理经 SF_PROXY 环境变量(桌面端对应设置项 proxy_url)。
     let proxy = std::env::var("SF_PROXY")
         .ok()
         .filter(|p| !p.trim().is_empty());
-    let adapter: Box<dyn ChannelAdapter> = match channel {
+    Ok(match channel {
         "opencode" => Box::new(OpencodeChannel::new(
             sf_llm::channels::opencode::OpencodeConfig {
-                bin_override: None,
+                bin_override: std::env::var("SF_OPENCODE_BIN").ok().map(Into::into),
                 sandbox_dir: std::env::temp_dir().join("sf-agent-sandbox"),
                 known_bad_versions: vec![],
                 rpm_estimate: 10,
@@ -949,11 +1099,300 @@ fn gen_cmd(
         )),
         "ollama" => Box::new(OllamaChannel::default()),
         other => bail!("unknown channel: {other}"),
+    })
+}
+
+/// 发一次生成请求,把整段产出取回来(探针用;工坊/gen 走流式)。
+fn run_generation(
+    channel: &str,
+    model: &str,
+    parts: sf_pipeline::prompt::PromptParts,
+    api_key: Option<String>,
+) -> Result<String> {
+    use futures::StreamExt;
+    use sf_llm::types::GenChunk;
+
+    let adapter = build_adapter(channel, api_key)?;
+    let req = sf_llm::types::GenRequest {
+        model: model.to_string(),
+        system: parts.system,
+        user: parts.user,
+        max_tokens: Some(8192),
+        temperature: Some(0.7),
     };
+    let rt = tokio::runtime::Runtime::new()?;
+    rt.block_on(async {
+        let mut stream = adapter
+            .complete_stream(req)
+            .await
+            .map_err(|e| anyhow::anyhow!("channel error: {e} ({})", e.zh_message()))?;
+        let mut text = String::new();
+        while let Some(chunk) = stream.next().await {
+            match chunk {
+                Ok(GenChunk::Text { text: t }) => text.push_str(&t),
+                Ok(GenChunk::Usage {
+                    prompt_tokens,
+                    completion_tokens,
+                }) => eprintln!("usage: {prompt_tokens} in / {completion_tokens} out"),
+                Ok(GenChunk::Done) => break,
+                Ok(_) => {}
+                Err(e) => bail!("stream error: {e} ({})", e.zh_message()),
+            }
+        }
+        Ok(text)
+    })
+}
+
+/// 一次探针运行的统计。按"句"计:一句有多个同类问题只算一次。
+#[derive(Default)]
+struct YieldStats {
+    total: usize,
+    stored: usize,
+    parse_errors: usize,
+    by_outcome: BTreeMap<&'static str, usize>,
+    by_issue: BTreeMap<String, usize>,
+    sole_cause: BTreeMap<String, usize>,
+    over_words: BTreeMap<String, usize>,
+    unknown_words: BTreeMap<String, usize>,
+}
+
+fn pct(n: usize, total: usize) -> f64 {
+    if total == 0 {
+        0.0
+    } else {
+        n as f64 * 100.0 / total as f64
+    }
+}
+
+fn issue_kind(i: &sf_pipeline::validate::ValidationIssue) -> &'static str {
+    use sf_pipeline::validate::ValidationIssue::*;
+    match i {
+        EmptyEnglish => "缺英文",
+        EmptyChinese => "缺中文",
+        NoWords => "缺逐词标注",
+        TokenMismatch { .. } => "逐词与句子不一致",
+        UnknownPosTag { .. } => "词性标签非法",
+        UnknownRoleTag { .. } => "成分标签非法",
+        ChunkIndexOutOfRange { .. } => "成分索引越界",
+        ChunkOverlap { .. } => "成分重叠",
+        ChunkGap { .. } => "成分未覆盖全句",
+        BadIpaChars { .. } => "音标含非法字符",
+        MissingIpa { .. } => "缺音标",
+        OverLevel { .. } => "越级(词偏难)",
+        UnknownWord { .. } => "词表外",
+        TooLong { .. } => "句子过长",
+        NearDuplicate { .. } => "与已有句重复",
+        IpaReconciled { .. } => "音标已校正",
+    }
+}
+
+/// 把一段原始产出喂进流水线,累计统计(与工坊同一套:流式扫描 + 校验 + 分诊)。
+fn tally_yield(
+    text: &str,
+    validator: &Validator<'_>,
+    all_specs: &[LevelSpec],
+    dedupe: &mut DedupeIndex,
+    st: &mut YieldStats,
+) {
+    use sf_pipeline::parse::StreamScanner;
+    use sf_pipeline::validate::Severity;
+
+    let mut scanner = StreamScanner::new();
+    for item in scanner.push(text) {
+        let Ok(d) = item else {
+            st.parse_errors += 1;
+            continue;
+        };
+        st.total += 1;
+        let report = validator.validate(&d, "probe", "", dedupe);
+
+        let mut kinds: std::collections::BTreeSet<String> = Default::default();
+        for i in &report.issues {
+            if i.severity() == Severity::AutoFixed {
+                continue;
+            }
+            kinds.insert(issue_kind(i).to_string());
+            match i {
+                sf_pipeline::validate::ValidationIssue::UnknownWord { word } => {
+                    *st.unknown_words.entry(word.to_lowercase()).or_default() += 1;
+                }
+                sf_pipeline::validate::ValidationIssue::OverLevel { word, band, .. } => {
+                    *st.over_words
+                        .entry(format!("{}({band})", word.to_lowercase()))
+                        .or_default() += 1;
+                }
+                _ => {}
+            }
+        }
+        for k in &kinds {
+            *st.by_issue.entry(k.clone()).or_default() += 1;
+        }
+        if kinds.len() == 1 {
+            *st.sole_cause
+                .entry(kinds.iter().next().cloned().unwrap_or_default())
+                .or_default() += 1;
+        }
+
+        // 分诊后的真实去向 —— 这才是用户看到的"入库率"
+        let label = match triage(report, GenProfile::User, all_specs) {
+            TriageOutcome::Accept { sentence } => {
+                dedupe.add(sentence.en.as_str());
+                st.stored += 1;
+                "入库"
+            }
+            TriageOutcome::Relevel { sentence, .. } => {
+                dedupe.add(sentence.en.as_str());
+                st.stored += 1;
+                "入库(改级)"
+            }
+            TriageOutcome::Repair { .. } => "需修补(要多发一次请求)",
+            TriageOutcome::Discard {
+                recoverable: Some(_),
+                ..
+            } => "丢弃(可捞回)",
+            TriageOutcome::Discard { .. } => "丢弃",
+        };
+        *st.by_outcome.entry(label).or_default() += 1;
+    }
+}
+
+fn report_yield(st: &YieldStats) {
+    println!(
+        "\n== 样本 {} 句 · 入库 {} 句({:.0}%)==",
+        st.total,
+        st.stored,
+        pct(st.stored, st.total)
+    );
+    if st.parse_errors > 0 {
+        println!("元素级 JSON 解析失败: {}", st.parse_errors);
+    }
+    println!("\n-- 去向 --");
+    let mut v: Vec<_> = st.by_outcome.iter().collect();
+    v.sort_by_key(|(_, n)| std::cmp::Reverse(**n));
+    for (k, n) in v {
+        println!("  {k:<24} {n:>4}  {:.0}%", pct(*n, st.total));
+    }
+    if !st.by_issue.is_empty() {
+        println!("\n-- 问题(按句计,一句可多因)--");
+        let mut v: Vec<_> = st.by_issue.iter().collect();
+        v.sort_by_key(|(_, n)| std::cmp::Reverse(**n));
+        for (k, n) in v {
+            println!("  {k:<24} {n:>4}  {:.0}%", pct(*n, st.total));
+        }
+        println!("\n-- 唯一原因(修掉即可救回)--");
+        let mut v: Vec<_> = st.sole_cause.iter().collect();
+        v.sort_by_key(|(_, n)| std::cmp::Reverse(**n));
+        for (k, n) in v {
+            println!("  {k:<24} {n:>4}  {:.0}%", pct(*n, st.total));
+        }
+    }
+    let dump = |title: &str, m: &BTreeMap<String, usize>| {
+        if m.is_empty() {
+            return;
+        }
+        let mut v: Vec<_> = m.iter().collect();
+        v.sort_by_key(|(_, n)| std::cmp::Reverse(**n));
+        let line: Vec<String> = v.iter().take(30).map(|(w, n)| format!("{w}×{n}")).collect();
+        println!(
+            "\n-- {title}(共 {} 个不同词)--\n  {}",
+            m.len(),
+            line.join(" ")
+        );
+    };
+    dump("词表外", &st.unknown_words);
+    dump("越带", &st.over_words);
+}
+
+/// `sf factory yield` —— 见 [`FactoryCmd::Yield`] 的说明。
+#[allow(clippy::too_many_arguments)]
+fn yield_cmd(
+    level: &str,
+    scene: Option<&str>,
+    count: u32,
+    channel: &str,
+    model: &str,
+    save: Option<&Path>,
+    replay: &[PathBuf],
+    content_dir: &Path,
+    api_key: Option<String>,
+) -> Result<()> {
+    let level: LevelId = level.parse().map_err(|e: String| anyhow::anyhow!(e))?;
+    let specs = load_specs(content_dir)?;
+    let (spec, _) = specs.get(&level).context("no spec for level")?;
+    let all_specs: Vec<LevelSpec> = specs.values().map(|(s, _)| s.clone()).collect();
+    let lexicon = load_lexicon(content_dir)?;
+    let validator = Validator::new(spec, &lexicon);
+    let mut dedupe = DedupeIndex::default();
+    let mut st = YieldStats::default();
+
+    if !replay.is_empty() {
+        for path in replay {
+            let text = std::fs::read_to_string(path)
+                .with_context(|| format!("reading {}", path.display()))?;
+            tally_yield(&text, &validator, &all_specs, &mut dedupe, &mut st);
+        }
+        report_yield(&st);
+        return Ok(());
+    }
+
+    let scene = scene.context("现场模式需要 --scene(回放模式用 --replay)")?;
+    let parts = sf_pipeline::prompt::build_prompt(spec, scene, count, &[], &[]);
+    eprintln!(
+        "prompt: system {} 字符 / user {} 字符",
+        parts.system.chars().count(),
+        parts.user.chars().count()
+    );
+    let text = run_generation(channel, model, parts, api_key)?;
+    if let Some(path) = save {
+        std::fs::write(path, &text)?;
+        eprintln!("原始产出已存到 {}", path.display());
+    }
+    tally_yield(&text, &validator, &all_specs, &mut dedupe, &mut st);
+    report_yield(&st);
+    Ok(())
+}
+
+fn gen_cmd(
+    scene: &str,
+    level: &str,
+    count: u32,
+    channel: &str,
+    model: &str,
+    content_dir: &Path,
+    db: &Path,
+    api_key: Option<String>,
+) -> Result<()> {
+    use futures::StreamExt;
+    use sf_llm::types::GenChunk;
+    use sf_pipeline::parse::StreamScanner;
+    use sf_pipeline::prompt::build_prompt;
+
+    let level: LevelId = level.parse().map_err(|e: String| anyhow::anyhow!(e))?;
+    let specs = load_specs(content_dir)?;
+    let (spec, _) = specs.get(&level).context("no spec for level")?;
+    let all_specs: Vec<LevelSpec> = specs.values().map(|(s, _)| s.clone()).collect();
+    let lexicon = load_lexicon(content_dir)?;
+
+    let store = if db.exists() {
+        ContentStore::open_rw(db).map_err(|e| anyhow::anyhow!(e.to_string()))?
+    } else {
+        if let Some(parent) = db.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        ContentStore::create(db, "factory", 1).map_err(|e| anyhow::anyhow!(e.to_string()))?
+    };
+    // 查重只在本场景内比(见 sf_pipeline::dedupe「比较范围」)。
+    let mut dedupe = DedupeIndex::new(
+        store
+            .sentences_en_in_scene(scene)
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?,
+    );
+
+    let adapter = build_adapter(channel, api_key)?;
 
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(async {
-        let avoid: Vec<u64> = dedupe.recent(16).collect();
+        let avoid = dedupe.recent(8);
         let parts = build_prompt(spec, scene, count, &avoid, &[]);
         let req = sf_llm::types::GenRequest {
             model: model.to_string(),
@@ -977,11 +1416,10 @@ fn gen_cmd(
                         match draft {
                             Ok(d) => {
                                 let report = validator.validate(&d, scene, "", &dedupe);
-                                let hash = report.simhash;
                                 match triage(report, GenProfile::Factory, &all_specs) {
                                     TriageOutcome::Accept { sentence }
                                     | TriageOutcome::Relevel { sentence, .. } => {
-                                        dedupe.add(hash);
+                                        dedupe.add(sentence.en.as_str());
                                         store
                                             .insert_sentence(&sentence, "", 1)
                                             .map_err(|e| anyhow::anyhow!(e.to_string()))?;

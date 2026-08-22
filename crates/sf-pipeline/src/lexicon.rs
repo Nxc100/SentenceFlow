@@ -83,9 +83,14 @@ impl Lexicon {
         self.entries.is_empty()
     }
 
+    /// 归一化查表键:保留字母、撇号与连字符。
+    ///
+    /// 连字符必须留着 —— 滤掉的话 `hard-working` 变成 `hardworking`,
+    /// 既查不到整词也没机会按成分拆(见 [`Self::hyphenated`]);
+    /// 表里唯一的连字符词条 `e-mail` 也会因此永远命中不了。
     fn normalize(word: &str) -> String {
         word.chars()
-            .filter(|c| c.is_ascii_alphabetic() || *c == '\'')
+            .filter(|c| c.is_ascii_alphabetic() || *c == '\'' || *c == '-')
             .collect::<String>()
             .to_lowercase()
     }
@@ -116,15 +121,42 @@ impl Lexicon {
                 return Some(e);
             }
         }
-        if let Some(&lemma) = self.irregular.get(w.as_str()) {
-            return self.entries.get(lemma);
+        // 不规则表命中就用它的词根;但**词根不在词表里时不能就此收手** ——
+        // 例如 leaves→leaf,而 leaf 不在 NGSL 里,直接返回 None 就把
+        // leaves(动词 leave 的三单,词表里有 leave)也一起判成生词了。
+        if let Some(&lemma) = self.irregular.get(w.as_str())
+            && let Some(e) = self.entries.get(lemma)
+        {
+            return Some(e);
         }
         for candidate in strip_suffix_candidates(&w) {
             if let Some(e) = self.entries.get(candidate.as_str()) {
                 return Some(e);
             }
         }
-        None
+        self.hyphenated(&w)
+    }
+
+    /// 连字符复合词:每一段都认识就算认识,难度取**最难的那一段**。
+    ///
+    /// `hard-working` / `twenty-five` / `check-in` 的组成部分全在词表里,
+    /// 整体却查不到 —— 实测里这是"词表外"误判的一大来源。取最大 band 而非
+    /// 最小,是因为复合词至少和它最难的成分一样难,宁严勿松。
+    ///
+    /// 只在前面所有还原都失败后才走这条路,所以不会影响已能直接命中的词。
+    fn hyphenated(&self, w: &str) -> Option<&LexEntry> {
+        if !w.contains('-') {
+            return None;
+        }
+        let mut hardest: Option<&LexEntry> = None;
+        for part in w.split('-').filter(|p| !p.is_empty()) {
+            // 递归:每段自己也可能需要还原(check-ins → check + in)
+            let e = self.lookup(part)?;
+            if hardest.is_none_or(|h| e.band > h.band) {
+                hardest = Some(e);
+            }
+        }
+        hardest
     }
 
     /// Frequency band of a surface form, if known.
@@ -150,6 +182,11 @@ fn strip_suffix_candidates(w: &str) -> Vec<String> {
     }
     if let Some(stem) = w.strip_suffix('s') {
         push(stem.to_string());
+    }
+    // -ves → f / fe(leaves→leaf、knives→knife、lives→life)
+    if let Some(stem) = w.strip_suffix("ves") {
+        push(format!("{stem}f"));
+        push(format!("{stem}fe"));
     }
     // past: -ed, -ied→y, -d, doubled consonant (stopped→stop)
     if let Some(stem) = w.strip_suffix("ied") {
@@ -180,14 +217,40 @@ fn strip_suffix_candidates(w: &str) -> Vec<String> {
     if let Some(stem) = w.strip_suffix("est") {
         push(stem.to_string());
         push(format!("{stem}e"));
+        if ends_with_double_consonant(stem) {
+            push(stem[..stem.len() - 1].to_string()); // biggest → big
+        }
     }
     if let Some(stem) = w.strip_suffix("er") {
         push(stem.to_string());
         push(format!("{stem}e"));
+        if ends_with_double_consonant(stem) {
+            push(stem[..stem.len() - 1].to_string()); // bigger → big
+        }
     }
-    // adverb: -ly
+    // adverb: -ly / -ily→y (happily → happy)
+    if let Some(stem) = w.strip_suffix("ily") {
+        push(format!("{stem}y"));
+    }
     if let Some(stem) = w.strip_suffix("ly") {
         push(stem.to_string());
+        push(format!("{stem}e"));
+        // -le 结尾的形容词换 e 为 y:simple → simply、possible → possibly
+        push(format!("{stem}le"));
+    }
+    // 派生词缀:refundable → refund、careless → care、payment → pay。
+    // 这些只在直接命中与屈折还原都失败后才试,所以不会改变已认识的词;
+    // 难度取词根的 band(与复数/过去式的既有处理一致)。
+    for suffix in [
+        "able", "ible", "ful", "less", "ness", "ment", "ship", "hood",
+    ] {
+        if let Some(stem) = w.strip_suffix(suffix) {
+            push(stem.to_string());
+            push(format!("{stem}e")); // usable → use
+            if let Some(rest) = stem.strip_suffix('i') {
+                push(format!("{rest}y")); // happiness → happy
+            }
+        }
     }
     out
 }
@@ -345,6 +408,68 @@ fn irregular_forms() -> HashMap<&'static str, &'static str> {
 
 #[cfg(test)]
 mod tests {
+    // ↓ 连字符复合词回归(见 Lexicon::hyphenated)
+    #[test]
+    fn hyphenated_compound_takes_hardest_part() {
+        let lex = super::Lexicon::from_tsv(
+            "hard\t323\t\t\t\nwork\t75\t\t\t\ntwenty\t543\t\t\t\nfive\t286\t\t\t\ncheck\t400\t\t\t\nin\t6\t\t\t\n",
+        )
+        .unwrap();
+        // 整体查不到,但每段都在 —— 取最难的一段的 band
+        assert_eq!(lex.band_of("hard-working"), Some(323));
+        assert_eq!(lex.band_of("twenty-five"), Some(543));
+        assert_eq!(lex.band_of("check-in"), Some(400));
+        // 有一段不认识就整体不认识,不能放水
+        assert_eq!(lex.band_of("hard-zzzz"), None);
+    }
+
+    /// 回归:不规则表命中、但它的词根不在词表里时,必须继续走后缀还原。
+    /// `leaves` 被映射到 `leaf`(NGSL 没有),此前直接返回 None,
+    /// 连"leave 的三单"这条明路都不走了。
+    #[test]
+    fn irregular_miss_falls_through_to_suffix_rules() {
+        let lex = super::Lexicon::from_tsv("leave\t250\t\t\t\n").unwrap();
+        assert_eq!(lex.band_of("leaves"), Some(250));
+    }
+
+    /// 比较级的双写辅音还原:bigger → big(此前只有 -ed/-ing 做了去重复)。
+    #[test]
+    fn comparative_undoubles_consonant() {
+        let lex = super::Lexicon::from_tsv("big\t180\t\t\t\nhot\t400\t\t\t\n").unwrap();
+        assert_eq!(lex.band_of("bigger"), Some(180));
+        assert_eq!(lex.band_of("biggest"), Some(180));
+        assert_eq!(lex.band_of("hotter"), Some(400));
+    }
+
+    /// 派生词缀还原:词根认识就算认识(实测 refundable / careless
+    /// 这类词此前一律判"词表外",整句被丢)。
+    #[test]
+    fn derivational_suffixes_resolve_to_stem() {
+        let lex = super::Lexicon::from_tsv(
+            "refund\t1900\t\t\t\ncare\t120\t\t\t\npay\t200\t\t\t\nuse\t60\t\t\t\nhappy\t300\t\t\t\nsimple\t400\t\t\t\n",
+        )
+        .unwrap();
+        assert_eq!(lex.band_of("refundable"), Some(1900));
+        assert_eq!(lex.band_of("careless"), Some(120));
+        assert_eq!(lex.band_of("careful"), Some(120));
+        assert_eq!(lex.band_of("payment"), Some(200));
+        assert_eq!(lex.band_of("usable"), Some(60));
+        assert_eq!(lex.band_of("happiness"), Some(300));
+        assert_eq!(lex.band_of("happily"), Some(300));
+        assert_eq!(lex.band_of("simply"), Some(400));
+        // 词根不认识就不认识
+        assert_eq!(lex.band_of("zzzzable"), None);
+    }
+
+    /// 表里带连字符的词条(base.tsv 的 `e-mail`)必须查得到 ——
+    /// normalize 早先滤掉连字符,把它变成了永远命中不了的死条目。
+    #[test]
+    fn hyphenated_entry_is_reachable() {
+        let lex = super::Lexicon::from_tsv("e-mail\t900\t\t\t\n").unwrap();
+        assert_eq!(lex.band_of("e-mail"), Some(900));
+        assert_eq!(lex.band_of("E-Mail"), Some(900));
+    }
+
     use super::*;
 
     fn lex() -> Lexicon {

@@ -10,6 +10,7 @@
 //! this crate turns text into *validated* [`sf_core::Sentence`] rows. Nothing
 //! reaches a database without passing [`validate`].
 
+pub mod dedupe;
 pub mod lexicon;
 pub mod parse;
 pub mod prompt;
@@ -21,8 +22,9 @@ pub mod validate;
 #[cfg(feature = "store")]
 pub mod store;
 
+pub use dedupe::{DedupeIndex, DedupeKey};
 pub use parse::{DraftSentence, DraftWord, extract_json_array, parse_drafts};
 pub use prompt::{PromptParts, build_prompt};
-pub use simhash::{hamming_distance, simhash64};
+pub use simhash::simhash64;
 pub use triage::{GenProfile, TriageOutcome, triage};
 pub use validate::{ValidationIssue, ValidationReport, Validator};

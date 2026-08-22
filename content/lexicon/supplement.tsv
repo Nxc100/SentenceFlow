@@ -1,0 +1,39 @@
+# 教学补充词表 —— NGSL 2801 之外、但日常场景绕不开的词。
+# 与 base.tsv 同格式(lemma/band/ipa_gb/ipa_us/zh_gloss),加载时合并,
+# 同名以本表为准。
+#
+# 为什么要单独一张表:NGSL 是**通用语料词频**表,pizza/passport/wifi 这类词
+# 在通用语料里频率低,却是点餐/值机/住宿场景的刚需。混进 base.tsv 会让
+# 「base.tsv = NGSL」这个可核对的事实失真,所以分表并各自注明来源。
+#
+# band 的取值依据是**该词最早出现在哪个等级的场景**,不是通用词频;
+# 定得偏高是有意的 —— 宁可在低等级判越级(可改级救回),也不要让 L1 冒生词。
+juice	1150	dʒuːs	dʒuːs	果汁
+soup	1200	suːp	suːp	汤
+sandwich	1250	ˈsænwɪdʒ	ˈsænwɪtʃ	三明治
+pizza	1300	ˈpiːtsə	ˈpiːtsə	披萨
+salad	1350	ˈsæləd	ˈsæləd	沙拉
+beef	1400	biːf	biːf	牛肉
+burger	1500	ˈbɜːɡə	ˈbɜrɡər	汉堡
+cafe	1100	ˈkæfeɪ	kæˈfeɪ	咖啡馆
+latte	1900	ˈlɑːteɪ	ˈlɑːteɪ	拿铁
+airport	1050	ˈeəpɔːt	ˈerpɔrt	机场
+passport	1700	ˈpɑːspɔːt	ˈpæspɔrt	护照
+luggage	1750	ˈlʌɡɪdʒ	ˈlʌɡɪdʒ	行李
+subway	1650	ˈsʌbweɪ	ˈsʌbweɪ	地铁
+receipt	1600	rɪˈsiːt	rɪˈsiːt	收据
+refund	1900	ˈriːfʌnd	ˈriːfʌnd	退款
+email	1000	ˈiːmeɪl	ˈiːmeɪl	电子邮件
+password	1450	ˈpɑːswɜːd	ˈpæswɜrd	密码
+laptop	1500	ˈlæptɒp	ˈlæptɑp	笔记本电脑
+wifi	1200	ˈwaɪfaɪ	ˈwaɪfaɪ	无线网络
+yep	1800	jep	jep	对(口语)
+nope	1800	nəʊp	noʊp	不(口语)
+yuan	1600	juːˈæn	juːˈɑn	元(人民币)
+euro	1600	ˈjʊərəʊ	ˈjʊroʊ	欧元
+dessert	1650	dɪˈzɜːt	dɪˈzɜrt	甜点
+pasta	1500	ˈpæstə	ˈpɑːstə	意面
+fries	1600	fraɪz	fraɪz	薯条
+vegetarian	1850	ˌvedʒɪˈteəriən	ˌvedʒɪˈteriən	素食者
+hobby	1300	ˈhɒbi	ˈhɑbi	爱好
+snack	1400	snæk	snæk	零食

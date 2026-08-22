@@ -950,6 +950,20 @@ input[type="checkbox"] {
   font-size: 13px;
 }
 
+/* 改级标记:句子入了库,只是换了等级归属。做成低调的小胶囊 ——
+   它是补充信息,不是警告,不该让人误以为出了问题。 */
+.gen-card__relevel {
+  align-self: flex-start;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--sf-text-3);
+  background: var(--sf-bg);
+  border: 1px solid var(--sf-border);
+  white-space: nowrap;
+}
+
 /* 丢弃卡里的"仍然收下":次要动作,别抢 ✓ 卡的注意力 */
 .gen-card__recover {
   margin-top: 8px;

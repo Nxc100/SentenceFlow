@@ -5,7 +5,14 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Markdown, ProgressBar, levelOptionLabel, useToast } from "@sentenceflow/ui";
+import {
+  Button,
+  Markdown,
+  ProgressBar,
+  levelName,
+  levelOptionLabel,
+  useToast,
+} from "@sentenceflow/ui";
 import type { LevelId, Sentence } from "@sentenceflow/ui";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { useApp } from "../appState";
@@ -369,6 +376,16 @@ export function WorkshopPage({
               <span className="gen-card__badge">✓</span>
               <span className="gen-card__en">{card.sentence.en}</span>
               <span className="gen-card__zh">{card.sentence.zh}</span>
+              {/* 句子合格但用词对所选等级偏难时,后端会改存到合适的等级。
+                  不标一下,用户会以为句子"丢了"—— 其实在库里,只是换了级。 */}
+              {mode === "level" && card.sentence.level !== genLevel && (
+                <span
+                  className="gen-card__relevel"
+                  title="这句用词偏难,已存入更合适的等级"
+                >
+                  存入 {levelName(card.sentence.level)}
+                </span>
+              )}
             </div>
           ) : (
             <details key={card.key} className="gen-card gen-card--discard">
