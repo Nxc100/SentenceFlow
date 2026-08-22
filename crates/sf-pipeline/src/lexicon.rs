@@ -111,12 +111,19 @@ impl Lexicon {
         }
         // Contractions: I'm / we'll → try the part before the apostrophe;
         // n't forms (don't / isn't) additionally strip the fused "n".
+        //
+        // 两条都**递归走完整 lookup**,不能只查 entries:`doesn't` 剥出来是
+        // `does`,而 does 只在不规则表里(词元是 do)—— 直查 entries 会漏,
+        // 于是 doesn't/isn't/wasn't 这类最常见的口语缩写全判成生词。
+        // 递归安全:head 与 stem 都已不含撇号,不会再走进这个分支。
         if let Some((head, _)) = w.split_once('\'') {
-            if let Some(e) = self.entries.get(head) {
+            if !head.is_empty()
+                && let Some(e) = self.lookup(head)
+            {
                 return Some(e);
             }
             if let Some(stem) = w.strip_suffix("n't")
-                && let Some(e) = self.entries.get(stem)
+                && let Some(e) = self.lookup(stem)
             {
                 return Some(e);
             }
@@ -439,6 +446,23 @@ mod tests {
         assert_eq!(lex.band_of("bigger"), Some(180));
         assert_eq!(lex.band_of("biggest"), Some(180));
         assert_eq!(lex.band_of("hotter"), Some(400));
+    }
+
+    /// 回归:缩写要走完整还原链。`doesn't` 剥掉 n't 是 `does`,而 does 只在
+    /// 不规则表里(词元 do)—— 只查 entries 的话这类最常见的口语缩写全成生词。
+    #[test]
+    fn contractions_resolve_through_irregular_forms() {
+        let lex =
+            super::Lexicon::from_tsv("do\t20\t\t\t\nbe\t2\t\t\t\nhave\t9\t\t\t\nlike\t65\t\t\t\n")
+                .unwrap();
+        assert_eq!(lex.band_of("doesn't"), Some(20));
+        assert_eq!(lex.band_of("don't"), Some(20));
+        assert_eq!(lex.band_of("isn't"), Some(2));
+        assert_eq!(lex.band_of("wasn't"), Some(2));
+        assert_eq!(lex.band_of("haven't"), Some(9));
+        assert_eq!(lex.band_of("I'd"), None, "词表里没有 I,不该硬凑");
+        // 撇号后的部分不参与:we'll 只看 we
+        assert_eq!(lex.band_of("like's"), Some(65));
     }
 
     /// 派生词缀还原:词根认识就算认识(实测 refundable / careless
