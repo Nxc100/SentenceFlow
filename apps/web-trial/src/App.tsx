@@ -357,7 +357,7 @@ function FooterCta() {
   return (
     <footer className="trial-footer">
       <a className="trial-cta" href={DOWNLOAD_URL} target="_blank" rel="noreferrer">
-        桌面完整版:六级句库 · 听打默写 · AI 生成工坊 → 免费下载
+        桌面版:情景对话 · 间隔复习 · AI 生成工坊 · AI 聊天 → 免费下载
       </a>
     </footer>
   );
