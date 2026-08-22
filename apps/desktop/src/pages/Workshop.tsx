@@ -73,6 +73,7 @@ export function WorkshopPage({
   const [stopping, setStopping] = useState(false);
   const startTsRef = useRef<number | null>(null);
   const keyRef = useRef(0);
+  const [recovered, setRecovered] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (prefillScene) {
@@ -132,6 +133,7 @@ export function WorkshopPage({
                 en: card.en,
                 reason: card.reason,
                 recoverable: card.recoverable,
+                sentence: card.sentence,
               },
             ]);
             setRepairing((r) => removeFirst(r, card.en));
@@ -375,6 +377,22 @@ export function WorkshopPage({
                 <span className="gen-card__en">{card.en || "(解析失败)"}</span>
               </summary>
               <div className="gen-card__reason">{card.reason}</div>
+              {/* 越级/修补未过多半只是"这一级不合适",句子本身没毛病 ——
+                  给一个明确的收下入口,否则丢弃就是单向的(捞回命令一直没人调) */}
+              {card.recoverable && card.sentence && (
+                <button
+                  type="button"
+                  className="gen-card__recover"
+                  disabled={recovered.has(card.key)}
+                  onClick={async () => {
+                    await ipc.workshopRecover(card.sentence!);
+                    setRecovered((r) => new Set(r).add(card.key));
+                    toast.show("已收进「我的句集」");
+                  }}
+                >
+                  {recovered.has(card.key) ? "已收下" : "仍然收下这句"}
+                </button>
+              )}
             </details>
           ),
         )}
