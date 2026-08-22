@@ -20,6 +20,8 @@ export interface SoundPlayer {
   key(): void;
   error(): void;
   correct(): void;
+  /** 签名时刻的庆祝音(上行三音);单点"叮"撑不起"整句答对"的分量 */
+  celebrate(): void;
   master(): void;
 }
 
@@ -27,6 +29,7 @@ export const silentSounds: SoundPlayer = {
   key() {},
   error() {},
   correct() {},
+  celebrate() {},
   master() {},
 };
 
@@ -39,6 +42,7 @@ const DING_GAIN = 0.5;
 const KEY_GAIN = 0.28;
 const ERROR_GAIN = 0.3;
 const MASTER_GAIN = 0.42;
+const CELEBRATE_GAIN = 0.46;
 
 export class WebAudioSounds implements SoundPlayer {
   private ctx: AudioContext | null = null;
@@ -117,6 +121,18 @@ export class WebAudioSounds implements SoundPlayer {
   /** 正确"叮":880Hz · 90ms(§6.2) */
   correct() {
     this.tone(880, 90, DING_GAIN * this.volume(), "sine", 0, true);
+  }
+
+  /**
+   * 签名时刻:C6–E6–G6 上行分解和弦,每音 90ms 间隔 80ms。
+   * 只有第一音 cutPrevious —— 否则后两音会把自己前一音掐掉(§6.5 不叠播
+   * 针对的是"同类音效重触发",一串音内部不算)。
+   */
+  celebrate() {
+    const v = CELEBRATE_GAIN * this.volume();
+    this.tone(1046, 90, v, "sine", 0, true);
+    this.tone(1318, 90, v, "sine", 80);
+    this.tone(1568, 170, v * 1.05, "sine", 160);
   }
 
   /** 掌握上行双音(§6.5) */

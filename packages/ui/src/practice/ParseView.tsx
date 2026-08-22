@@ -1,7 +1,10 @@
 /**
  * ParseView — 签名时刻(§6.2,产品灵魂):
- * t0 下划线淡出 → +160 成分聚拢 → +300 词性胶囊 stagger → +380 音标
- * → +420 撒花 + 正确音"叮" → +500 朗读 → +700 中文与解析入口。
+ * t0 下划线淡出 → +160 成分卡逐张弹性落位(每张错开 70ms,带成分色光晕)
+ * → +300 词性胶囊 stagger → +380 音标 → +420 撒花 + 上行三音庆祝
+ * → +500 朗读 → +700 中文与解析入口。
+ * 撒花的构图刻意把"中心一炸"放在最前:+720 就允许按空格进下一题,
+ * 多数用户只看得到前 300ms(见 confetti.ts 头注)。
  * 任意按键跳终态;跳过动效的那一次按键不向页面层透传(stopPropagation),
  * 因此"空格进下一题"永远作用于已定格的画面。
  * 动效自然结束或被跳过时触发 onSettled(页面层据此启用空格/Enter 下一题)。
@@ -80,9 +83,9 @@ export function ParseView({
     };
 
     if (reduced) {
-      // 降级:直接终态,无撒花 (§6.1)
+      // 降级:直接终态,无撒花 (§6.1);庆祝音保留 —— 声音不是动效
       setStage("footer");
-      if (celebrate) sounds.correct();
+      if (celebrate) sounds.celebrate();
       speech?.speak(sentence.en);
       doneRef.current = true;
       settle();
@@ -95,7 +98,7 @@ export function ParseView({
     if (celebrate) {
       timersRef.current.push(
         window.setTimeout(() => {
-          sounds.correct();
+          sounds.celebrate();
           if (canvasRef.current) confettiRef.current = playConfetti(canvasRef.current);
         }, 420),
       );
@@ -156,8 +159,17 @@ export function ParseView({
   return (
     <div className={cls}>
       <div className="sf-parse__chunks">
-        {chunks.map((chunk) => (
-          <div key={chunk.key} className="sf-parse__chunk" style={roleVars(chunk.role)}>
+        {chunks.map((chunk, ci) => (
+          <div
+            key={chunk.key}
+            className="sf-parse__chunk"
+            style={
+              {
+                ...roleVars(chunk.role),
+                "--sf-chunk-delay": `${ci * 70}ms`,
+              } as React.CSSProperties
+            }
+          >
             <div className="sf-parse__words">
               {chunk.words.map((word) => (
                 <div key={word.idx} className="sf-parse__wordcol">

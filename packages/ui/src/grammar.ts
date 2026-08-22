@@ -43,10 +43,17 @@ export function roleVars(role: RoleTag): React.CSSProperties {
     background: `var(--sf-role-${role}-bg)`,
     color: `var(--sf-role-${role}-text)`,
     borderColor: `var(--sf-role-${role}-border)`,
-  };
+    // 成分色的"可用作光晕的那一档";CSS 里拿不到"当前成分"是谁,只能这样传进去
+    "--sf-role-tint": `var(--sf-role-${role}-border)`,
+  } as React.CSSProperties;
 }
 
-/** 撒花取语法色板底色系(浅色系,§6.2) */
+/**
+ * 撒花的**兜底**色表(§6.2 原文:取语法色板底色系)。
+ * 正常路径不走这里 —— `confetti.ts` 会在运行时读当前主题的语法色板文字色,
+ * 因为这组近白粉彩压在浅色底上只有 ~1.1:1 的对比,肉眼看不见(见 confetti.ts 头注)。
+ * 保留它只为 SSR / 测试等拿不到 CSS 变量的场合有个确定值。
+ */
 export const CONFETTI_COLORS = [
   "#FFE3EE", "#FFE2DC", "#FCE0F3", "#EBE3FC", "#E6DEFA", "#F0E4FB",
   "#E1EBFF", "#DFF3E3", "#FFEDD5", "#D9F2EF", "#DBF0FA", "#FFF3CD",

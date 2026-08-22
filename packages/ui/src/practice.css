@@ -212,6 +212,29 @@
   100% { transform: none; opacity: 1; }
 }
 
+/* ================= 无障碍:练习区易读模式 =================
+   开关写在 <html data-dyslexic="1"> 上(设置 · 无障碍)。
+   规范原意是换 OpenDyslexic 字体,但字体文件没有随包(见文档 §16.2),
+   `data-dyslexic` 此前只是写进 DOM、没有任何样式消费它 —— 开关点了没反应。
+   这里改成用**能立即生效的排版手段**做易读:加宽字距与词距、去掉连字
+   (连字会把 rn/fi 之类粘成一团)、字重压到 700(过粗反而糊)。
+   等 woff2 随包后,在这里补一条 font-family 覆盖即可,开关语义不变。 */
+[data-dyslexic="1"] .sf-typing,
+[data-dyslexic="1"] .sf-reorder,
+[data-dyslexic="1"] .sf-parse__word,
+[data-dyslexic="1"] .sf-dictation__input {
+  letter-spacing: 0.06em;
+  font-variant-ligatures: none;
+  font-weight: 700;
+}
+[data-dyslexic="1"] .sf-typing__line {
+  gap: 0 26px;
+  row-gap: 34px;
+}
+[data-dyslexic="1"] .sf-typing__slot {
+  width: 0.82em;
+}
+
 /* ================= ParseView(签名时刻) ================= */
 .sf-parse {
   font-family: var(--sf-font-en);
@@ -232,13 +255,32 @@
   opacity: 0;
   transform: translateY(8px);
 }
+/* 成分卡"落位":弹性放大一下再回位,并带一圈成分色光晕 ——
+   签名时刻要有被奖励的实感,单纯淡入太温吞(用户反馈"成功动画不明显")。
+   逐张错开 70ms,读起来像从左到右依次拼好一句话。
+   减少动效下 --sf-dur-slow 与 --sf-ease-spring 已被令牌降级,这里自然退化。 */
 .sf-parse--grouped .sf-parse__chunk {
   opacity: 1;
   transform: none;
-  transition:
-    opacity var(--sf-dur-slow) var(--sf-ease-out),
-    transform var(--sf-dur-slow) var(--sf-ease-out),
-    background var(--sf-dur-slow) var(--sf-ease-out);
+  animation: sf-chunk-land var(--sf-dur-slow) var(--sf-ease-spring) both;
+  animation-delay: var(--sf-chunk-delay, 0ms);
+}
+@keyframes sf-chunk-land {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(0) scale(1.045);
+    box-shadow: 0 0 26px 3px var(--sf-role-tint, transparent);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 .sf-parse__words {
   display: flex;
@@ -340,9 +382,15 @@
   color: var(--sf-text-placeholder);
   font-size: var(--sf-fs-caption);
 }
+/* canvas 是替换元素:只写 inset:0 不会把它撑开(width:auto 时用的是
+   固有尺寸 300×150),撒花因此一直只画在屏幕左上角那一小块里 —— 这才是
+   "礼花看不见"的真正原因。必须显式给出显示尺寸;JS 那边再按 dpr 设置
+   画布的像素尺寸(canvas.width/height),两者分工不能混。 */
 .sf-parse__confetti {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 50;
 }
