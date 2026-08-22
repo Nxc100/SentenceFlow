@@ -73,7 +73,7 @@ apps/
                  + React 前端(今日/句库/情景对话/AI 造句/AI 聊天/报告/水平/设置)
   web-trial/     Web 试用版(纯静态站):L1–L2 各一节,IndexedDB 进度可导出带走
 packages/ui/     共享 React 组件 —— 设计规范(§5/§6)的唯一实现处:
-                 设计令牌(浅色/深色/护眼纸色)、练习引擎组件、签名时刻动效
+                 设计令牌(浅色/深色/护眼纸色/马卡龙少女)、练习引擎组件、签名时刻动效
 content/         specs/*.yaml(六级 LevelSpec,单一事实源)· seed/(种子句库)
                  · scenario/(8 个出厂情景包)· placement/(定级题库)
                  · lexicon/(NGSL 全量词典)· channels.json
