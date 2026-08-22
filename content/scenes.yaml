@@ -1,0 +1,118 @@
+# 出厂句库的场景清单 —— W6 全量生产(≈5000 句)的覆盖面定义。
+#
+# 每条 = 一个场景;`levels` 列出该场景要在哪几级产内容。产量看下面的
+# `targets`,不是"一个槽位一批" —— 见那里的说明。
+#
+# 等级适配的取舍:同一个话题在不同等级问的东西不一样 —— L1 的「餐厅」是
+# "我要一杯水",L5 的「餐厅」是"这道菜里有花生吗?我朋友过敏"。所以
+# `levels` 不是"这个话题有多难",而是"这个话题在哪几级值得各出一批"。
+#
+# 生产前先跑 `sf factory scan --scenes content/scenes.yaml`:它按清单逐个
+# 场景试产一小批,把「词表外 / 越带」的词汇总出来,一次性补进
+# `content/lexicon/supplement.tsv`,免得 5000 句跑到一半才发现某个领域
+# 的词全在词表外(实测:医疗场景 fever/headache/sore 全部不在 NGSL 内)。
+
+version: 1
+
+# 每级出厂句数目标(合计 5000,W6 出口标准)。
+#
+# 场景清单定的是**覆盖面**,这里定的是**产量**:某级的批次数 =
+# ceil(目标 ÷ 该级场景数 ÷ 每批句数)。低等级场景少但每个场景可写的
+# 说法多(L1 的「问候」有几十种变体),高等级反过来 —— 所以不强求
+# 每个「场景×等级」只出一批。
+targets:
+  L1: 700
+  L2: 800
+  L3: 900
+  L4: 900
+  L5: 900
+  L6: 800
+
+scenes:
+  # ---------------- 社交 ----------------
+  - { id: greeting,          name: "问候与寒暄",       category: 社交, levels: [L1, L2, L3] }
+  - { id: self-intro,        name: "自我介绍",         category: 社交, levels: [L1, L2, L3, L4] }
+  - { id: first-meeting,     name: "初次见面",         category: 社交, levels: [L2, L3, L4] }
+  - { id: contact-exchange,  name: "交换联系方式",     category: 社交, levels: [L2, L3] }
+  - { id: invitation,        name: "邀请与婉拒",       category: 社交, levels: [L3, L4, L5, L6] }
+  - { id: apology-thanks,    name: "道歉与致谢",       category: 社交, levels: [L1, L2, L3, L4] }
+  - { id: farewell,          name: "告别与约下次",     category: 社交, levels: [L1, L2, L3] }
+  - { id: small-talk-weather, name: "闲聊天气",        category: 社交, levels: [L1, L2, L3] }
+  - { id: hobbies,           name: "聊爱好与周末",     category: 社交, levels: [L2, L3, L4] }
+  - { id: family,            name: "聊家人",           category: 社交, levels: [L1, L2, L3] }
+  - { id: opinion-agree,     name: "表达赞同与反对",   category: 社交, levels: [L4, L5, L6] }
+  - { id: comfort-advice,    name: "安慰与建议",       category: 社交, levels: [L4, L5, L6] }
+
+  # ---------------- 出行 ----------------
+  - { id: directions,        name: "问路",             category: 出行, levels: [L1, L2, L3, L4] }
+  - { id: taxi,              name: "打车",             category: 出行, levels: [L2, L3, L4] }
+  - { id: public-transit,    name: "坐公交与地铁",     category: 出行, levels: [L2, L3, L4] }
+  - { id: airport-checkin,   name: "机场值机",         category: 出行, levels: [L3, L4, L5] }
+  - { id: security-check,    name: "过安检",           category: 出行, levels: [L3, L4] }
+  - { id: on-board,          name: "登机与机上服务",   category: 出行, levels: [L3, L4, L5] }
+  - { id: flight-change,     name: "改签与退票",       category: 出行, levels: [L4, L5, L6] }
+  - { id: baggage-issue,     name: "行李问题",         category: 出行, levels: [L4, L5] }
+  - { id: hotel-checkin,     name: "酒店入住",         category: 出行, levels: [L2, L3, L4] }
+  - { id: hotel-problem,     name: "酒店问题与退房",   category: 出行, levels: [L4, L5, L6] }
+  - { id: train-ticket,      name: "火车站购票",       category: 出行, levels: [L2, L3, L4] }
+  - { id: car-rental,        name: "租车",             category: 出行, levels: [L4, L5] }
+
+  # ---------------- 餐饮 ----------------
+  - { id: cafe-order,        name: "咖啡店点单",       category: 餐饮, levels: [L1, L2, L3] }
+  - { id: restaurant-order,  name: "餐厅点餐",         category: 餐饮, levels: [L1, L2, L3, L4] }
+  - { id: fast-food,         name: "快餐店点餐",       category: 餐饮, levels: [L1, L2, L3] }
+  - { id: ask-about-dish,    name: "询问菜品与推荐",   category: 餐饮, levels: [L3, L4, L5] }
+  - { id: dietary-needs,     name: "口味与忌口",       category: 餐饮, levels: [L4, L5] }
+  - { id: reserve-table,     name: "电话订位",         category: 餐饮, levels: [L3, L4] }
+  - { id: pay-bill,          name: "结账与买单",       category: 餐饮, levels: [L2, L3, L4] }
+  - { id: food-delivery,     name: "点外卖",           category: 餐饮, levels: [L3, L4] }
+
+  # ---------------- 购物 ----------------
+  - { id: supermarket,       name: "超市购物",         category: 购物, levels: [L1, L2, L3] }
+  - { id: ask-price,         name: "问价与讲价",       category: 购物, levels: [L1, L2, L3, L4] }
+  - { id: try-clothes,       name: "服装试穿",         category: 购物, levels: [L2, L3, L4] }
+  - { id: return-exchange,   name: "退换货",           category: 购物, levels: [L4, L5, L6] }
+  - { id: checkout-pay,      name: "结账与支付方式",   category: 购物, levels: [L2, L3, L4] }
+  - { id: online-shopping,   name: "网购与配送",       category: 购物, levels: [L4, L5, L6] }
+
+  # ---------------- 医疗 ----------------
+  - { id: pharmacy,          name: "药店买药",         category: 医疗, levels: [L3, L4] }
+  - { id: describe-symptom,  name: "看医生描述症状",   category: 医疗, levels: [L3, L4, L5] }
+  - { id: make-appointment,  name: "预约挂号",         category: 医疗, levels: [L3, L4] }
+  - { id: health-advice,     name: "医嘱与康复",       category: 医疗, levels: [L5, L6] }
+
+  # ---------------- 学习 ----------------
+  - { id: classroom,         name: "课堂用语",         category: 学习, levels: [L1, L2, L3] }
+  - { id: ask-teacher,       name: "请教问题",         category: 学习, levels: [L2, L3, L4] }
+  - { id: library,           name: "图书馆借还",       category: 学习, levels: [L2, L3] }
+  - { id: homework-exam,     name: "作业与考试",       category: 学习, levels: [L3, L4] }
+  - { id: course-choice,     name: "选课与专业",       category: 学习, levels: [L5, L6] }
+
+  # ---------------- 工作 ----------------
+  - { id: job-interview,     name: "面试自我介绍",     category: 工作, levels: [L4, L5, L6] }
+  - { id: phone-work,        name: "工作电话沟通",     category: 工作, levels: [L4, L5] }
+  - { id: meeting-speak,     name: "会议发言",         category: 工作, levels: [L5, L6] }
+  - { id: email-schedule,    name: "邮件与日程安排",   category: 工作, levels: [L4, L5] }
+  - { id: leave-report,      name: "请假与汇报",       category: 工作, levels: [L4, L5] }
+  - { id: office-small-talk, name: "同事闲聊",         category: 工作, levels: [L3, L4, L5] }
+  - { id: negotiate,         name: "谈条件与协商",     category: 工作, levels: [L6] }
+
+  # ---------------- 居家 ----------------
+  - { id: housework,         name: "家务与日常安排",   category: 居家, levels: [L1, L2, L3] }
+  - { id: rent-house,        name: "租房看房",         category: 居家, levels: [L4, L5, L6] }
+  - { id: repair-request,    name: "报修与投诉",       category: 居家, levels: [L4, L5] }
+  - { id: neighbours,        name: "邻里往来",         category: 居家, levels: [L3, L4] }
+
+  # ---------------- 服务 ----------------
+  - { id: bank,              name: "银行开户与取款",   category: 服务, levels: [L4, L5] }
+  - { id: phone-internet,    name: "手机与网络办理",   category: 服务, levels: [L4, L5] }
+  - { id: post-parcel,       name: "邮寄快递",         category: 服务, levels: [L3, L4] }
+  - { id: haircut,           name: "理发",             category: 服务, levels: [L3, L4] }
+  - { id: lost-and-found,    name: "遗失与寻物",       category: 服务, levels: [L4, L5] }
+
+  # ---------------- 娱乐 ----------------
+  - { id: movie,             name: "看电影",           category: 娱乐, levels: [L2, L3, L4] }
+  - { id: sports-gym,        name: "运动与健身",       category: 娱乐, levels: [L2, L3, L4] }
+  - { id: sightseeing,       name: "旅游景点",         category: 娱乐, levels: [L3, L4, L5, L6] }
+  - { id: concert-show,      name: "演出与门票",       category: 娱乐, levels: [L3, L4] }
+  - { id: describe-experience, name: "讲一次经历",     category: 娱乐, levels: [L5, L6] }

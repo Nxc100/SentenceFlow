@@ -63,6 +63,40 @@ enum FactoryCmd {
         #[arg(long, default_value = "content")]
         content_dir: PathBuf,
     },
+    /// 生产前的场景词汇预扫:按 `content/scenes.yaml` 逐个场景试产一小批,
+    /// 汇总每个场景缺哪些词。
+    ///
+    /// 为什么要有这一步:词表带是按**通用语料词频**划的,而场景要的词未必
+    /// 高频 —— 实测「看医生」场景 fever/headache/sore 全不在 NGSL 内,
+    /// cough(2447)/throat(2327)/stomach(2673)在 L4 判越级,一批就掉三成。
+    /// 5000 句跑到一半才发现这个,已经浪费掉大量额度。先扫一遍、把缺的词
+    /// 一次性补进 supplement.tsv,正式跑批才不会边跑边掉。
+    ///
+    /// 输出一张 Markdown 表 + 一段可直接粘进 supplement.tsv 的候选词条。
+    Scan {
+        #[arg(long, default_value = "content/scenes.yaml")]
+        scenes: PathBuf,
+        /// 每个场景试产几句(够暴露词汇即可,不必是正式批量)
+        #[arg(long, default_value_t = 8)]
+        count: u32,
+        /// 只扫这个类别(如 医疗);缺省扫全部
+        #[arg(long)]
+        category: Option<String>,
+        /// 只扫前 N 个场景(先小样试跑用)
+        #[arg(long)]
+        limit: Option<usize>,
+        #[arg(long, default_value = "opencode")]
+        channel: String,
+        #[arg(long, default_value = "opencode/hy3-free")]
+        model: String,
+        /// 报告写到这个文件(缺省只打到标准输出)
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(long, default_value = "content")]
+        content_dir: PathBuf,
+        #[arg(long)]
+        api_key: Option<String>,
+    },
     /// 入库率探针:跑一批(或回放已存的产出),报出各类拒因的占比。
     ///
     /// 内容生产前先用它摸底 —— 通过率低到底是"模型不行"还是"词表缺词/
@@ -173,6 +207,27 @@ fn main() -> Result<()> {
                 run_placement(&content_dir)?;
                 run_scenario_packs(&content_dir, None, 1).map(|_| ())
             }
+            FactoryCmd::Scan {
+                scenes,
+                count,
+                category,
+                limit,
+                channel,
+                model,
+                out,
+                content_dir,
+                api_key,
+            } => scan_cmd(
+                &scenes,
+                count,
+                category.as_deref(),
+                limit,
+                &channel,
+                &model,
+                out.as_deref(),
+                &content_dir,
+                api_key,
+            ),
             FactoryCmd::Yield {
                 level,
                 scene,
@@ -1301,6 +1356,303 @@ fn report_yield(st: &YieldStats) {
     };
     dump("词表外", &st.unknown_words);
     dump("越带", &st.over_words);
+}
+
+/// `content/scenes.yaml` 的一条场景。
+#[derive(Debug, serde::Deserialize)]
+struct SceneEntry {
+    id: String,
+    name: String,
+    category: String,
+    levels: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct SceneBook {
+    #[serde(default)]
+    targets: BTreeMap<String, u32>,
+    scenes: Vec<SceneEntry>,
+}
+
+/// 一个场景扫出来的结果。
+struct SceneScan {
+    id: String,
+    name: String,
+    category: String,
+    level: LevelId,
+    total: usize,
+    stored: usize,
+    unknown: Vec<String>,
+    over: Vec<(String, u32)>,
+}
+
+/// `sf factory scan` —— 见 [`FactoryCmd::Scan`] 的说明。
+#[allow(clippy::too_many_arguments)]
+fn scan_cmd(
+    scenes_path: &Path,
+    count: u32,
+    category: Option<&str>,
+    limit: Option<usize>,
+    channel: &str,
+    model: &str,
+    out: Option<&Path>,
+    content_dir: &Path,
+    api_key: Option<String>,
+) -> Result<()> {
+    use sf_pipeline::validate::{Severity, ValidationIssue};
+
+    let book: SceneBook = serde_yaml::from_str(
+        &std::fs::read_to_string(scenes_path)
+            .with_context(|| format!("reading {}", scenes_path.display()))?,
+    )
+    .with_context(|| format!("parsing {}", scenes_path.display()))?;
+
+    let specs = load_specs(content_dir)?;
+    let lexicon = load_lexicon(content_dir)?;
+
+    let mut todo: Vec<&SceneEntry> = book
+        .scenes
+        .iter()
+        .filter(|s| category.is_none_or(|c| s.category == c))
+        .collect();
+    if let Some(n) = limit {
+        todo.truncate(n);
+    }
+
+    // 覆盖面小结:清单本身能不能撑起 targets
+    println!(
+        "场景清单 {} —— {} 个场景",
+        scenes_path.display(),
+        book.scenes.len()
+    );
+    if !book.targets.is_empty() {
+        let mut per_level: BTreeMap<&str, usize> = BTreeMap::new();
+        for s in &book.scenes {
+            for lv in &s.levels {
+                *per_level.entry(lv.as_str()).or_default() += 1;
+            }
+        }
+        for (lv, target) in &book.targets {
+            let n = per_level.get(lv.as_str()).copied().unwrap_or(0);
+            let per = if n > 0 { target.div_ceil(n as u32) } else { 0 };
+            println!("  {lv}: {n} 个场景 · 目标 {target} 句 → 每场景 {per} 句");
+        }
+    }
+    println!("待扫 {} 个场景,每个试产 {count} 句\n", todo.len());
+
+    let mut results: Vec<SceneScan> = Vec::new();
+    for (i, sc) in todo.iter().enumerate() {
+        // 在该场景**最低**的目标等级上扫:词表带最紧,最容易暴露缺词。
+        let level: LevelId = sc
+            .levels
+            .iter()
+            .filter_map(|l| l.parse::<LevelId>().ok())
+            .min()
+            .with_context(|| format!("场景 {} 没有合法的 levels", sc.id))?;
+        let (spec, _) = specs.get(&level).context("no spec for level")?;
+        let parts = sf_pipeline::prompt::build_prompt(spec, &sc.name, count, &[], &[]);
+        eprint!("[{}/{}] {} ({level}) ... ", i + 1, todo.len(), sc.name);
+
+        let text = match run_generation(channel, model, parts, api_key.clone()) {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("跳过:{e}");
+                continue;
+            }
+        };
+
+        let validator = Validator::new(spec, &lexicon);
+        let mut dedupe = DedupeIndex::default();
+        let mut scan = SceneScan {
+            id: sc.id.clone(),
+            name: sc.name.clone(),
+            category: sc.category.clone(),
+            level,
+            total: 0,
+            stored: 0,
+            unknown: Vec::new(),
+            over: Vec::new(),
+        };
+        let all_specs: Vec<LevelSpec> = specs.values().map(|(s, _)| s.clone()).collect();
+        let mut scanner = sf_pipeline::parse::StreamScanner::new();
+        for item in scanner.push(&text) {
+            let Ok(d) = item else { continue };
+            scan.total += 1;
+            let report = validator.validate(&d, &sc.name, "", &dedupe);
+            for issue in &report.issues {
+                if issue.severity() == Severity::AutoFixed {
+                    continue;
+                }
+                match issue {
+                    ValidationIssue::UnknownWord { word } => {
+                        let w = word.to_lowercase();
+                        if !scan.unknown.contains(&w) {
+                            scan.unknown.push(w);
+                        }
+                    }
+                    ValidationIssue::OverLevel { word, band, .. } => {
+                        let w = word.to_lowercase();
+                        if !scan.over.iter().any(|(x, _)| *x == w) {
+                            scan.over.push((w, *band));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            match triage(report, GenProfile::User, &all_specs) {
+                TriageOutcome::Accept { sentence } | TriageOutcome::Relevel { sentence, .. } => {
+                    dedupe.add(sentence.en.as_str());
+                    scan.stored += 1;
+                }
+                _ => {}
+            }
+        }
+        eprintln!(
+            "{}/{} 入库 · 缺词 {} · 越带 {}",
+            scan.stored,
+            scan.total,
+            scan.unknown.len(),
+            scan.over.len()
+        );
+        results.push(scan);
+    }
+
+    let report = render_scan(&results);
+    println!("{report}");
+    if let Some(path) = out {
+        std::fs::write(path, &report)?;
+        eprintln!("报告已写到 {}", path.display());
+    }
+    Ok(())
+}
+
+/// 把扫描结果渲染成 Markdown(逐场景表 + 候选词条)。
+fn render_scan(results: &[SceneScan]) -> String {
+    use std::fmt::Write;
+    let mut out = String::new();
+    let total: usize = results.iter().map(|r| r.total).sum();
+    let stored: usize = results.iter().map(|r| r.stored).sum();
+
+    let _ = writeln!(out, "# 场景词汇预扫报告\n");
+    let _ = writeln!(
+        out,
+        "扫了 {} 个场景 · 试产 {total} 句 · 入库 {stored} 句({:.0}%)\n",
+        results.len(),
+        pct(stored, total)
+    );
+
+    // 只列有问题的场景 —— 全过的场景不用占版面
+    let mut problem: Vec<&SceneScan> = results
+        .iter()
+        .filter(|r| !r.unknown.is_empty() || !r.over.is_empty())
+        .collect();
+    problem.sort_by_key(|r| std::cmp::Reverse(r.unknown.len() + r.over.len()));
+
+    let _ = writeln!(out, "## 需要补词的场景\n");
+    if problem.is_empty() {
+        let _ = writeln!(out, "无 —— 所有场景的词都在词表内。\n");
+    } else {
+        let _ = writeln!(
+            out,
+            "| 场景 | 类别 | 扫描等级 | 入库 | 词表外 | 越带(band) |"
+        );
+        let _ = writeln!(
+            out,
+            "|------|------|----------|------|--------|------------|"
+        );
+        for r in &problem {
+            let over = r
+                .over
+                .iter()
+                .map(|(w, b)| format!("{w}({b})"))
+                .collect::<Vec<_>>()
+                .join(" ");
+            let _ = writeln!(
+                out,
+                "| {} `{}` | {} | {} | {}/{} | {} | {} |",
+                r.name,
+                r.id,
+                r.category,
+                r.level,
+                r.stored,
+                r.total,
+                if r.unknown.is_empty() {
+                    "—".into()
+                } else {
+                    r.unknown.join(" ")
+                },
+                if over.is_empty() { "—".into() } else { over },
+            );
+        }
+        let _ = writeln!(out);
+    }
+
+    // 候选词条:词表外的词按"最早需要它的等级"给 band
+    let mut candidates: BTreeMap<String, (LevelId, Vec<String>)> = BTreeMap::new();
+    for r in results {
+        for w in &r.unknown {
+            let e = candidates.entry(w.clone()).or_insert((r.level, Vec::new()));
+            if r.level < e.0 {
+                e.0 = r.level;
+            }
+            if !e.1.contains(&r.name) {
+                e.1.push(r.name.clone());
+            }
+        }
+    }
+    let _ = writeln!(out, "## 候选词条(粘进 content/lexicon/supplement.tsv)\n");
+    if candidates.is_empty() {
+        let _ = writeln!(out, "无。\n");
+    } else {
+        let _ = writeln!(
+            out,
+            "band 按**最早需要该词的等级**给(该级词带上限 + 100,落在下一级 —— \n             宁可判越级由分诊改级救回,也不要让低等级冒生词)。IPA 与释义需人工补齐。\n"
+        );
+        let _ = writeln!(out, "```tsv");
+        for (w, (lv, scenes)) in &candidates {
+            let _ = writeln!(
+                out,
+                "{w}\t{}\t\t\t\t# {} —— {}",
+                suggested_band(*lv),
+                lv,
+                scenes.join(" / ")
+            );
+        }
+        let _ = writeln!(out, "```\n");
+    }
+
+    // 越带词:不用补表,分诊会改级,但值得知道哪些场景会被推高
+    let mut over_all: BTreeMap<String, (u32, Vec<String>)> = BTreeMap::new();
+    for r in results {
+        for (w, b) in &r.over {
+            let e = over_all.entry(w.clone()).or_insert((*b, Vec::new()));
+            if !e.1.contains(&r.name) {
+                e.1.push(r.name.clone());
+            }
+        }
+    }
+    if !over_all.is_empty() {
+        let _ = writeln!(out, "## 越带词(不必补表,分诊会改存到合适等级)\n");
+        let mut v: Vec<_> = over_all.iter().collect();
+        v.sort_by_key(|(_, (b, _))| std::cmp::Reverse(*b));
+        for (w, (b, scenes)) in v {
+            let _ = writeln!(out, "- `{w}`({b}) —— {}", scenes.join(" / "));
+        }
+        let _ = writeln!(out);
+    }
+    out
+}
+
+/// 给新词建议的 band:落在"最早需要它的那一级"的下一级。
+fn suggested_band(level: LevelId) -> u32 {
+    match level {
+        LevelId::L1 => 600,
+        LevelId::L2 => 1100,
+        LevelId::L3 => 1600,
+        LevelId::L4 => 2100,
+        LevelId::L5 => 2900,
+        LevelId::L6 => 2900,
+    }
 }
 
 /// `sf factory yield` —— 见 [`FactoryCmd::Yield`] 的说明。
