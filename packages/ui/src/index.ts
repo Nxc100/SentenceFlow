@@ -6,6 +6,8 @@
 import "./tokens.css";
 import "./components.css";
 import "./practice.css";
+// 主题层放最后:靠加载顺序 + 更高特异性覆盖上面的组件默认表现
+import "./theme-macaron.css";
 
 export * from "./types";
 export * from "./levels";

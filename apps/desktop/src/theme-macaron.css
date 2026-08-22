@@ -1,0 +1,63 @@
+/* ============================================================
+   马卡龙少女主题 — 桌面外壳的表面处理
+   共享组件(sf-*)的对应处理在 packages/ui/src/theme-macaron.css;
+   语义颜色一律取 tokens.css 的 [data-theme="macaron"] 段,这里不定义新色号
+   (个别装饰性投影与 app.css 里已有的危险色除外,均就地注明出处)。
+
+   页面里绝大多数卡片不需要在这里写一行:它们本来就是 `background: var(--sf-card)`,
+   而马卡龙把这个令牌换成了半透明白玻璃渐变 —— 换主题即换材质。
+   下面只处理三类特殊面:① 外壳边界 ② 浮在内容之上的层(要磨砂)
+   ③ 少数把颜色写死、绕过令牌的历史遗留。
+   ============================================================ */
+
+/* ---- ① 外壳:左侧窄栏浮在糖霜壁纸上 ---- */
+[data-theme="macaron"] .app-nav {
+  border-right-color: var(--sf-glass-edge);
+  box-shadow: 1px 0 24px rgba(176, 84, 130, 0.1);
+}
+[data-theme="macaron"] .app-nav__item--on {
+  box-shadow: inset 0 0 0 1px var(--sf-primary-border);
+}
+
+/* ---- ② 浮层:背后有内容经过,磨砂才有意义 ---- */
+[data-theme="macaron"] .ask-drawer,
+[data-theme="macaron"] .scenario-preview__panel,
+[data-theme="macaron"] .skills-panel,
+[data-theme="macaron"] .aichat-model__pop {
+  backdrop-filter: blur(var(--sf-glass-blur)) saturate(1.4);
+}
+[data-theme="macaron"] .scenario-preview__panel,
+[data-theme="macaron"] .skills-panel,
+[data-theme="macaron"] .aichat-model__pop {
+  border: 1px solid var(--sf-glass-edge);
+  box-shadow: var(--sf-shadow-3);
+}
+/* 抽屉贴着视口下沿,只有上边缘看得见 */
+[data-theme="macaron"] .ask-drawer {
+  border-top-color: var(--sf-glass-edge);
+}
+
+/* ---- ③ 写死颜色的历史遗留:遮罩的冷灰压在糖霜上会发脏 ---- */
+[data-theme="macaron"] .scenario-preview,
+[data-theme="macaron"] .skills-overlay {
+  background: var(--sf-overlay);
+}
+
+/* 练习底栏的"下一题"与主按钮同款糖果渐变 */
+[data-theme="macaron"] .practice-nav--primary {
+  background: var(--sf-candy);
+  border-color: transparent;
+}
+[data-theme="macaron"] .practice-nav--primary:hover:not(:disabled) {
+  background: var(--sf-candy-hover);
+}
+
+/* 删除对话的危险按钮必须保持红:app.css 里那条覆盖(0,2,0)特异性低于
+   主题层的糖果渐变,不在这里重申一遍就会被染成粉紫,危险语义丢失。 */
+[data-theme="macaron"] .aichat-del__danger.sf-btn--primary {
+  background: var(--sf-error);
+  box-shadow: none;
+}
+[data-theme="macaron"] .aichat-del__danger.sf-btn--primary:hover {
+  background: #B91C1C;   /* 与 app.css 的 .aichat-del__danger:hover 同值 */
+}

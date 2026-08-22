@@ -1,0 +1,63 @@
+/* ============================================================
+   马卡龙少女主题 — 共享组件(sf-*)的表面处理
+   凡是有语义角色的颜色(底/文字/主色/描边/投影)一律取 tokens.css 的
+   [data-theme="macaron"] 段;只有几处**纯装饰的玻璃细节**(深色药丸底、
+   糖果投影、白色高光)就地写死 —— 它们只服务这一个元素,提到全局令牌层是噪音。
+   桌面外壳(app-nav、aichat-… 这些类)的对应处理在
+   apps/desktop/src/theme-macaron.css —— 两边按包归属分,谁的类名谁负责。
+
+   磨砂(backdrop-filter)只加在**背后真有内容经过**的浮层上:
+   壁纸本身是平滑渐变,模糊平滑渐变等于没模糊,却要付一整层 GPU 合成的钱。
+   卡片的"玻璃感"由 --sf-card 的半透明渐变 + 粉调投影给出,零成本。
+   ============================================================ */
+
+/* ---- 浮层:磨砂玻璃 ---- */
+[data-theme="macaron"] .sf-modal {
+  border: 1px solid var(--sf-glass-edge);
+  backdrop-filter: blur(var(--sf-glass-blur)) saturate(1.4);
+}
+
+/* Toast 是深色药丸,深灰在糖霜底上发脏 → 换成梅子色玻璃。
+   :not() 是必须的:成功/失败态的 .sf-toast--success/--error 特异性比
+   "[主题] .sf-toast" 低,不排除就会被这条吃掉,变成清一色梅子药丸。 */
+[data-theme="macaron"] .sf-toast:not(.sf-toast--success):not(.sf-toast--error) {
+  background: rgba(74, 41, 59, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+/* ---- 糖果渐变:主按钮 / 进度条 / 开关 ---- */
+[data-theme="macaron"] .sf-btn--primary {
+  background: var(--sf-candy);
+  box-shadow: 0 6px 16px rgba(176, 84, 130, 0.26);
+}
+[data-theme="macaron"] .sf-btn--primary:hover:not(:disabled) {
+  background: var(--sf-candy-hover);
+}
+[data-theme="macaron"] .sf-btn--primary:disabled {
+  background: var(--sf-primary-disabled);
+  box-shadow: none;
+}
+[data-theme="macaron"] .sf-btn--secondary {
+  border-color: var(--sf-glass-edge);
+  box-shadow: var(--sf-shadow-1);
+}
+
+[data-theme="macaron"] .sf-progress__fill,
+[data-theme="macaron"] .sf-switch input:checked + .sf-switch__track {
+  background: var(--sf-candy);
+}
+
+/* ---- 统计卡:玻璃高光边 ---- */
+[data-theme="macaron"] .sf-stat-card {
+  border: 1px solid var(--sf-glass-edge);
+  box-shadow: var(--sf-shadow-2);
+}
+
+/* ---- 热力日历:绿色格子在糖霜底上像青苔,换成草莓色阶 ---- */
+[data-theme="macaron"] .sf-heatmap__cell[data-level="1"] { background: var(--sf-rose-100); }
+[data-theme="macaron"] .sf-heatmap__cell[data-level="2"] { background: var(--sf-rose-200); }
+[data-theme="macaron"] .sf-heatmap__cell[data-level="3"] { background: var(--sf-rose-400); }
+[data-theme="macaron"] .sf-heatmap__cell[data-level="4"] { background: var(--sf-rose-500); }
+
+/* 词性胶囊与成分卡整套不动 —— 颜色到语法的映射跨主题必须稳定(§5.1 第 2 条)。 */

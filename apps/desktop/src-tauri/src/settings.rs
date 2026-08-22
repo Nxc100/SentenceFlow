@@ -86,11 +86,15 @@ impl Default for SoundSettings {
     }
 }
 
+/// 主题。与 `packages/ui/src/tokens.css` 的 `[data-theme=…]` 一一对应,
+/// 前端把它原样写进 `document.documentElement.dataset.theme`。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Theme {
     Light,
     Dark,
+    /// 马卡龙少女:糖霜壁纸 + 玻璃卡面(与 `paper` 互斥,选中时护眼纸色不生效)。
+    Macaron,
     System,
 }
 
@@ -202,6 +206,20 @@ mod tests {
         assert_eq!(s.appearance.theme, Theme::System);
         assert_eq!(s.accessibility.reduce_motion, TriState::System);
         assert!((s.ai.per_run_budget_cny - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn theme_wire_names_match_css_data_theme() {
+        // 线上值就是前端写进 data-theme 的字符串,改名等于换主题失效。
+        for (theme, wire) in [
+            (Theme::Light, "\"light\""),
+            (Theme::Dark, "\"dark\""),
+            (Theme::Macaron, "\"macaron\""),
+            (Theme::System, "\"system\""),
+        ] {
+            assert_eq!(serde_json::to_string(&theme).unwrap(), wire);
+            assert_eq!(serde_json::from_str::<Theme>(wire).unwrap(), theme);
+        }
     }
 
     #[test]

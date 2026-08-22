@@ -108,7 +108,7 @@ export function ReportPage({ onDrill }: { onDrill: (scene: string) => void }) {
           <Sparkline
             label="打字速度"
             values={curve.map((c) => c.avg_wpm)}
-            color="var(--sf-blue-500)"
+            color="var(--sf-primary)"
           />
           <Sparkline
             label="正确率"

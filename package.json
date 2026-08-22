@@ -12,7 +12,8 @@
     "build:wasm": "wasm-pack build crates/sf-wasm --target web --out-dir pkg && node scripts/copy-wasm.mjs",
     "dev:trial": "npm run dev --workspace=web-trial",
     "build:trial": "npm run build --workspace=web-trial",
-    "typecheck": "tsc --noEmit -p packages/ui && tsc --noEmit -p apps/web-trial && tsc --noEmit -p apps/desktop"
+    "typecheck": "tsc --noEmit -p packages/ui && tsc --noEmit -p apps/web-trial && tsc --noEmit -p apps/desktop",
+    "check:theme": "node packages/ui/scripts/check-theme-contrast.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

@@ -6,7 +6,10 @@
 
 body {
   margin: 0;
-  background: var(--sf-bg);
+  /* 与桌面端同因:装饰层是独立令牌,用 background 简写会把它重置掉 */
+  background-color: var(--sf-bg);
+  background-image: var(--sf-bg-image);
+  background-attachment: fixed;
   color: var(--sf-text);
   font-family: var(--sf-font-ui);
 }

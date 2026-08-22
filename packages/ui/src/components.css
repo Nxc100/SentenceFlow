@@ -1,5 +1,15 @@
 /* 基础组件样式(§5.5 核心组件) — 类名前缀 sf- */
 
+/* ---- 键盘焦点环(全局) ----
+   此前全应用只有开关自己画了焦点环,其余交互元素吃 Chromium 默认的 1px 黑环:
+   在深色/马卡龙底上几乎看不见,纯键盘用户会"不知道焦点在哪"。
+   用 :where() 把特异性压到 0 —— 打字板、聊天输入框等几处**有意**关掉焦点环的
+   规则(outline: none)特异性更高,依旧生效,不会被这条覆盖。 */
+:where(button, a[href], input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--sf-primary);
+  outline-offset: 2px;
+}
+
 /* ---- 按钮 ---- */
 .sf-btn {
   display: inline-flex;
@@ -70,6 +80,11 @@
 .sf-switch input:checked + .sf-switch__track .sf-switch__thumb {
   transform: translateX(18px);
 }
+/* 禁用态:轨道压暗 + 禁用光标(轨道 inset:0,盖住整个开关) */
+.sf-switch input:disabled + .sf-switch__track {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .sf-switch input:focus-visible + .sf-switch__track {
   outline: 2px solid var(--sf-primary);
   outline-offset: 2px;
@@ -129,7 +144,12 @@
   box-shadow: var(--sf-shadow-2);
   animation: sf-toast-in var(--sf-dur-base) var(--sf-ease-spring);
 }
-[data-theme="dark"] .sf-toast { background: var(--sf-card); color: var(--sf-text); }
+/* :not() 不能省:变体类特异性(0,1,0)低于本条(0,2,0),不排除的话
+   深色下成功/失败 toast 会一起变成灰卡片,丢掉绿/红语义。 */
+[data-theme="dark"] .sf-toast:not(.sf-toast--success):not(.sf-toast--error) {
+  background: var(--sf-card);
+  color: var(--sf-text);
+}
 .sf-toast--success { background: var(--sf-success); }
 .sf-toast--error { background: var(--sf-error); }
 
@@ -178,6 +198,19 @@
 }
 
 /* ---- 热力日历(5 级绿) ---- */
+/* 月份标签与格子列共用同一套宽度与间距(12 + 3),标签允许向右溢出 ——
+   它只需要对齐所在列的左边缘,像 GitHub 贡献图那样。 */
+.sf-heatmap-cal { display: inline-flex; flex-direction: column; gap: 4px; }
+.sf-heatmap__months { display: flex; gap: 3px; height: 14px; }
+.sf-heatmap__month {
+  flex: none;
+  width: 12px;
+  font-size: var(--sf-fs-micro);
+  line-height: 14px;
+  color: var(--sf-text-3);
+  white-space: nowrap;
+}
+.sf-heatmap__cell--future { visibility: hidden; }
 .sf-heatmap { display: flex; gap: 3px; }
 .sf-heatmap__col { display: flex; flex-direction: column; gap: 3px; }
 .sf-heatmap__cell {

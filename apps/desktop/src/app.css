@@ -12,7 +12,11 @@ body,
 
 body {
   margin: 0;
-  background: var(--sf-bg);
+  /* 拆成两行是给主题留装饰层:--sf-bg-image 在非马卡龙主题下是 none,
+     用 background 简写会把它一起重置掉。fixed 让糖霜不随内容滚。 */
+  background-color: var(--sf-bg);
+  background-image: var(--sf-bg-image);
+  background-attachment: fixed;
   color: var(--sf-text);
   font-family: var(--sf-font-ui);
   font-size: 15px;
@@ -205,6 +209,14 @@ select {
   padding: 0 8px;
 }
 
+/* 原生控件也要跟着主题走:range 的轨道滑块、checkbox 的勾选底都用系统强调色,
+   不接管的话换成非蓝主题就会露出系统蓝(实测:马卡龙主题下的语速滑杆、
+   AI 聊天输入区的「帮我纠错 / 中文对照」勾选框)。 */
+input[type="range"],
+input[type="checkbox"] {
+  accent-color: var(--sf-primary);
+}
+
 .sf-chip {
   border: 1px solid var(--sf-border);
   background: var(--sf-card);
@@ -265,6 +277,17 @@ select {
   color: var(--sf-primary);
 }
 
+/* 空库等级的角标:提示而非警告,用次要文字色 */
+.onboarding__empty {
+  font-size: 11px;
+  color: var(--sf-warning);
+  background: var(--sf-warning-bg);
+  border-radius: var(--sf-radius-full);
+  padding: 2px 8px;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
 .onboarding__cando {
   font-size: 13px;
   color: var(--sf-text-2);
@@ -290,9 +313,29 @@ select {
   padding: 32px 0;
 }
 
+/* 空态:一句解释 + 一排出路。文字居中与上方主按钮同轴,
+   两个出路按钮并排,别让用户在"没东西可练"的页面上无路可走。 */
 .today-empty {
   color: var(--sf-text-3);
   font-size: 13px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: var(--sf-read-max);
+}
+
+.today-empty p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.today-empty__acts {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 /* ---- 练习全屏 ---- */
@@ -907,6 +950,23 @@ select {
   font-size: 13px;
 }
 
+/* 丢弃卡里的"仍然收下":次要动作,别抢 ✓ 卡的注意力 */
+.gen-card__recover {
+  margin-top: 8px;
+  border: 1px solid var(--sf-border);
+  background: var(--sf-card);
+  color: var(--sf-primary);
+  border-radius: var(--sf-radius-sm);
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-card__recover:disabled {
+  color: var(--sf-text-3);
+  cursor: default;
+}
+
 .gen-card__reason {
   padding: 8px 0 0 28px;
   font-size: 13px;
@@ -1119,9 +1179,29 @@ select {
   color: var(--sf-text-placeholder);
 }
 
-.settings-restore {
+/* 设置页的操作行:按钮按内容宽,与说明文字左对齐成一列 —— 数据页四个区块
+   此前一半通栏一半自适应,三种对齐混在一屏里显得没规矩 */
+.settings-actions {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* 选中的文件名/路径:长路径要能换行,别把按钮挤出容器 */
+.settings-path-shown {
+  font-size: 12px;
+  color: var(--sf-text-3);
+  word-break: break-all;
+  min-width: 0;
+}
+
+/* 把原生文件输入藏在按钮样式的 label 后面(见 ImportTrial 注释) */
+.settings-filepick {
+  cursor: pointer;
+}
+.settings-filepick input[type="file"] {
+  display: none;
 }
 
 .settings-path {
@@ -2135,7 +2215,7 @@ select {
 
 .aichat-thread--on {
   background: var(--sf-primary-soft);
-  border-color: var(--sf-blue-100);
+  border-color: var(--sf-primary-border);
 }
 
 .aichat-thread__title {
@@ -2321,7 +2401,7 @@ select {
 .aichat-fix__orig {
   color: var(--sf-text-3);
   text-decoration: line-through;
-  text-decoration-color: var(--sf-gray-300);
+  text-decoration-color: var(--sf-text-placeholder);
   font-family: var(--sf-font-en);
 }
 
@@ -2544,7 +2624,7 @@ select {
 }
 
 .aichat-model__chip--pinned {
-  border-color: var(--sf-blue-200);
+  border-color: var(--sf-primary-border);
   background: var(--sf-primary-soft);
   color: var(--sf-primary);
 }
@@ -2553,8 +2633,8 @@ select {
   font-size: 10px;
   padding: 1px 5px;
   border-radius: 6px;
-  background: var(--sf-blue-100);
-  color: var(--sf-blue-700);
+  background: var(--sf-primary-soft-hover);
+  color: var(--sf-primary-hover);
 }
 
 .aichat-model__pop {
@@ -2597,7 +2677,7 @@ select {
 
 .aichat-model__tab--on {
   background: var(--sf-primary-soft);
-  border-color: var(--sf-blue-200);
+  border-color: var(--sf-primary-border);
   color: var(--sf-primary);
 }
 
@@ -2771,7 +2851,7 @@ select {
   gap: 8px;
   margin: 0 max(12px, (100% - var(--sf-chat-col)) / 2);
   padding: 6px 10px;
-  border: 1px solid var(--sf-blue-200);
+  border: 1px solid var(--sf-primary-border);
   border-radius: var(--sf-radius-md);
   background: var(--sf-primary-soft);
   color: var(--sf-text-2);
@@ -2923,8 +3003,8 @@ select {
 }
 
 .skill-row__tag--manual {
-  background: var(--sf-blue-50);
-  color: var(--sf-blue-700);
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary-hover);
 }
 
 .skill-row__tag--muted {
@@ -3129,7 +3209,7 @@ select {
 }
 
 .aichat-todo--live {
-  border-color: var(--sf-blue-200);
+  border-color: var(--sf-primary-border);
 }
 
 .aichat-todo__head {
@@ -3188,7 +3268,7 @@ select {
 .aichat-todo__item--completed {
   color: var(--sf-text-3);
   text-decoration: line-through;
-  text-decoration-color: var(--sf-gray-300);
+  text-decoration-color: var(--sf-text-placeholder);
 }
 
 /* 中文对照:压低存在感,英文仍是主角 */

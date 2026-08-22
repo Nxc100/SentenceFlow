@@ -60,6 +60,9 @@ jobs:
         run: npm run build:wasm
       - name: Typecheck
         run: npx tsc --noEmit -p packages/ui && npx tsc --noEmit -p apps/web-trial && npx tsc --noEmit -p apps/desktop
+      # 四套主题的对比度体检:阈值取浅色主题实测基线,新主题不许把哪一对压到线下。
+      - name: Theme contrast check
+        run: npm run check:theme
       - name: Build web trial
         run: npm run build:trial
       - name: Build desktop frontend

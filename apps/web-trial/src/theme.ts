@@ -1,6 +1,10 @@
-/** 主题(浅/深/跟随系统)与减少动效偏好,localStorage 持久化(§4.8 外观)。 */
+/** 主题(浅/深/马卡龙少女/跟随系统)与减少动效偏好,localStorage 持久化(§4.8 外观)。 */
 
-export type ThemePref = "light" | "dark" | "system";
+/** 取值与 tokens.css 的 `[data-theme=…]` 同名;"system" 解析成 light/dark。 */
+export type ThemePref = "light" | "dark" | "macaron" | "system";
+
+/** 可直接落到 data-theme 上的具体主题(即除 system 外的全部)。 */
+const CONCRETE: readonly ThemePref[] = ["light", "dark", "macaron"];
 
 const THEME_KEY = "sf-theme";
 const MOTION_KEY = "sf-motion";
@@ -17,8 +21,8 @@ export function applyTheme(pref: ThemePref) {
 }
 
 export function getThemePref(): ThemePref {
-  const raw = localStorage.getItem(THEME_KEY);
-  return raw === "light" || raw === "dark" ? raw : "system";
+  const raw = localStorage.getItem(THEME_KEY) as ThemePref | null;
+  return raw && CONCRETE.includes(raw) ? raw : "system";
 }
 
 export function applyReducedMotion(on: boolean) {
