@@ -21,7 +21,12 @@ use sf_core::spec::LevelSpec;
 use sf_core::{Chunk, PosTag, RoleTag, Sentence, Word};
 
 /// Characters permitted in IPA transcriptions (English phoneme inventory).
-const IPA_ALLOWED: &str = "abcdefghijklmnopqrstuvwxyzæɑɒɔəɜɛɪʊʌŋʃʒθðɡːˈˌ.'’ ";
+///
+/// 公开是为了让 `sf gold run` 能拿它反过来体检词表自己的 IPA 列:
+/// 词典对账会把词表里的音标**覆写**进句子,词表里混进一个非法字符,
+/// 生成时就会判 BadIpaChars → 触发修补调用(一次完整请求),
+/// 而且每次生成到这个词都会再犯一遍。
+pub const IPA_ALLOWED: &str = "abcdefghijklmnopqrstuvwxyzæɑɒɔəɜɛɪʊʌŋʃʒθðɡːˈˌ.'’ ";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]

@@ -1027,8 +1027,67 @@ fn check_few_shots(content_dir: &Path) -> Result<()> {
     }
 }
 
+/// 词表 IPA 体检:每条音标都必须只用校验器接受的字符
+/// ([`sf_pipeline::validate::IPA_ALLOWED`])。
+///
+/// 词典对账会拿词表的音标覆写模型给的音标。词表里混进一个非法字符
+/// (最常见的是 `/` 斜杠、重音符号写成 ASCII 的 `'`、或者用了 `ʤ`/`ʧ`
+/// 这类合并符号),生成时就判 BadIpaChars → 每遇到这个词发一次修补请求。
+/// 一个错字符能持续烧额度,所以在构建期拦。
+fn check_lexicon_ipa(content_dir: &Path) -> Result<()> {
+    use sf_pipeline::validate::IPA_ALLOWED;
+
+    let allowed: std::collections::HashSet<char> = IPA_ALLOWED.chars().collect();
+    let mut checked = 0usize;
+    let mut problems = Vec::new();
+    for (name, text) in [
+        (
+            "base.tsv",
+            std::fs::read_to_string(content_dir.join("lexicon/base.tsv")).ok(),
+        ),
+        (
+            "supplement.tsv",
+            std::fs::read_to_string(content_dir.join("lexicon/supplement.tsv")).ok(),
+        ),
+    ] {
+        let Some(text) = text else { continue };
+        for (ln, line) in text.lines().enumerate() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            let cols: Vec<&str> = line.split('\t').collect();
+            let (Some(lemma), Some(ipa)) = (cols.first(), cols.get(2)) else {
+                continue;
+            };
+            let ipa = ipa.trim();
+            if ipa.is_empty() {
+                continue;
+            }
+            checked += 1;
+            let bad: Vec<char> = ipa.chars().filter(|c| !allowed.contains(c)).collect();
+            if !bad.is_empty() {
+                problems.push(format!(
+                    "  ✕ {name}:{} `{lemma}` 音标 `{ipa}` 含非法字符 {bad:?}",
+                    ln + 1
+                ));
+            }
+        }
+    }
+    if problems.is_empty() {
+        println!("词表 IPA: {checked}/{checked} 字符合法");
+        Ok(())
+    } else {
+        for p in &problems {
+            println!("{p}");
+        }
+        bail!("词表 IPA: {} 条非法", problems.len())
+    }
+}
+
 fn gold_run(content_dir: &Path) -> Result<()> {
     check_lexicon_layers(content_dir)?;
+    check_lexicon_ipa(content_dir)?;
     check_few_shots(content_dir)?;
     // Gold = seeds for now; the harness (pass-rate report + non-zero exit on
     // regression) is what W1's 出口标准 needs.
@@ -1381,9 +1440,19 @@ struct SceneScan {
     category: String,
     level: LevelId,
     total: usize,
-    stored: usize,
+    /// 按本级原样入库的句数。
+    kept: usize,
+    /// 合格但被改存到更高等级的句数 —— 这一项高说明该场景在这一级
+    /// 名不副实:句子没丢,但产不出**本级**的内容。
+    relevelled: usize,
     unknown: Vec<String>,
     over: Vec<(String, u32)>,
+}
+
+impl SceneScan {
+    fn stored(&self) -> usize {
+        self.kept + self.relevelled
+    }
 }
 
 /// `sf factory scan` —— 见 [`FactoryCmd::Scan`] 的说明。
@@ -1469,7 +1538,8 @@ fn scan_cmd(
             category: sc.category.clone(),
             level,
             total: 0,
-            stored: 0,
+            kept: 0,
+            relevelled: 0,
             unknown: Vec::new(),
             over: Vec::new(),
         };
@@ -1500,17 +1570,22 @@ fn scan_cmd(
                 }
             }
             match triage(report, GenProfile::User, &all_specs) {
-                TriageOutcome::Accept { sentence } | TriageOutcome::Relevel { sentence, .. } => {
+                TriageOutcome::Accept { sentence } => {
                     dedupe.add(sentence.en.as_str());
-                    scan.stored += 1;
+                    scan.kept += 1;
+                }
+                TriageOutcome::Relevel { sentence, .. } => {
+                    dedupe.add(sentence.en.as_str());
+                    scan.relevelled += 1;
                 }
                 _ => {}
             }
         }
         eprintln!(
-            "{}/{} 入库 · 缺词 {} · 越带 {}",
-            scan.stored,
+            "本级 {}/{} · 改级 {} · 缺词 {} · 越带 {}",
+            scan.kept,
             scan.total,
+            scan.relevelled,
             scan.unknown.len(),
             scan.over.len()
         );
@@ -1531,14 +1606,16 @@ fn render_scan(results: &[SceneScan]) -> String {
     use std::fmt::Write;
     let mut out = String::new();
     let total: usize = results.iter().map(|r| r.total).sum();
-    let stored: usize = results.iter().map(|r| r.stored).sum();
+    let kept: usize = results.iter().map(|r| r.kept).sum();
+    let stored: usize = results.iter().map(SceneScan::stored).sum();
 
     let _ = writeln!(out, "# 场景词汇预扫报告\n");
     let _ = writeln!(
         out,
-        "扫了 {} 个场景 · 试产 {total} 句 · 入库 {stored} 句({:.0}%)\n",
+        "扫了 {} 个场景 · 试产 {total} 句 · 入库 {stored} 句({:.0}%),其中按本级入库 {kept} 句({:.0}%)\n",
         results.len(),
-        pct(stored, total)
+        pct(stored, total),
+        pct(kept, total)
     );
 
     // 只列有问题的场景 —— 全过的场景不用占版面
@@ -1546,7 +1623,8 @@ fn render_scan(results: &[SceneScan]) -> String {
         .iter()
         .filter(|r| !r.unknown.is_empty() || !r.over.is_empty())
         .collect();
-    problem.sort_by_key(|r| std::cmp::Reverse(r.unknown.len() + r.over.len()));
+    // 先按「丢了多少 + 被推走多少」排,最该处理的排最前
+    problem.sort_by_key(|r| std::cmp::Reverse(r.total - r.kept));
 
     let _ = writeln!(out, "## 需要补词的场景\n");
     if problem.is_empty() {
@@ -1554,11 +1632,17 @@ fn render_scan(results: &[SceneScan]) -> String {
     } else {
         let _ = writeln!(
             out,
-            "| 场景 | 类别 | 扫描等级 | 入库 | 词表外 | 越带(band) |"
+            "`本级` = 按扫描等级原样入库;`改级` = 合格但被推到更高等级 —— 这一列高
+说明该场景在这一级产不出本级内容。
+"
         );
         let _ = writeln!(
             out,
-            "|------|------|----------|------|--------|------------|"
+            "| 场景 | 类别 | 等级 | 本级 | 改级 | 丢 | 词表外 | 越带 |"
+        );
+        let _ = writeln!(
+            out,
+            "|------|------|------|------|------|----|--------|------|"
         );
         for r in &problem {
             let over = r
@@ -1569,13 +1653,15 @@ fn render_scan(results: &[SceneScan]) -> String {
                 .join(" ");
             let _ = writeln!(
                 out,
-                "| {} `{}` | {} | {} | {}/{} | {} | {} |",
+                "| {} `{}` | {} | {} | {}/{} | {} | {} | {} | {} |",
                 r.name,
                 r.id,
                 r.category,
                 r.level,
-                r.stored,
+                r.kept,
                 r.total,
+                r.relevelled,
+                r.total - r.stored(),
                 if r.unknown.is_empty() {
                     "—".into()
                 } else {
@@ -1606,7 +1692,7 @@ fn render_scan(results: &[SceneScan]) -> String {
     } else {
         let _ = writeln!(
             out,
-            "band 按**最早需要该词的等级**给(该级词带上限 + 100,落在下一级 —— \n             宁可判越级由分诊改级救回,也不要让低等级冒生词)。IPA 与释义需人工补齐。\n"
+            "band 给的是**保守值**:落在\"最早需要它的那一级\"的下一级。照这个值收,\n该场景在本级用到它时会被判越级、由分诊改存到上一级 —— 宁可这样,\n也不要让低等级凭空冒生词。\n\n**想让它在本级就能用,把 band 调进本级词带上限之内**(L1≤500 / L2≤1000 /\nL3≤1500 / L4≤2000 / L5≤2800 / L6 不限)。这个判断机器做不了 —— \n`pizza` 对 L2 学习者不难,`prescription` 就难。\n\n还要人工补的:**IPA(英式/美式)与中文释义**;以及把屈折形式还原成词元\n(表里收 `painkiller`,`painkillers` 会自动按后缀还原命中)。\n"
         );
         let _ = writeln!(out, "```tsv");
         for (w, (lv, scenes)) in &candidates {
