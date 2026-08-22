@@ -724,4 +724,29 @@ practice:
         let (tokens, _) = tokenize_en("Don't worry.");
         assert_eq!(tokens, vec!["Don't", "worry"]);
     }
+
+    /// 分词保留数字,打字板的可上屏字符集必须跟着保留 —— 两边不一致时,
+    /// 含数字的词会永远差几格打不满(出厂包「机场值机与安检」实测卡死)。
+    /// 前端对应物:`packages/ui/src/practice/TypingBoard.tsx` 的 `CHAR_RE`。
+    #[test]
+    fn tokenizer_keeps_digits_inside_words() {
+        let (tokens, punct) = tokenize_en("Where's the check-in desk for flight BA208?");
+        assert_eq!(
+            tokens,
+            vec![
+                "Where's", "the", "check-in", "desk", "for", "flight", "BA208"
+            ]
+        );
+        assert_eq!(punct, "?");
+        let (tokens, _) = tokenize_en("I can give you 14A.");
+        assert_eq!(tokens, vec!["I", "can", "give", "you", "14A"]);
+        // 词内允许的字符集就是这三类:字母、数字、撇号/连字符
+        for t in tokens {
+            assert!(
+                t.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '\'' || c == '-'),
+                "意外的词内字符: {t}"
+            );
+        }
+    }
 }

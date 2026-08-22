@@ -23,6 +23,15 @@ type S<'a> = State<'a, Arc<AppState>>;
 
 // ------------------------------------------------------------- bootstrap
 
+/// 某一级当前**可练**的句数(出厂 + 我的句集)。
+/// 出厂内容只到 L3(见文档 §16.1),前端据此避免把用户送进空库等级:
+/// 定级结果封顶、今日页空态区分"库还没有"与"今天练完了"、等级下拉标注。
+#[derive(Debug, Serialize)]
+pub struct LevelCount {
+    pub level: LevelId,
+    pub count: u32,
+}
+
 #[derive(Debug, Serialize)]
 pub struct Bootstrap {
     pub specs: Vec<LevelSpec>,
@@ -30,6 +39,7 @@ pub struct Bootstrap {
     pub settings: Settings,
     pub content_rev: Option<String>,
     pub sentence_count: u32,
+    pub level_counts: Vec<LevelCount>,
 }
 
 #[tauri::command]
@@ -37,12 +47,20 @@ pub fn bootstrap(state: S<'_>) -> CmdResult<Bootstrap> {
     let license = licensing::current_state(&state.paths, now_unix())?;
     let settings = state.settings.lock().expect("settings lock").clone();
     let content = state.content.lock().expect("content lock");
+    let mut level_counts = Vec::with_capacity(LevelId::ALL.len());
+    for level in LevelId::ALL {
+        level_counts.push(LevelCount {
+            level,
+            count: content.sentences_by_level(level)?.len() as u32,
+        });
+    }
     Ok(Bootstrap {
         specs: state.specs.values().cloned().collect(),
         license,
         settings,
         content_rev: content.factory.get_meta("rev")?,
         sentence_count: content.factory.sentence_count()?,
+        level_counts,
     })
 }
 
@@ -1156,6 +1174,26 @@ pub async fn weekly_review(state: S<'_>, tz_offset_secs: i32) -> CmdResult<Strin
 
 // ------------------------------------------------------------- backup
 
+/// 系统文件选择框(恢复备份用)。webview 里的 `<input type=file>` 拿不到真实
+/// 路径,而后端恢复需要路径 —— 让用户手打路径是不可用的交互,所以走原生框。
+/// `filter_name` / `extensions` 组成一条扩展名过滤器,空扩展名表示不过滤。
+#[tauri::command]
+pub async fn pick_file(
+    title: String,
+    filter_name: String,
+    extensions: Vec<String>,
+) -> CmdResult<Option<String>> {
+    let mut dialog = rfd::AsyncFileDialog::new().set_title(&title);
+    if !extensions.is_empty() {
+        let exts: Vec<&str> = extensions.iter().map(String::as_str).collect();
+        dialog = dialog.add_filter(&filter_name, &exts);
+    }
+    Ok(dialog
+        .pick_file()
+        .await
+        .map(|h| h.path().to_string_lossy().into_owned()))
+}
+
 /// Backup zip = progress.db + user_content.db, 不含任何密钥 (§4.8).
 /// Relative destinations resolve into the app data dir — the exe's folder may
 /// not be writable (Program Files).
@@ -1277,4 +1315,21 @@ pub fn diagnostics(state: S<'_>) -> CmdResult<serde_json::Value> {
         "log_count": logs.len(),
         "policy_rev": state.policy.rev,
     }))
+}
+
+/// 把诊断包写成文件并返回落盘路径。
+/// 此前前端用 `<a download>` 触发 webview 下载 —— 在桌面壳里会掀起浏览器的下载
+/// 界面,而应用内**没有任何反馈**,用户不知道文件去哪了。改成与备份导出同一条路:
+/// 后端写盘、前端 toast 报路径。相对路径落应用数据目录(exe 所在目录可能不可写)。
+#[tauri::command]
+pub fn export_diagnostics(state: S<'_>, dest: String) -> CmdResult<String> {
+    let json = diagnostics(state.clone())?;
+    let dest = std::path::PathBuf::from(dest);
+    let dest = if dest.is_absolute() {
+        dest
+    } else {
+        state.paths.root.join(dest)
+    };
+    std::fs::write(&dest, serde_json::to_vec_pretty(&json)?)?;
+    Ok(dest.to_string_lossy().into_owned())
 }

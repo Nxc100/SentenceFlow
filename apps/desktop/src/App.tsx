@@ -171,7 +171,7 @@ function Shell() {
       </nav>
       <div className="app-main">
         {trialCapsule && <div className="app-topbar">{trialCapsule}</div>}
-        {nav === "today" && <TodayPage onStart={(launch) => setPractice(launch)} />}
+        {nav === "today" && <TodayPage onStart={(launch) => setPractice(launch)} onNav={setNav} />}
         {nav === "library" && <LibraryPage onPractice={(launch) => setPractice(launch)} />}
         {nav === "scenario" && (
           <ScenarioPage

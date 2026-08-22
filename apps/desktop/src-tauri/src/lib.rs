@@ -120,10 +120,12 @@ pub fn run() {
             skills::skill_source,
             skills::skill_save,
             skills::skill_delete,
+            commands::pick_file,
             commands::backup_export,
             commands::backup_restore,
             commands::tts_speak,
             commands::diagnostics,
+            commands::export_diagnostics,
         ])
         .run(tauri::generate_context!())
         .expect("error while running SentenceFlow");

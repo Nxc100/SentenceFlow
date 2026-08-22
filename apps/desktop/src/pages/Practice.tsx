@@ -326,10 +326,16 @@ export function PracticeScreen({
       <div className="practice-screen">
         {topBar("练习完成")}
         <CompletionPage
+          title={tally.sentences > 0 ? "本节完成" : "这一节先到这儿"}
           stats={{ sentences: tally.sentences, accuracy, avgWpm, durMs: tally.durMs }}
           actions={<Button onClick={onExit}>回到今日</Button>}
         >
-          <p className="practice-rest-hint">练得不错 —— 记得休息一下眼睛。</p>
+          {/* 一题没答就走到底时,别夸"练得不错" —— 那句话会显得系统没在看 */}
+          <p className="practice-rest-hint">
+            {tally.sentences > 0
+              ? "练得不错 —— 记得休息一下眼睛。"
+              : "这次没有作答记录,随时可以回来接着练。"}
+          </p>
         </CompletionPage>
       </div>
     );
@@ -372,7 +378,10 @@ export function PracticeScreen({
           {sentence ? levelName(sentence.level) : ""} · {sentence?.scene ?? "…"} ({index + 1}/
           {items.length})
           {item.is_review && <span className="practice-review-dot" title="复习句" />}
-          <span className="practice-mode-chip">{MODE_LABEL[item.mode]}</span>
+          {/* 重组是打字题的前置一步:此刻胶囊若还写「打字」,用户正在拼词块会对不上 */}
+          <span className="practice-mode-chip">
+            {phase === "reorder" ? MODE_LABEL.reorder : MODE_LABEL[item.mode]}
+          </span>
         </>,
       )}
       <ProgressBar value={progress} aria-label="进度" />

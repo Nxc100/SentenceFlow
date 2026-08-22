@@ -29,8 +29,12 @@ import { appendLog, downloadProgress, exportProgress, saveSrs } from "./storage"
 import { applyReducedMotion, applyTheme, getReducedMotion, getThemePref } from "./theme";
 import type { ThemePref } from "./theme";
 
-/** 购买链接 — 渠道定价为开放问题(§10),接入发卡平台后替换 */
-const PURCHASE_URL = "https://example.com/sentenceflow#buy";
+/**
+ * 桌面版下载地址。2026-08-20 起本产品为**免费版**(FREE_EDITION),
+ * 这里此前既写着"购买"又指向 example.com 占位域名 —— 试用站一旦上线,
+ * 用户点了会落到别人的域名上,而且被误导成要付费。
+ */
+const DOWNLOAD_URL = "https://github.com/Nxc100/SentenceFlow/releases/latest";
 
 interface Section {
   level: string;
@@ -321,14 +325,21 @@ function ThemeBar({
   return (
     <div className="trial-themebar">
       <span>外观:</span>
-      {(["light", "system", "dark"] as const).map((t) => (
+      {(
+        [
+          ["light", "浅色"],
+          ["system", "跟随系统"],
+          ["dark", "深色"],
+          ["macaron", "马卡龙少女"],
+        ] as Array<[ThemePref, string]>
+      ).map(([t, label]) => (
         <button
           key={t}
           type="button"
           className={`trial-chip${theme === t ? " trial-chip--on" : ""}`}
           onClick={() => onTheme(t)}
         >
-          {t === "light" ? "浅色" : t === "dark" ? "深色" : "跟随系统"}
+          {label}
         </button>
       ))}
       <button
@@ -345,8 +356,8 @@ function ThemeBar({
 function FooterCta() {
   return (
     <footer className="trial-footer">
-      <a className="trial-cta" href={PURCHASE_URL} target="_blank" rel="noreferrer">
-        桌面完整版:六级句库 · 听打默写 · AI 生成工坊 → 购买
+      <a className="trial-cta" href={DOWNLOAD_URL} target="_blank" rel="noreferrer">
+        桌面完整版:六级句库 · 听打默写 · AI 生成工坊 → 免费下载
       </a>
     </footer>
   );

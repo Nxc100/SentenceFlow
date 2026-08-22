@@ -19,7 +19,7 @@ const PAGE_SIZE = 20;
 type Tab = "factory" | "mine" | "wrongbook" | "favorites";
 
 export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) => void }) {
-  const { level, specs, setLevel } = useApp();
+  const { level, specs, setLevel, sentenceCountFor } = useApp();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("factory");
   const [scenes, setScenes] = useState<string[]>([]);
@@ -84,6 +84,7 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
           {specs.map((s) => (
             <option key={s.id} value={s.id}>
               {levelOptionLabel(s.id, s)}
+              {sentenceCountFor(s.id) === 0 ? "(暂无句子)" : ""}
             </option>
           ))}
         </select>

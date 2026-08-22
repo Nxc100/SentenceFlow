@@ -40,7 +40,13 @@ interface Ghost {
   key: number;
 }
 
-const CHAR_RE = /^[a-zA-Z'-]$/;
+/**
+ * 可上屏的字符,必须与后端分词口径一致 —— `sf_pipeline::validate::tokenize_en`
+ * 保留 `is_ascii_alphanumeric() || '\'' || '-'`。
+ * 数字曾漏在白名单外:含数字的词(航班号 BA208、座位 14A)会永远差几格打不满,
+ * 用户只能跳过 —— 出厂情景包「机场值机与安检」的第 1、6 句就是这样卡死的。
+ */
+const CHAR_RE = /^[a-zA-Z0-9'-]$/;
 
 export function TypingBoard({
   sentence,

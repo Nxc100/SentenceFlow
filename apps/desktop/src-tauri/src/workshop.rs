@@ -38,12 +38,16 @@ pub enum CardEvent {
     },
     /// 修补中 (⟳).
     Repairing { job_id: u64, en: String },
-    /// 丢弃,可展开原因,可捞回 (✕).
+    /// 丢弃,可展开原因,可捞回 (✕)。
+    /// `sentence` 只在 `recoverable` 时带上 —— 前端要拿它调 `workshop_recover`,
+    /// 事件里不给,界面就只能干看着(实测:捞回功能此前在 UI 上够不着)。
     Discarded {
         job_id: u64,
         en: String,
         reason: String,
         recoverable: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        sentence: Option<Box<sf_core::Sentence>>,
     },
 }
 
@@ -335,6 +339,9 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
             let mut scanner = StreamScanner::new();
             let mut accepted_in_batch = 0u32;
             let mut batch_failed = false;
+            // 这一批有没有拿到 usage 事件:opencode 通道从不上报 token(只有
+            // OpenAI 兼容通道会),不补记的话「今日 N 次请求」对默认通道永远是 0。
+            let mut usage_seen = false;
             // 修补队列:流结束后统一发修补调用(仅传差异,§7.4)。
             let mut pending_repairs: Vec<(sf_core::Sentence, Vec<String>)> = Vec::new();
             // 活跃信号:已接收字符数,节流上报
@@ -420,6 +427,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                                         en: sentence.en.clone(),
                                                         reason: "与句库已有句完全相同".into(),
                                                         recoverable: false,
+                                                        sentence: None,
                                                     },
                                                 );
                                                 continue;
@@ -468,6 +476,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                                     en: sentence.en.clone(),
                                                     reason: "超出当前等级或与已有句重复".into(),
                                                     recoverable: true,
+                                                    sentence: Some(Box::new(sentence.clone())),
                                                 },
                                             );
                                         }
@@ -484,6 +493,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                                     en: String::new(),
                                                     reason,
                                                     recoverable: false,
+                                                    sentence: None,
                                                 },
                                             );
                                         }
@@ -501,6 +511,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                                 "AI 返回的格式有误,已跳过这条(不影响其他句子)。技术细节:{e}"
                                             ),
                                             recoverable: false,
+                                            sentence: None,
                                         },
                                     );
                                 }
@@ -511,6 +522,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                         prompt_tokens,
                         completion_tokens,
                     }) => {
+                        usage_seen = true;
                         if let Some(m) = &mut money {
                             m.report_usage(prompt_tokens, completion_tokens);
                         }
@@ -523,7 +535,15 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                             money.as_ref().map(|m| m.current_cost()).unwrap_or(0.0),
                         )?;
                     }
-                    Ok(GenChunk::Done) => break,
+                    Ok(GenChunk::Done) => {
+                        // 不报 token 的通道(opencode)也要留一条请求记账:
+                        // 零 token、零花费,但「今日几次请求」得是真的。
+                        if !usage_seen {
+                            let progress = state.progress.lock().expect("progress lock");
+                            progress.spend_add(now_unix(), &job.params.channel, 0, 0, 0.0)?;
+                        }
+                        break;
+                    }
                     Ok(_) => {}
                     Err(ChannelError::RateLimited { retry_after_secs }) => {
                         let decision =
@@ -594,6 +614,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                         en: fixed.en.clone(),
                                         reason: "与句库已有句完全相同".into(),
                                         recoverable: false,
+                                        sentence: None,
                                     },
                                 );
                                 continue;
@@ -624,6 +645,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                                 en: broken.en.clone(),
                                 reason: format!("修补未通过:{}", reasons.join("；")),
                                 recoverable: true,
+                                sentence: Some(Box::new(broken.clone())),
                             },
                         );
                     }

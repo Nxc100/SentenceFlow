@@ -11,7 +11,7 @@ import type { PlacementResult } from "../ipc";
 import { ipc } from "../ipc";
 
 export function MyLevelPage({ onStartTest }: { onStartTest: () => void }) {
-  const { specs, level, setLevel } = useApp();
+  const { specs, level, setLevel, sentenceCountFor, topLevelWithContent } = useApp();
   const toast = useToast();
   const [last, setLast] = useState<PlacementResult | null>(null);
 
@@ -54,17 +54,32 @@ export function MyLevelPage({ onStartTest }: { onStartTest: () => void }) {
           {last.low_confidence && (
             <p className="mylevel-last__note">那次作答里猜的成分比较多,结果仅供参考。</p>
           )}
-          {last.level !== level && (
-            <Button
-              variant="secondary"
-              onClick={() => {
-                void setLevel(last.level);
-                toast.show(`已切换到「${levelName(last.level)}」`);
-              }}
-            >
-              按推荐切换到「{levelName(last.level)}」
-            </Button>
-          )}
+          {/* 推荐级可能还没有句子(出厂内容到 L3):按有内容的最高级封顶,
+              与定级结果页同一口径,别让"按推荐切换"变成另一扇通往空库的门 */}
+          {(() => {
+            const top = topLevelWithContent();
+            const rec = last.level > top ? top : last.level;
+            return (
+              <>
+                {rec !== last.level && (
+                  <p className="mylevel-last__note">
+                    「{levelName(last.level)}」的题库还在补齐中,先按「{levelName(rec)}」练。
+                  </p>
+                )}
+                {rec !== level && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void setLevel(rec);
+                      toast.show(`已切换到「${levelName(rec)}」`);
+                    }}
+                  >
+                    按推荐切换到「{levelName(rec)}」
+                  </Button>
+                )}
+              </>
+            );
+          })()}
         </section>
       )}
 
@@ -84,6 +99,10 @@ export function MyLevelPage({ onStartTest }: { onStartTest: () => void }) {
             >
               <span className="onboarding__level">{levelName(s.id)}</span>
               <span className="onboarding__cando">能做到:{levelCanDo(s.id, s)}</span>
+              {/* 出厂内容目前到 L3:空库等级如实标出来,别让人切过去才发现没题 */}
+              {sentenceCountFor(s.id) === 0 && (
+                <span className="onboarding__empty">题库补齐中 · 可用 AI 造句</span>
+              )}
               {s.id === level && <span className="mylevel-card__badge">当前</span>}
             </button>
           ))}

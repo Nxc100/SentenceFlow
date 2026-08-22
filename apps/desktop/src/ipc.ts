@@ -38,7 +38,9 @@ export interface Settings {
     fx_volume: number;
   };
   appearance: {
-    theme: "light" | "dark" | "system";
+    /** 与 tokens.css 的 [data-theme=…] 同名;"system" 由前端解析成 light/dark */
+    theme: "light" | "dark" | "macaron" | "system";
+    /** 护眼纸色:仅在主题解析为浅色时生效 */
     paper: boolean;
     practice_font_size: "small" | "medium" | "large";
   };
@@ -115,7 +117,15 @@ export interface GenJob {
 export type WorkshopCard =
   | { kind: "accepted"; job_id: number; sentence: Sentence }
   | { kind: "repairing"; job_id: number; en: string }
-  | { kind: "discarded"; job_id: number; en: string; reason: string; recoverable: boolean };
+  | {
+      kind: "discarded";
+      job_id: number;
+      en: string;
+      reason: string;
+      recoverable: boolean;
+      /** 仅 recoverable 时带上,供「仍然收下」调用 workshop_recover */
+      sentence?: Sentence;
+    };
 
 export interface WorkshopProgress {
   job_id: number;
@@ -150,6 +160,8 @@ export interface Bootstrap {
   settings: Settings;
   content_rev: string | null;
   sentence_count: number;
+  /** 每级可练句数(出厂 + 我的句集);出厂内容目前只到 L3 */
+  level_counts: Array<{ level: LevelId; count: number }>;
 }
 
 export interface TodayOverview {
@@ -510,6 +522,9 @@ export const ipc = {
   skillDelete: (path: string) => invoke<string>("skill_delete", { path }),
   /** 系统文件夹选择器;null = 用户取消 */
   pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
+  /** 系统文件选择框;取消返回 null。extensions 为空表示不过滤 */
+  pickFile: (title: string, filterName: string, extensions: string[]) =>
+    invoke<string | null>("pick_file", { title, filterName, extensions }),
 
   backupExport: (dest: string) => invoke<string>("backup_export", { dest }),
   backupRestore: (src: string, apply: boolean) =>
@@ -520,6 +535,8 @@ export const ipc = {
   ttsSpeak: (text: string, usAccent: boolean, rate: number) =>
     invoke<string | null>("tts_speak", { text, usAccent, rate }),
   diagnostics: () => invoke<Record<string, unknown>>("diagnostics"),
+  /** 诊断包落盘并返回路径(与备份导出同一条路,前端不再走 webview 下载) */
+  exportDiagnostics: (dest: string) => invoke<string>("export_diagnostics", { dest }),
 
   /** opencode 一键安装(免 Node/免终端);进度经 install://progress */
   opencodeInstall: () => invoke<InstallDone>("opencode_install"),

@@ -31,7 +31,7 @@ export interface PlacementTestScreenProps {
 }
 
 export function PlacementTestScreen({ onExit, onPick }: PlacementTestScreenProps) {
-  const { settings, specs } = useApp();
+  const { settings, specs, topLevelWithContent } = useApp();
   const [step, setStep] = useState<PlacementStep | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busyRef = useRef(false);
@@ -134,22 +134,26 @@ export function PlacementTestScreen({ onExit, onPick }: PlacementTestScreenProps
       wpm: 0,
     });
 
-  const topBar = (
+  /** 顶栏。`showProgress=false` 用于结果页与错误页 —— 测试已结束,
+      再挂一条满格进度条只剩噪音(实测:结果页右上角悬着一条 100% 蓝条)。 */
+  const topBar = (showProgress = true) => (
     <header className="practice-top">
       <button type="button" className="practice-back" onClick={onExit} aria-label="退出测试">
         ‹
       </button>
       <span className="practice-title">水平测试</span>
-      <div className="placement-progress">
-        <ProgressBar value={step?.progress ?? 0} aria-label="测试进度" />
-      </div>
+      {showProgress && (
+        <div className="placement-progress">
+          <ProgressBar value={step?.progress ?? 0} aria-label="测试进度" />
+        </div>
+      )}
     </header>
   );
 
   if (error) {
     return (
       <div className="practice-screen">
-        {topBar}
+        {topBar(false)}
         <main className="practice-main practice-empty">
           <div className="practice-empty__icon">😥</div>
           <p className="practice-empty__title">测试无法开始</p>
@@ -163,21 +167,29 @@ export function PlacementTestScreen({ onExit, onPick }: PlacementTestScreenProps
   if (!step) {
     return (
       <div className="practice-screen">
-        {topBar}
+        {topBar()}
         <div className="practice-main" aria-busy="true" />
       </div>
     );
   }
 
   if (result) {
-    const spec = specs.find((s) => s.id === result.level);
+    // 测出来的等级可能高于"现在真有句子"的等级(出厂内容目前到 L3,见文档 §16.1)。
+    // 那就把起点压到练得起来的最高级 —— 但**如实告诉用户测出来是多少**,
+    // 既不谎报水平,也不让人一进今日页就撞上空库。
+    const top = topLevelWithContent();
+    const capped = result.level > top ? top : result.level;
+    const startLevel = capped;
+    const spec = specs.find((s) => s.id === startLevel);
     return (
       <div className="practice-screen">
-        {topBar}
+        {topBar(false)}
         <main className="practice-main placement-result">
-          <p className="placement-result__eyebrow">适合你的起点是</p>
-          <h1 className="placement-result__level">{levelName(result.level)}</h1>
-          <p className="placement-result__cando">能做到:{levelCanDo(result.level, spec)}</p>
+          <p className="placement-result__eyebrow">
+            {capped === result.level ? "适合你的起点是" : "你的水平测下来在「" + levelName(result.level) + "」,先从这里起步"}
+          </p>
+          <h1 className="placement-result__level">{levelName(startLevel)}</h1>
+          <p className="placement-result__cando">能做到:{levelCanDo(startLevel, spec)}</p>
           <ul className="placement-result__why">
             <li>词汇量约 {result.vocab_est} 词</li>
             {result.sentence_accuracy > 0 && (
@@ -187,13 +199,19 @@ export function PlacementTestScreen({ onExit, onPick }: PlacementTestScreenProps
               <li key={n}>{n}</li>
             ))}
           </ul>
+          {capped !== result.level && (
+            <p className="placement-result__note">
+              「{levelName(result.level)}」的题库还在补齐中,先按「{levelName(startLevel)}」开练;
+              也可以在「AI 造句」里为更高等级生成句子,等级随时能在「我的水平」里改。
+            </p>
+          )}
           {result.low_confidence && (
             <p className="placement-result__note">
               这次作答里猜的成分比较多,推荐偏保守——练两天觉得简单,随时可以调高等级。
             </p>
           )}
           <div className="placement-result__actions">
-            <Button onClick={() => onPick(result.level)}>按这个等级开始练习</Button>
+            <Button onClick={() => onPick(startLevel)}>按这个等级开始练习</Button>
             <Button variant="ghost" onClick={onExit}>
               {settings.level === null ? "自己挑一个等级" : "保持当前等级"}
             </Button>
@@ -205,7 +223,7 @@ export function PlacementTestScreen({ onExit, onPick }: PlacementTestScreenProps
 
   return (
     <div className="practice-screen">
-      {topBar}
+      {topBar()}
       <main className="practice-main">
         {item?.kind === "vocab" && (
           <div className="placement-vocab">

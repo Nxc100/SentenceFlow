@@ -147,13 +147,33 @@ function GeneralSection() {
           <option value="system">跟随系统</option>
           <option value="light">浅色</option>
           <option value="dark">深色</option>
+          <option value="macaron">马卡龙少女</option>
         </select>
       </Row>
       <Row label="护眼纸色(浅色下生效)">
+        {/* 深色/马卡龙下纸色不参与解析,置灰比"开了没反应"诚实 */}
         <Switch
           checked={settings.appearance.paper}
+          disabled={settings.appearance.theme === "dark" || settings.appearance.theme === "macaron"}
           onChange={(v) => set((s) => (s.appearance.paper = v))}
         />
+      </Row>
+
+      <Row label="练习区字号">
+        <select
+          value={settings.appearance.practice_font_size}
+          onChange={(e) =>
+            set(
+              (s) =>
+                (s.appearance.practice_font_size = e.target
+                  .value as Settings["appearance"]["practice_font_size"]),
+            )
+          }
+        >
+          <option value="small">小</option>
+          <option value="medium">中</option>
+          <option value="large">大</option>
+        </select>
       </Row>
 
       <h2>无障碍</h2>
@@ -173,7 +193,9 @@ function GeneralSection() {
           <option value="off">关</option>
         </select>
       </Row>
-      <Row label="OpenDyslexic 字体(练习区英文)">
+      {/* 字段名仍是 dyslexic_font(兼容老设置);做的是字距/连字层面的易读排版,
+          OpenDyslexic 字体文件尚未随包,标签如实写明手段而不是字体名 */}
+      <Row label="练习区易读排版(加宽字距、去连字)">
         <Switch
           checked={settings.accessibility.dyslexic_font}
           onChange={(v) => set((s) => (s.accessibility.dyslexic_font = v))}
@@ -445,7 +467,8 @@ function BenchButton({ onPicked }: { onPicked: (model: string) => void }) {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        toast.show("正在为你试用各个模型并挑最合适的,约 30 秒,只需一次");
+        // 实测 7 个免费模型 × 6 句要 2–3 分钟;写"约 30 秒"会让人以为卡死
+        toast.show("正在为你试用各个模型并挑最合适的,约一到三分钟,只需一次");
         try {
           const ranking = await ipc.runBench();
           const best = ranking[0];
@@ -672,37 +695,40 @@ function DataSection() {
     <>
       <h2>备份</h2>
       <p className="settings-hint">备份包含学习进度与你的句库,不含任何密钥。</p>
-      <Button
-        onClick={async () => {
-          const name = `sentenceflow-backup-${new Date().toISOString().slice(0, 10)}.zip`;
-          const path = await ipc.backupExport(name);
-          toast.show(`已导出:${path}`);
-        }}
-      >
-        导出备份 zip
-      </Button>
+      <div className="settings-actions">
+        <Button
+          onClick={async () => {
+            const name = `sentenceflow-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+            const path = await ipc.backupExport(name);
+            toast.show(`已导出:${path}`);
+          }}
+        >
+          导出备份 zip
+        </Button>
+      </div>
 
       <h2>恢复</h2>
-      <div className="settings-restore">
-        <input
-          className="settings-path"
-          placeholder="备份 zip 的完整路径"
-          value={restorePath}
-          onChange={(e) => setRestorePath(e.target.value)}
-        />
+      <p className="settings-hint">
+        选一个之前导出的备份 zip,先看会合并多少条,确认后才写入。重复的进度保留较新一条。
+      </p>
+      <div className="settings-actions">
         <Button
           variant="secondary"
-          disabled={!restorePath.trim()}
           onClick={async () => {
+            const path = await ipc.pickFile("选择备份 zip", "备份包", ["zip"]);
+            if (!path) return;
+            setRestorePath(path);
+            setPreview(null);
             try {
-              setPreview(await ipc.backupRestore(restorePath.trim(), false));
+              setPreview(await ipc.backupRestore(path, false));
             } catch (e) {
               toast.show(String((e as { message?: string }).message ?? e));
             }
           }}
         >
-          预览差异
+          选择备份 zip…
         </Button>
+        {restorePath && <span className="settings-path-shown">{restorePath}</span>}
       </div>
       {preview && (
         <div className="settings-preview">
@@ -723,43 +749,65 @@ function DataSection() {
       )}
 
       <h2>试用版进度导入</h2>
+      <p className="settings-hint">
+        在网页试用版练过的进度,导出成 json 后可以带进来 —— 按英文原句精确匹配合并,匹配不上的会跳过。
+      </p>
       <ImportTrial />
 
       <h2>诊断</h2>
-      <Button
-        variant="ghost"
-        onClick={async () => {
-          const d = await ipc.diagnostics();
-          const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "sentenceflow-diagnostics.json";
-          a.click();
-        }}
-      >
-        导出匿名诊断包
-      </Button>
+      <p className="settings-hint">
+        遇到问题时导出这个文件发给我们:只含版本、系统、句数与日志条数,
+        <strong>不含任何句子内容或密钥</strong>。
+      </p>
+      <div className="settings-actions">
+        <Button
+          variant="secondary"
+          onClick={async () => {
+            const name = `sentenceflow-diagnostics-${new Date().toISOString().slice(0, 10)}.json`;
+            const path = await ipc.exportDiagnostics(name);
+            toast.show(`已导出:${path}`);
+          }}
+        >
+          导出匿名诊断包
+        </Button>
+      </div>
     </>
   );
 }
 
+/**
+ * 试用版进度导入。这里必须用 `<input type=file>`(要读文件**内容**,而恢复备份
+ * 要的是**路径**,所以那边走原生框),但原生控件的"选择文件|未选择文件"在应用里
+ * 太突兀 —— 把它藏在 label 后面,外观复用 sf-btn。
+ */
 function ImportTrial() {
   const toast = useToast();
+  const [picked, setPicked] = useState<string | null>(null);
   return (
-    <input
-      type="file"
-      accept="application/json"
-      onChange={async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try {
-          const json = JSON.parse(await file.text());
-          const [merged, skipped] = await ipc.importTrialProgress(json);
-          toast.show(`已合并 ${merged} 条进度${skipped > 0 ? `,${skipped} 条未匹配` : ""}`);
-        } catch (err) {
-          toast.show(String((err as { message?: string }).message ?? err));
-        }
-      }}
-    />
+    <div className="settings-actions">
+      <label className="sf-btn sf-btn--secondary settings-filepick">
+        选择进度 json…
+        <input
+          type="file"
+          accept="application/json"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setPicked(file.name);
+            try {
+              const json = JSON.parse(await file.text());
+              const [merged, skipped] = await ipc.importTrialProgress(json);
+              toast.show(`已合并 ${merged} 条进度${skipped > 0 ? `,${skipped} 条未匹配` : ""}`);
+            } catch (err) {
+              toast.show(String((err as { message?: string }).message ?? err));
+            } finally {
+              // 允许连续选同一个文件重试
+              e.target.value = "";
+            }
+          }}
+        />
+      </label>
+      {picked && <span className="settings-path-shown">{picked}</span>}
+    </div>
   );
 }

@@ -17,6 +17,10 @@ import { ipc } from "./ipc";
 interface AppCtx {
   specs: LevelSpec[];
   specFor: (level: LevelId) => LevelSpec | undefined;
+  /** 该等级现在有多少句可练(出厂 + 我的句集)。0 = 库还没建起来 */
+  sentenceCountFor: (level: LevelId) => number;
+  /** 现在真正练得起来的最高等级;全空时回落 L1 */
+  topLevelWithContent: () => LevelId;
   license: LicenseState;
   settings: Settings;
   updateSettings: (patch: (s: Settings) => Settings) => Promise<void>;
@@ -35,6 +39,11 @@ export function useApp(): AppCtx {
   return ctx;
 }
 
+/**
+ * 设置 → `data-*`。主题 id 与 tokens.css 的 `[data-theme=…]` 同名,直接透传;
+ * `system` 先解析成 light/dark,护眼纸色只是"浅色的一个变体",故最后才细化,
+ * 深色与马卡龙自然不受影响。
+ */
 function applyAppearance(settings: Settings) {
   const root = document.documentElement;
   const { theme, paper } = settings.appearance;
@@ -52,6 +61,8 @@ function applyAppearance(settings: Settings) {
       ? "reduced"
       : "";
   root.dataset.dyslexic = settings.accessibility.dyslexic_font ? "1" : "";
+  // 练习区字号三档:tokens.css 里只覆盖练习区字阶,中档即默认值
+  root.dataset.fontsize = settings.appearance.practice_font_size;
 }
 
 export function AppStateProvider({
@@ -89,9 +100,19 @@ export function AppStateProvider({
     [updateSettings],
   );
 
+  const countByLevel = new Map<LevelId, number>(
+    bootstrap.level_counts.map((c) => [c.level, c.count]),
+  );
+  const sentenceCountFor = (l: LevelId) => countByLevel.get(l) ?? 0;
+
   const value: AppCtx = {
     specs: bootstrap.specs,
     specFor: (l) => bootstrap.specs.find((s) => s.id === l),
+    sentenceCountFor,
+    topLevelWithContent: () => {
+      const withContent = bootstrap.specs.map((s) => s.id).filter((l) => sentenceCountFor(l) > 0);
+      return withContent.length > 0 ? withContent[withContent.length - 1]! : "L1";
+    },
     license,
     settings,
     updateSettings,
