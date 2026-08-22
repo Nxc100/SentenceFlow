@@ -39,6 +39,10 @@ const PROBE_VERSION_TIMEOUT: Duration = Duration::from_secs(20);
 /// 模型名单可能触发首次联网拉取,给更宽裕的窗口。
 const PROBE_MODELS_TIMEOUT: Duration = Duration::from_secs(45);
 
+/// opencode 自家(Zen)模型的 providerID;`opencode models` 也会列出
+/// 用户自配的其它 provider,本通道只认这一个。
+const PROVIDER: &str = "opencode";
+
 /// 我方托管的沙箱 `opencode.json` (§3.4 约束②; 键名 W2 spike 对官方文档钉死).
 /// The desktop app writes this file into the sandbox dir on every update.
 pub const SANDBOX_OPENCODE_JSON: &str = r#"{
@@ -244,12 +248,20 @@ impl ChannelAdapter for OpencodeChannel {
         //    Zen 免费层匿名可用、无需登录——名单为空更可能是网络波动或
         //    名单下线;NotAuthed 在 UI 层呈现为「重试 + 备用登录」,
         //    而非把登录当成必经步骤。
+        //    展示名走 `--verbose`(官方选项,同一份 models.dev 元数据):
+        //    否则界面上只有原始 id,用户在 opencode 里见到的
+        //    「Ox Alpha Free (Unlimited)」在这里显示成 `x-preview-f-free`,
+        //    对不上号。老版本 CLI 没有这个选项,退回纯 `models`——
+        //    名字难看,但通道照常可用。
         match self
-            .run_capture(&bin, &["models"], PROBE_MODELS_TIMEOUT)
+            .run_capture(&bin, &["models", "--verbose"], PROBE_MODELS_TIMEOUT)
             .await
         {
             Ok(out) => {
-                let models = parse_models_output(&out);
+                let models = match parse_models_verbose(&out) {
+                    v if !v.is_empty() => v,
+                    _ => parse_models_output(&out),
+                };
                 if models.is_empty() {
                     ChannelStatus::NotAuthed
                 } else {
@@ -326,17 +338,95 @@ fn common_install_dirs() -> Vec<PathBuf> {
 
 /// Parse `opencode models` output: one model id per line; channel usability =
 /// "has at least one `opencode/` entry"(§11.C;免费层匿名可用,与登录无关)。
+///
+/// 这是**退化路径**:拿不到官方展示名,只能把 id 当名字显示
+/// (`x-preview-f-free` 而不是「Ox Alpha Free (Unlimited)」)。
+/// 首选 [`parse_models_verbose`],见其文档。
 pub fn parse_models_output(out: &str) -> Vec<ModelInfo> {
+    let prefix = format!("{PROVIDER}/");
     out.lines()
         .map(str::trim)
-        .filter(|l| l.starts_with("opencode/"))
+        .filter(|l| l.starts_with(&prefix))
         .map(|id| ModelInfo {
-            display_name: id.strip_prefix("opencode/").unwrap_or(id).to_string(),
+            display_name: id.strip_prefix(&prefix).unwrap_or(id).to_string(),
             id: id.to_string(),
             terms_note: crate::channels::zen::FREE_TERMS_NOTE.to_string(),
             needs_proxy: false,
         })
         .collect()
+}
+
+/// Parse `opencode models --verbose`:每个模型一行 id,紧跟一段顶格的
+/// pretty JSON(`{` 与 `}` 都在行首)。取官方的 `name` 与 `cost`。
+///
+/// 为什么要走这条路:纯 `opencode models` 只有 id,于是界面上显示的是
+/// `x-preview-f-free` —— 而 opencode 自己把它叫「Ox Alpha Free (Unlimited)」。
+/// 用户在 opencode 里看到的名字在本软件里对不上号,会以为"没同步新模型"
+/// (真实反馈)。`--verbose` 是 CLI 自带的官方选项,拿的是同一份 models.dev
+/// 元数据,不去翻 opencode 的缓存或配置文件。
+///
+/// `cost` 顺带解决另一件事:此前所有 opencode 模型都被无条件标成"限时免费",
+/// 名单里一旦出现付费模型就是误导。现在按 input/output 单价是否为 0 判定。
+pub fn parse_models_verbose(out: &str) -> Vec<ModelInfo> {
+    let mut models = Vec::new();
+    let mut block = String::new();
+    let mut in_block = false;
+    for line in out.lines() {
+        // 顶格的 `{` 开块、顶格的 `}` 收块(嵌套括号一律带缩进)。
+        // 块内原样累积,不补换行:pretty JSON 每行自带缩进,
+        // 拼起来照样是合法 JSON。
+        if !in_block {
+            if line.starts_with('{') {
+                block.clear();
+                block.push_str(line);
+                in_block = true;
+            }
+            continue; // id 行与其他噪声:id 从 JSON 里取,这里不需要
+        }
+        block.push_str(line);
+        if line.starts_with('}') {
+            in_block = false;
+            if let Some(m) = model_from_json(&block) {
+                models.push(m);
+            }
+        }
+    }
+    models
+}
+
+/// 一段模型 JSON → ModelInfo;字段缺失就整条跳过(宁可少一个模型,
+/// 也不要把半条记录塞进下拉框)。
+///
+/// 只收 `providerID == "opencode"`,与 [`parse_models_output`] 的
+/// `starts_with("opencode/")` 等价:`--verbose` 会把用户自己配好的
+/// 其它 provider(anthropic 等)一并列出来,放进"免费通道"的清单里
+/// 既名不副实,也可能让人误刷自己的付费额度。
+fn model_from_json(block: &str) -> Option<ModelInfo> {
+    let v: serde_json::Value = serde_json::from_str(block).ok()?;
+    let provider = v.get("providerID")?.as_str()?;
+    if provider != PROVIDER {
+        return None;
+    }
+    let id = v.get("id")?.as_str()?;
+    let name = v.get("name").and_then(|n| n.as_str()).unwrap_or(id);
+    let price = |k: &str| {
+        v.get("cost")
+            .and_then(|c| c.get(k))
+            .and_then(serde_json::Value::as_f64)
+            .unwrap_or(0.0)
+    };
+    let (input, output) = (price("input"), price("output"));
+    let free = input <= 0.0 && output <= 0.0;
+    Some(ModelInfo {
+        id: format!("{provider}/{id}"),
+        display_name: name.to_string(),
+        terms_note: if free {
+            crate::channels::zen::FREE_TERMS_NOTE.to_string()
+        } else {
+            format!("按量计费 · 约 ${input}/M 输入 · ${output}/M 输出")
+        },
+        needs_proxy: false,
+    })
 }
 
 /// 组装喂给 `opencode run` 的提示词(纯函数,可测)。
@@ -486,6 +576,105 @@ mod tests {
         assert_eq!(models[0].id, "opencode/deepseek-v4-flash");
         assert_eq!(models[0].display_name, "deepseek-v4-flash");
         assert!(parse_models_output("no models\n").is_empty());
+    }
+
+    /// `opencode models --verbose` 的真实形状(2026-08-23 实测截取):
+    /// 顶格 id 行 + 顶格 pretty JSON 块,嵌套括号一律带缩进。
+    const VERBOSE_SAMPLE: &str = r#"opencode/x-preview-f-free
+{
+  "id": "x-preview-f-free",
+  "providerID": "opencode",
+  "name": "Ox Alpha Free (Unlimited)",
+  "api": {
+    "id": "x-preview-f-free",
+    "url": "https://opencode.ai/zen/v1"
+  },
+  "cost": {
+    "input": 0,
+    "output": 0,
+    "cache": {
+      "read": 0,
+      "write": 0
+    }
+  }
+}
+opencode/paid-example
+{
+  "id": "paid-example",
+  "providerID": "opencode",
+  "name": "Paid Example",
+  "cost": {
+    "input": 1.5,
+    "output": 6
+  }
+}
+"#;
+
+    /// 回归:用户报「opencode 出了新模型 Ox Alpha Free (Unlimited),软件没同步」。
+    /// 真相是模型一直在清单里,只是界面显示的是原始 id `x-preview-f-free`。
+    /// 展示名必须用官方 name;id 必须原样保留(选型与代理判定都按 id 走)。
+    #[test]
+    fn verbose_output_uses_official_display_names() {
+        let models = parse_models_verbose(VERBOSE_SAMPLE);
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0].id, "opencode/x-preview-f-free");
+        assert_eq!(models[0].display_name, "Ox Alpha Free (Unlimited)");
+        assert_eq!(models[0].terms_note, crate::channels::zen::FREE_TERMS_NOTE);
+        assert!(!models[0].needs_proxy);
+    }
+
+    /// cost 非零的模型不能再挂"限时免费"的条款说明。
+    #[test]
+    fn verbose_output_marks_paid_models_by_cost() {
+        let models = parse_models_verbose(VERBOSE_SAMPLE);
+        assert_eq!(models[1].display_name, "Paid Example");
+        assert_ne!(models[1].terms_note, crate::channels::zen::FREE_TERMS_NOTE);
+        assert!(models[1].terms_note.contains("计费"));
+    }
+
+    /// 老版本 CLI 不认 `--verbose`,输出退化成纯 id 行(或报错文本):
+    /// verbose 解析器交白卷,探测据此回退到 parse_models_output。
+    #[test]
+    fn verbose_parser_yields_nothing_for_plain_or_error_output() {
+        assert!(parse_models_verbose("opencode/hy3-free\nopencode/big-pickle\n").is_empty());
+        assert!(parse_models_verbose("error: unknown option '--verbose'\n").is_empty());
+        // 半截 JSON(进程被截断)不能产出半条记录
+        assert!(parse_models_verbose("{\n  \"id\": \"x\",\n").is_empty());
+    }
+
+    /// `--verbose` 会列出用户自配的其它 provider;免费通道的清单里
+    /// 不能混进这些(会名不副实,还可能误刷别人的付费额度)。
+    #[test]
+    fn verbose_parser_keeps_only_opencode_provider() {
+        let out = r#"{
+  "id": "claude-sonnet-5",
+  "providerID": "anthropic",
+  "name": "Claude Sonnet 5",
+  "cost": {
+    "input": 3,
+    "output": 15
+  }
+}
+{
+  "id": "hy3-free",
+  "providerID": "opencode",
+  "name": "Hy3 Free"
+}
+"#;
+        let models = parse_models_verbose(out);
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].id, "opencode/hy3-free");
+    }
+
+    /// 缺 providerID/id 的块整条跳过,不往下拉框里塞残缺项。
+    #[test]
+    fn verbose_parser_skips_incomplete_blocks() {
+        let out = "{\n  \"name\": \"No Ids\"\n}\n{\n  \"id\": \"ok\",\n  \"providerID\": \"opencode\"\n}\n";
+        let models = parse_models_verbose(out);
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].id, "opencode/ok");
+        // name 缺失时退回 id,不能是空字符串
+        assert_eq!(models[0].display_name, "ok");
     }
 
     #[test]

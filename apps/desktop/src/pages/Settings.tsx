@@ -234,17 +234,21 @@ function AiSection() {
     for (const c of CHANNELS) void probe(c.id);
   }, [probe]);
 
-  // 旧版本存的设置没有 model_label:探测到模型列表后自动补写展示名。
+  // 探测到模型列表后,把存下来的展示名与通道当前的官方名对齐:
+  //  · 旧版本存的设置根本没有 model_label —— 补写;
+  //  · 存的是过时的名字 —— 覆盖。opencode 的 `x-preview-f-free`
+  //    官方叫「Ox Alpha Free (Unlimited)」,早期版本按原始 id 存过标签,
+  //    不覆盖的话用户升级后仍旧看到 id,与通道里的名字对不上。
+  // 只按 id 匹配,不动 model 本身;名字一致时不写盘,不会自我触发。
   useEffect(() => {
     const status = settings.ai.channel ? statuses[settings.ai.channel] : undefined;
-    if (!settings.ai.model || settings.ai.model_label || status?.state !== "ready") return;
+    if (!settings.ai.model || status?.state !== "ready") return;
     const name = status.models.find((m) => m.id === settings.ai.model)?.display_name;
-    if (name) {
-      void updateSettings((s) => {
-        s.ai.model_label = name;
-        return s;
-      });
-    }
+    if (!name || name === settings.ai.model_label) return;
+    void updateSettings((s) => {
+      s.ai.model_label = name;
+      return s;
+    });
   }, [statuses, settings.ai.channel, settings.ai.model, settings.ai.model_label, updateSettings]);
 
   /** 选通道/模型;顺手记下模型展示名,界面各处显示友好名而非原始 id */
