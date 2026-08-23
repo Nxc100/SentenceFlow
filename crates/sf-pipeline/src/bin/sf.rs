@@ -1689,9 +1689,16 @@ fn run_level(
     );
 
     let mut failed = 0usize;
+    let before = |db: &Path| {
+        ContentStore::open_rw(db)
+            .and_then(|s| s.sentence_count())
+            .unwrap_or(0)
+    };
+    let mut empty = 0usize;
     for (i, sc) in todo.iter().enumerate() {
         for b in 1..=batches {
             println!("--- [{}/{}] {} 批{b} ---", i + 1, todo.len(), sc.name);
+            let n0 = before(db);
             if let Err(e) = gen_cmd(
                 &sc.name,
                 level,
@@ -1705,10 +1712,12 @@ fn run_level(
                 // 单批失败不该断掉整级 —— 限速、网络抖动都属常态
                 println!("  ! 本批失败,继续:{e}");
                 failed += 1;
+            } else if before(db) == n0 {
+                empty += 1;
             }
         }
     }
-    println!("=== {level} 完成(失败批次 {failed})===");
+    println!("=== {level} 完成(失败批次 {failed} · 零产出批次 {empty})===");
 
     let store = ContentStore::open_rw(db).map_err(|e| anyhow::anyhow!(e.to_string()))?;
     println!(
@@ -2243,6 +2252,12 @@ fn gen_cmd(
                     discarded += 1;
                 }
             }
+        }
+        if accepted == 0 && discarded == 0 {
+            // 模型什么也没吐出来(空响应/流中断),既没入库也没丢弃。
+            // 不报的话这一批在日志里和"跑过了"长得一样,250 个批次里
+            // 这种静默失败完全看不见,白烧的额度也查不出来。
+            println!("  ! 本批零产出:模型没有返回可解析的句子(空响应或流中断)");
         }
         println!("accepted {accepted} · discarded {discarded}");
         Ok(())

@@ -394,12 +394,12 @@ impl<'a> Validator<'a> {
             scene: scene.to_string(),
             func: func.to_string(),
             pattern: draft.pattern.clone(),
-            zh: draft.zh.trim().to_string(),
+            zh: normalize_zh_punctuation(draft.zh.trim()),
             en: draft.en.trim().to_string(),
             punct,
             words,
             chunks,
-            note: draft.note.trim().to_string(),
+            note: normalize_zh_punctuation(draft.note.trim()),
             simhash: hash,
         });
 
@@ -410,6 +410,44 @@ impl<'a> Validator<'a> {
             simhash: hash,
         }
     }
+}
+
+/// 中文标点归一:**紧挨汉字**的半角标点转成全角。
+///
+/// 实测 685 句 L1 里,中文问号 182 句用半角 `?`、11 句用全角 `？`;逗号
+/// 13 : 12。同一个界面上同时出现「你还好吗?」和「门关着吗？」,看着就是没做完。
+/// 句号倒是一致(492 句全是 `。`)—— 说明模型自己也没准。
+///
+/// 只转**紧挨汉字**的,是为了不动中文里合法的半角内容:`10:30`、
+/// `A, B, C`、括号里的英文缩写。判据是前后任一侧为 CJK 字符。
+fn normalize_zh_punctuation(zh: &str) -> String {
+    fn is_cjk(c: char) -> bool {
+        matches!(c as u32, 0x4E00..=0x9FFF | 0x3400..=0x4DBF | 0x3000..=0x303F)
+    }
+    let chars: Vec<char> = zh.chars().collect();
+    let mut out = String::with_capacity(zh.len());
+    for (i, &c) in chars.iter().enumerate() {
+        let full = match c {
+            '?' => Some('？'),
+            '!' => Some('！'),
+            ',' => Some('，'),
+            ';' => Some('；'),
+            ':' => Some('：'),
+            _ => None,
+        };
+        match full {
+            Some(f)
+                if chars[..i].last().copied().is_some_and(is_cjk)
+                    || chars.get(i + 1).copied().is_some_and(is_cjk)
+                    // 句尾标点:前面是汉字就转
+                    || (i + 1 == chars.len() && chars[..i].last().copied().is_some_and(is_cjk)) =>
+            {
+                out.push(f)
+            }
+            _ => out.push(c),
+        }
+    }
+    out
 }
 
 /// 把模型给的词性标签归一到闭集里的写法。
@@ -684,6 +722,22 @@ practice:
         let r = run(&d);
         assert_eq!(r.verdict, VerdictKind::NeedsRepair);
         assert!(r.sentence.is_some());
+    }
+
+    /// 中文标点归一:紧挨汉字的半角转全角,其余不动。
+    #[test]
+    fn zh_punctuation_normalizes_next_to_cjk() {
+        assert_eq!(normalize_zh_punctuation("你还好吗?"), "你还好吗？");
+        assert_eq!(normalize_zh_punctuation("太好了!"), "太好了！");
+        assert_eq!(
+            normalize_zh_punctuation("这是我的朋友,莉莉。"),
+            "这是我的朋友，莉莉。"
+        );
+        // 不挨汉字的半角保持原样:时刻、英文列举
+        assert_eq!(normalize_zh_punctuation("10:30 出发"), "10:30 出发");
+        assert_eq!(normalize_zh_punctuation("A, B and C"), "A, B and C");
+        // 已经是全角的不动
+        assert_eq!(normalize_zh_punctuation("你好吗？"), "你好吗？");
     }
 
     /// 模型常给感叹词标 `int`(闭集里叫 part)、给限定词标 `det` —— 这些
