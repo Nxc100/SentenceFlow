@@ -15,7 +15,7 @@ pizza	1300	ˈpiːtsə	ˈpiːtsə	披萨
 salad	1350	ˈsæləd	ˈsæləd	沙拉
 beef	1400	biːf	biːf	牛肉
 burger	1500	ˈbɜːɡə	ˈbɜrɡər	汉堡
-cafe	1100	ˈkæfeɪ	kæˈfeɪ	咖啡馆
+cafe	480	ˈkæfeɪ	kæˈfeɪ	咖啡馆
 latte	1900	ˈlɑːteɪ	ˈlɑːteɪ	拿铁
 airport	1050	ˈeəpɔːt	ˈerpɔrt	机场
 passport	1700	ˈpɑːspɔːt	ˈpæspɔrt	护照
@@ -85,3 +85,6 @@ cloudy	500	ˈklaʊdi	ˈklaʊdi	多云的
 # ---- 2026-08-23 跨等级摸底补入 ----
 banana	480	bəˈnɑːnə	bəˈnænə	香蕉
 basket	480	ˈbɑːskɪt	ˈbæskɪt	篮子
+# ---- 2026-08-23 问路/地点组 ----
+supermarket	480	ˈsuːpəmɑːkɪt	ˈsuːpərmɑrkət	超市
+bookshop	900	ˈbʊkʃɒp	ˈbʊkʃɑp	书店

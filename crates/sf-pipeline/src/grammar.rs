@@ -126,9 +126,15 @@ pub fn check(
     }
 
     // ---- wh 疑问句标点 ----
+    // wh 开头不一定是疑问句 —— 也可能是名词性从句做主语:
+    //   `What she said at the meeting surprised everyone.`(她说的话让人吃惊)
+    // 句号完全正确。判据看成分标注:从句做主语时 wh 词落在一个**多词的
+    // subj 成分**里;真疑问句里它是单独的 marker(或单词 subj,如
+    // `What happened?`)。这条是定级题库实跑抓出来的误伤。
     if words[0].pos == sf_core::PosTag::Interrogative
         && !punct.contains('?')
         && !punct.contains('!')
+        && !leads_nominal_clause(chunks)
     {
         out.push(GrammarProblem::WhQuestionPunct {
             first: first.clone(),
@@ -176,6 +182,13 @@ pub fn check(
     }
 
     out
+}
+
+/// 首词是否领起一个**名词性从句**(而非疑问句):它落在一个多词的主语成分里。
+fn leads_nominal_clause(chunks: &[Chunk]) -> bool {
+    chunks
+        .iter()
+        .any(|c| c.r == RoleTag::Subject && c.i.len() > 1 && c.i.contains(&0))
 }
 
 fn third_person_check(
@@ -355,6 +368,53 @@ mod tests {
             chunk(RoleTag::Predicate, &[1]),
         ];
         assert!(check("He goes it.", &ws, &cs, ".", &base).is_empty());
+    }
+
+    /// 回归:wh 开头的**名词性从句**不是疑问句,句号是对的。
+    /// 定级题库里的 `What she said at the meeting surprised everyone.`
+    /// 被误判过 —— 判据是 wh 词落在多词 subj 成分里。
+    #[test]
+    fn wh_led_nominal_clause_is_not_a_question() {
+        let words = vec![
+            w("What", "wɒt", PosTag::Interrogative),
+            w("she", "ʃiː", PosTag::Pronoun),
+            w("said", "sed", PosTag::Verb),
+            w("surprised", "səˈpraɪzd", PosTag::Verb),
+            w("everyone", "ˈevriwʌn", PosTag::Pronoun),
+        ];
+        let chunks = vec![
+            chunk(RoleTag::Subject, &[0, 1, 2]),
+            chunk(RoleTag::Predicate, &[3]),
+            chunk(RoleTag::Object, &[4]),
+        ];
+        assert!(
+            check(
+                "What she said surprised everyone.",
+                &words,
+                &chunks,
+                ".",
+                &base
+            )
+            .is_empty(),
+            "主语从句不该被要求加问号"
+        );
+
+        // 真疑问句缺问号照样抓:wh 词是单独的 marker
+        let q = vec![
+            w("Where", "weə", PosTag::Interrogative),
+            w("are", "ɑː", PosTag::Auxiliary),
+            w("you", "juː", PosTag::Pronoun),
+        ];
+        let qc = vec![
+            chunk(RoleTag::Marker, &[0]),
+            chunk(RoleTag::Linking, &[1]),
+            chunk(RoleTag::Subject, &[2]),
+        ];
+        let p = check("Where are you.", &q, &qc, ".", &base);
+        assert!(
+            matches!(p[0], GrammarProblem::WhQuestionPunct { .. }),
+            "{p:?}"
+        );
     }
 
     #[test]

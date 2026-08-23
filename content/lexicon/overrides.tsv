@@ -127,3 +127,16 @@ plate	1200	L3 餐饮场景核心名词
 dish	1200	同上;询问菜品绕不开
 stamp	1200	L3 邮寄场景核心名词
 gift	1200	L3 邮寄/社交场景常用
+
+# ---- 2026-08-23 问路/地点组(L1「问路」实跑暴露)----
+# turn left / near here 是 A1 第一课,却因 NGSL 频次卡在 L1 门外。
+left	152	方位词,问路第一课(turn left);NGSL 650 是书面语频次
+near	158	同上(Is it near here?)
+road	322	问路的基本名词,与 street 同档
+stop	326	bus stop,问路/坐车必用
+corner	620	A2 方位;转角在稍进阶的指路里出现
+restaurant	400	A1 场所名词,问路与点餐都要
+cinema	460	A1 场所名词(看电影场景亦用)
+church	640	A2 场所名词,问路地标
+museum	645	同上
+pool	900	A2;swimming pool 在运动场景出现
