@@ -134,7 +134,18 @@ pub fn build_prompt(
          - chunks 必须覆盖每个词恰好一次;\n\
          - 只输出 JSON 数组。"
     );
-    let mut user = format!("场景:{scene};等级 {};生成 {count} 句。", spec.id);
+    // 场景贴合度要在**尾部**反复强调,不能只在前缀里提一次。
+    //
+    // 实测教训:只写「场景:问路;等级 L1;生成 20 句」时,模型写着写着就
+    // 跑题 —— 「问路」场景里出现 `My name is Tom.`、`This is a book.`,
+    // 一个场景 60 句里只有 5 句真在问路。跑题的句子照样入库,库里的场景
+    // 分组就成了摆设。
+    let mut user = format!(
+        "场景:{scene};等级 {};生成 {count} 句。\n\
+         **每一句都必须是在「{scene}」这个场景里真会说出口的话**;\n\
+         想不出更多本场景的说法就少写几句,不要拿通用寒暄句凑数。",
+        spec.id
+    );
     user.push_str(&avoid_section(avoid));
     if !banned.is_empty() {
         let words: Vec<&str> = banned
@@ -188,7 +199,10 @@ pub fn build_scenario_prompt(
          - chunks 必须覆盖每个词恰好一次;\n\
          - 只输出 JSON 数组。"
     );
-    let mut user = format!("场景:{scene};生成 {count} 句连续对话(A/B 交替)。");
+    let mut user = format!(
+        "场景:{scene};生成 {count} 句连续对话(A/B 交替)。\n\
+         每一句都必须是在这个场景里真会说出口的话,不要拿通用寒暄句凑数。"
+    );
     user.push_str(&avoid_section(avoid));
     if !banned.is_empty() {
         let words: Vec<&str> = banned
@@ -262,6 +276,10 @@ practice:
         let p = build_prompt(&spec(), "机场值机", 10, &["Where is the gate?"], &[]);
         assert!(p.user.contains("机场值机"));
         assert!(p.user.contains("10"));
+        assert!(
+            p.user.contains("真会说出口"),
+            "尾部要强调场景贴合度 —— 只写场景名时模型会跑题"
+        );
         assert!(p.user.contains("Where is the gate?"), "避重段应给出原句");
         assert!(!p.user.contains("禁止使用"), "无禁用词时不出现该段");
     }

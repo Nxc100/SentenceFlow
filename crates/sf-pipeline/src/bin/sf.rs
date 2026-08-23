@@ -1842,10 +1842,19 @@ fn gen_cmd(
         }
         ContentStore::create(db, "factory", 1).map_err(|e| anyhow::anyhow!(e.to_string()))?
     };
-    // 查重只在本场景内比(见 sf_pipeline::dedupe「比较范围」)。
+    // 出厂库查重看**全库**,不是本场景。
+    //
+    // 踩过的坑:先前跟着工坊改成了"场景内",结果同一句被存进 6 个场景 ——
+    // 实测 516 句里 124 句(24%)是跨场景的完全同文,`What is your name?`
+    // 存了 6 份。工坊那个策略是给个人库设计的(它另有 exists_by_en 全局
+    // 兜底),出厂库是成品,用户按等级浏览时整级句子一眼看得见,不能重。
+    //
+    // 全局阈值安全性有实测支撑:L1 的 378 条不同文本两两比较(71253 对),
+    // 相似度 ≥0.65 的只有 12 对,且全部是真近重
+    // (`I am a teacher.` / `Yes, I am a teacher.`),零假阳性。
     let mut dedupe = DedupeIndex::new(
         store
-            .sentences_en_in_scene(scene)
+            .all_sentences_en()
             .map_err(|e| anyhow::anyhow!(e.to_string()))?,
     );
 
@@ -1870,6 +1879,8 @@ fn gen_cmd(
         let validator = Validator::new(spec, &lexicon);
         let mut accepted = 0u32;
         let mut discarded = 0u32;
+        // 修补队列:流结束后统一发,避免和主流式请求抢通道
+        let mut pending_repairs: Vec<(sf_core::Sentence, Vec<String>)> = Vec::new();
         while let Some(chunk) = stream.next().await {
             match chunk {
                 Ok(GenChunk::Text { text }) => {
@@ -1880,6 +1891,18 @@ fn gen_cmd(
                                 match triage(report, GenProfile::Factory, &all_specs) {
                                     TriageOutcome::Accept { sentence }
                                     | TriageOutcome::Relevel { sentence, .. } => {
+                                        // 完全同文兜底:近重阈值之外再挡一次,
+                                        // 保证成品库里不会出现两条一模一样的句子
+                                        // (工坊的 exists_by_en 对应物)。
+                                        if store
+                                            .sentence_id_by_en(&sentence.en)
+                                            .map_err(|e| anyhow::anyhow!(e.to_string()))?
+                                            .is_some()
+                                        {
+                                            println!("  ✕ 已有完全相同的句子:{}", sentence.en);
+                                            discarded += 1;
+                                            continue;
+                                        }
                                         dedupe.add(sentence.en.as_str());
                                         store
                                             .insert_sentence(&sentence, "", 1)
@@ -1888,15 +1911,15 @@ fn gen_cmd(
                                         println!("  ✓ {}", sentence.en);
                                     }
                                     TriageOutcome::Repair { sentence, issues } => {
-                                        // Factory-run repair loop is W6 work;
-                                        // for now bank the sentence with its
-                                        // issues logged.
-                                        println!(
-                                            "  ⟳ {} (needs repair: {} issues)",
-                                            sentence.en,
-                                            issues.len()
-                                        );
-                                        discarded += 1;
+                                        // 排队,流结束后统一发修补调用(仅传差异,§7.4)。
+                                        // 桌面工坊早就这么做了,CLI 这边一直是 TODO ——
+                                        // 于是音标缺失、语法小错这类"改一下就能用"的句子
+                                        // 在出厂生产里被白白丢掉。
+                                        println!("  ⟳ {} (待修补)", sentence.en);
+                                        pending_repairs.push((
+                                            sentence,
+                                            issues.iter().map(|i| i.zh_reason()).collect(),
+                                        ));
                                     }
                                     TriageOutcome::Discard { reason, .. } => {
                                         println!("  ✕ discarded: {reason}");
@@ -1922,9 +1945,66 @@ fn gen_cmd(
                 Err(e) => bail!("stream error: {e} ({})", e.zh_message()),
             }
         }
+        // ---- 修补循环:每句一次,仅传差异;修不好才算丢 ----
+        for (broken, reasons) in pending_repairs {
+            match repair_one(&*adapter, model, &broken, &reasons, &validator, &dedupe).await {
+                Some(fixed) => {
+                    dedupe.add(fixed.en.as_str());
+                    store
+                        .insert_sentence(&fixed, "", 1)
+                        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+                    accepted += 1;
+                    println!("  ✓ {} (已修补)", fixed.en);
+                }
+                None => {
+                    println!("  ✕ 修补未过:{}", broken.en);
+                    discarded += 1;
+                }
+            }
+        }
         println!("accepted {accepted} · discarded {discarded}");
         Ok(())
     })
+}
+
+/// 单次修补调用(§7.4 仅传差异):让模型只改这几处问题,重新校验,
+/// 干净通过才收。与桌面工坊 `workshop::run_repair` 同一套做法。
+async fn repair_one(
+    adapter: &dyn sf_llm::ChannelAdapter,
+    model: &str,
+    broken: &sf_core::Sentence,
+    reasons: &[String],
+    validator: &Validator<'_>,
+    dedupe: &DedupeIndex,
+) -> Option<sf_core::Sentence> {
+    use futures::StreamExt;
+    use sf_llm::types::GenChunk;
+
+    let parts = sf_pipeline::prompt::build_repair_prompt(&broken.en, reasons);
+    let req = sf_llm::types::GenRequest {
+        model: model.to_string(),
+        system: parts.system,
+        user: parts.user,
+        max_tokens: Some(2048),
+        // 修补要的是"照着改",不是再创作 —— 温度压低
+        temperature: Some(0.2),
+    };
+    let mut stream = adapter.complete_stream(req).await.ok()?;
+    let mut text = String::new();
+    while let Some(chunk) = stream.next().await {
+        match chunk {
+            Ok(GenChunk::Text { text: t }) => text.push_str(&t),
+            Ok(GenChunk::Done) => break,
+            Ok(_) => {}
+            Err(_) => return None,
+        }
+    }
+    let draft = sf_pipeline::parse::parse_single_draft(&text).ok()?;
+    let report = validator.validate(&draft, &broken.scene, &broken.func, dedupe);
+    match report.verdict {
+        sf_pipeline::validate::VerdictKind::Pass => report.sentence,
+        _ => None,
+    }
 }
 
 fn fnv1a64(bytes: &[u8]) -> u64 {

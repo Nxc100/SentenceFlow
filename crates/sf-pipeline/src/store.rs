@@ -389,6 +389,17 @@ impl ContentStore {
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
+    /// 全库句子的英文原文 —— **出厂库**查重的比较范围。
+    ///
+    /// 出厂库是随包分发的成品,用户按等级浏览时一眼能看见整级的句子,
+    /// 同一句出现两次很显眼。所以工厂档全局查重,与工坊的"场景内"不同
+    /// (工坊是个人库,跨场景的近似变体留着无妨)。
+    pub fn all_sentences_en(&self) -> Result<Vec<String>> {
+        let mut stmt = self.conn.prepare("SELECT en FROM sentence")?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+    }
+
     pub fn all_simhashes(&self) -> Result<Vec<u64>> {
         let mut stmt = self.conn.prepare("SELECT simhash FROM sentence")?;
         let rows = stmt.query_map([], |r| r.get::<_, i64>(0))?;

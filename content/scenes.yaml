@@ -43,6 +43,21 @@ scenes:
   - { id: opinion-agree,     name: "表达赞同与反对",   category: 社交, levels: [L4, L5, L6] }
   - { id: comfort-advice,    name: "安慰与建议",       category: 社交, levels: [L4, L5, L6] }
 
+  # ---------------- 入门话题(A1 教材式的话题单元)----------------
+  # L1 只有 14 个场景却要产 700 句 = 每场景 50 句,远超一个场景在 500 词带
+  # 内能说的量,模型只好拿通用寒暄句凑数(实测「问路」60 句里只有 5 句真在
+  # 问路)。A1 教材本来就是按**话题**组织的,补这一组把 L1 的深度换成广度。
+  - { id: numbers-age,       name: "数字与年龄",       category: 入门, levels: [L1, L2] }
+  - { id: days-dates,        name: "星期与日期",       category: 入门, levels: [L1, L2] }
+  - { id: colours-shapes,    name: "颜色与形状",       category: 入门, levels: [L1] }
+  - { id: classroom-things,  name: "教室里的东西",     category: 入门, levels: [L1] }
+  - { id: rooms-at-home,     name: "家里的房间",       category: 入门, levels: [L1, L2] }
+  - { id: food-drinks,       name: "食物与饮料",       category: 入门, levels: [L1, L2] }
+  - { id: body-feelings,     name: "身体与感觉",       category: 入门, levels: [L1, L2] }
+  - { id: clothes,           name: "衣服与穿着",       category: 入门, levels: [L1, L2] }
+  - { id: pets-animals,      name: "宠物与动物",       category: 入门, levels: [L1, L2] }
+  - { id: daily-routine,     name: "时间与作息",       category: 入门, levels: [L1, L2, L3] }
+
   # ---------------- 出行 ----------------
   - { id: directions,        name: "问路",             category: 出行, levels: [L1, L2, L3, L4] }
   - { id: taxi,              name: "打车",             category: 出行, levels: [L2, L3, L4] }
