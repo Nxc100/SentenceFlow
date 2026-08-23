@@ -76,7 +76,7 @@ box	280	快递/购物
 window	285	房间描述
 bus	290	出行方式
 shoe	295	服装
-chair	640	A2 家具
+chair	345	教室/房间物品,A1;先前定 640 仍卡在 L1 门外
 clock	645	A2 时间
 hat	650	A2 服装
 coat	655	A2 服装
@@ -154,3 +154,14 @@ floor	342	房间物品,A1
 picture	344	房间/教室物品,A1
 thirsty	354	同上
 warm	356	天气/感觉,A1
+
+# ---- 2026-08-23 L1「入门」重跑暴露(第五轮,已收敛)----
+hungry	350	身体感觉,A1(I am hungry 第一课)
+hurt	355	描述不适的核心动词,A1(my leg hurts)
+stomach	470	身体部位,A1 描述不适
+desk	348	教室/房间物品,A1
+dog	206	A1 第一批具体名词,与 cat 同档
+breakfast	314	三餐词,与 lunch 同档
+fresh	465	描述食物,A1
+holiday	468	星期与日期话题,A1
+visit	475	日常动词,A1
