@@ -1,4 +1,4 @@
-# AI 生成的出厂句(L5,133 句)
+# AI 生成的出厂句(L5,297 句)
 # 由 `sf factory harvest` 从 generated.db 收上来。
 # 手改这个文件是可以的(人工抽审改错句就直接改这里);
 # 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
@@ -59,6 +59,100 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "marker", i: [5] }
+  - en: "Can you explain this grammar rule?"
+    zh: "能讲解这条语法规则吗？"
+    scene: "作业与考试"
+    func: ""
+    pattern: "can 疑问句"
+    note: "explain 后接宾语，不说 explain me。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "explain", ipa: "ɪkˈspleɪn", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "grammar", ipa: "ˈɡræmə", pos: "n" }
+      - { w: "rule", ipa: "ruːl", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+  - en: "Did you finish the reading assignment?"
+    zh: "阅读作业写完了吗？"
+    scene: "作业与考试"
+    func: ""
+    pattern: "一般过去时疑问句"
+    note: "reading assignment 固定指“阅读作业”。"
+    words:
+      - { w: "Did", ipa: "dɪd", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "finish", ipa: "ˈfɪnɪʃ", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "reading", ipa: "ˈriːdɪŋ", pos: "n" }
+      - { w: "assignment", ipa: "əˈsaɪnmənt", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+  - en: "I have not finished my essay yet."
+    zh: "我还没写完论文。"
+    scene: "作业与考试"
+    func: ""
+    pattern: "现在完成时否定"
+    note: "yet 放句尾配合完成时表示“还没”。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "not", ipa: "nɒt", pos: "adv" }
+      - { w: "finished", ipa: "ˈfɪnɪʃt", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "essay", ipa: "ˈeseɪ", pos: "n" }
+      - { w: "yet", ipa: "jet", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6] }
+  - en: "I must hand in the assignment by Friday."
+    zh: "我必须周五前交作业。"
+    scene: "作业与考试"
+    func: ""
+    pattern: "must + 动词原形"
+    note: "hand in 上交。must 表示必须。by Friday 周五前。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "must", ipa: "mʌst", pos: "modal" }
+      - { w: "hand", ipa: "hænd", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "adv" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "assignment", ipa: "əˈsaɪnmənt", pos: "n" }
+      - { w: "by", ipa: "baɪ", pos: "prep" }
+      - { w: "Friday", ipa: "ˈfraɪdeɪ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7] }
+  - en: "I need to finish this essay today."
+    zh: "我今天得写完这篇作文。"
+    scene: "作业与考试"
+    func: ""
+    pattern: "need to + 动词"
+    note: "need to 表示\"需要/必须\"。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "finish", ipa: "ˈfɪnɪʃ", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "essay", ipa: "ˈeseɪ", pos: "n" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6] }
   - en: "Is that your dog because he is very calm and nice?"
     zh: "那是你的狗吗，因为它很安静又乖。"
     scene: "初次见面"
@@ -84,6 +178,140 @@ sentences:
       - { r: "subj", i: [5] }
       - { r: "pred", i: [6] }
       - { r: "comp", i: [7, 8, 9, 10] }
+  - en: "Can I have it without cheese?"
+    zh: "能不加芝士吗？"
+    scene: "口味与忌口"
+    func: ""
+    pattern: "情态动词请求 + 介词短语"
+    note: "without cheese 是去配料的标准表达。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "without", ipa: "wɪˈðaʊt", pos: "prep" }
+      - { w: "cheese", ipa: "tʃiːz", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5] }
+  - en: "I don't drink alcohol for health reasons."
+    zh: "我因健康原因不喝酒。"
+    scene: "口味与忌口"
+    func: ""
+    pattern: "否定句 + for + 名词短语"
+    note: "for…reasons 说明原因，比较正式。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "don't", ipa: "dəʊnt", pos: "aux" }
+      - { w: "drink", ipa: "drɪŋk", pos: "v" }
+      - { w: "alcohol", ipa: "ˈælkəhɒl", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "health", ipa: "helθ", pos: "n" }
+      - { w: "reasons", ipa: "ˈriːznz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "The portion is too large for me."
+    zh: "这份量对我来说太大了。"
+    scene: "口味与忌口"
+    func: ""
+    pattern: "be + too + 形容词 + for sb"
+    note: "portion 份量，too large for me 经典抱怨句。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "portion", ipa: "ˈpɔːʃən", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "too", ipa: "tuː", pos: "adv" }
+      - { w: "large", ipa: "lɑːdʒ", pos: "adj" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }
+  - en: "Let us grab a coffee after this meeting."
+    zh: "开完会去喝杯咖啡吧。"
+    scene: "同事闲聊"
+    func: ""
+    pattern: "Let us + 动词原形"
+    note: "grab a coffee 比 have a coffee 更口语化。"
+    words:
+      - { w: "Let", ipa: "let", pos: "v" }
+      - { w: "us", ipa: "ʌs", pos: "pron" }
+      - { w: "grab", ipa: "ɡræb", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "coffee", ipa: "ˈkɒfi", pos: "n" }
+      - { w: "after", ipa: "ˈɑːftə", pos: "prep" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "meeting", ipa: "ˈmiːtɪŋ", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "objc", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "Let's grab coffee before the next call."
+    zh: "下个会前先去抓杯咖啡。"
+    scene: "同事闲聊"
+    func: ""
+    pattern: "祈使建议句 + 时间介词短语"
+    note: "grab coffee 是同事间极地道的「去喝咖啡」说法。"
+    words:
+      - { w: "Let's", ipa: "lets", pos: "pron" }
+      - { w: "grab", ipa: "ɡræb", pos: "v" }
+      - { w: "coffee", ipa: "ˈkɒfi", pos: "n" }
+      - { w: "before", ipa: "bɪˈfɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "next", ipa: "nekst", pos: "adj" }
+      - { w: "call", ipa: "kɔːl", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+  - en: "The new hire seems nice and capable."
+    zh: "新来那位看着挺好挺能干。"
+    scene: "同事闲聊"
+    func: ""
+    pattern: "系表结构 + 并列形容词"
+    note: "hire 作名词指「新雇员」；seems 后接形容词作表语。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "new", ipa: "njuː", pos: "adj" }
+      - { w: "hire", ipa: "haɪə", pos: "n" }
+      - { w: "seems", ipa: "siːmz", pos: "v" }
+      - { w: "nice", ipa: "naɪs", pos: "adj" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "capable", ipa: "ˈkeɪpəbl", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "link", i: [3] }
+      - { r: "comp", i: [4] }
+      - { r: "marker", i: [5] }
+      - { r: "comp", i: [6] }
+  - en: "This printer never works properly."
+    zh: "这打印机老坏。"
+    scene: "同事闲聊"
+    func: ""
+    pattern: "频率副词 + 一般现在时"
+    note: "never 表 0% 频率，语气比 not often 强。"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "printer", ipa: "ˈprɪntə", pos: "n" }
+      - { w: "never", ipa: "ˈnevə", pos: "adv" }
+      - { w: "works", ipa: "wɜːks", pos: "v" }
+      - { w: "properly", ipa: "ˈprɒpəli", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "advl", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "advl", i: [4] }
   - en: "Do you have hot chocolate?"
     zh: "你们有热巧克力吗？"
     scene: "咖啡店点单"
@@ -180,6 +408,24 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "link", i: [2] }
       - { r: "advl", i: [3, 4, 5, 6] }
+  - en: "I forgot to tap out yesterday."
+    zh: "我昨天忘了刷卡出站。"
+    scene: "坐公交与地铁"
+    func: ""
+    pattern: "过去时 + 不定式"
+    note: "forget to do 忘记去做某事。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "forgot", ipa: "fəˈɡɒt", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "tap", ipa: "tæp", pos: "v" }
+      - { w: "out", ipa: "aʊt", pos: "adv" }
+      - { w: "yesterday", ipa: "ˈjestədeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3, 4] }
+      - { r: "advl", i: [5] }
   - en: "My card does not work at the gate, can you help?"
     zh: "我的卡在闸机刷不了，能帮忙吗？"
     scene: "坐公交与地铁"
@@ -293,6 +539,25 @@ sentences:
       - { r: "subj", i: [0] }
       - { r: "pred", i: [1, 2] }
       - { r: "advl", i: [3, 4, 5, 6, 7, 8, 9] }
+  - en: "You must tap your card when entering."
+    zh: "进站必须刷卡。"
+    scene: "坐公交与地铁"
+    func: ""
+    pattern: "情态动词 must"
+    note: "must 表示强制要求。"
+    words:
+      - { w: "You", ipa: "juː", pos: "pron" }
+      - { w: "must", ipa: "mʌst", pos: "modal" }
+      - { w: "tap", ipa: "tæp", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "card", ipa: "kɑːd", pos: "n" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "entering", ipa: "ˈentərɪŋ", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }
   - en: "Can she iron my shirt before we go out?"
     zh: "我们出门前她能熨一下我的衬衫吗？"
     scene: "家务与日常安排"
@@ -377,6 +642,86 @@ sentences:
       - { r: "link", i: [1] }
       - { r: "subj", i: [2, 3] }
       - { r: "advl", i: [4, 5, 6, 7] }
+  - en: "Could you email me the updated file?"
+    zh: "能发邮件把更新的文件发给我吗？"
+    scene: "工作电话沟通"
+    func: ""
+    pattern: "modal + object + object"
+    note: "email 这里作动词用，意为发邮件。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "email", ipa: "ˈiːmeɪl", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "updated", ipa: "ʌpˈdeɪtɪd", pos: "adj" }
+      - { w: "file", ipa: "faɪl", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3] }
+      - { r: "obj", i: [4, 5, 6] }
+  - en: "Could you send me the agenda by email?"
+    zh: "能发邮件把议程发给我吗？"
+    scene: "工作电话沟通"
+    func: ""
+    pattern: "can_modal"
+    note: "by email 说明发送方式，比用 on 更地道。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "send", ipa: "send", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "agenda", ipa: "əˈdʒendə", pos: "n" }
+      - { w: "by", ipa: "baɪ", pos: "prep" }
+      - { w: "email", ipa: "ˈiːmeɪl", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7] }
+  - en: "I am looking forward to our cooperation."
+    zh: "期待我们的合作。"
+    scene: "工作电话沟通"
+    func: ""
+    pattern: "present_continuous + prep + object"
+    note: "look forward to 后接名词/动名词，固定搭配。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "v" }
+      - { w: "looking", ipa: "ˈlʊkɪŋ", pos: "v" }
+      - { w: "forward", ipa: "ˈfɔːwəd", pos: "adv" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "our", ipa: "aʊə", pos: "pron" }
+      - { w: "cooperation", ipa: "kəʊˌɒpəˈreɪʃn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "advl", i: [4] }
+      - { r: "obj", i: [5, 6] }
+  - en: "Let me confirm the spelling of your name."
+    zh: "让我核对一下您名字的拼写。"
+    scene: "工作电话沟通"
+    func: ""
+    pattern: "imperative + object_clause"
+    note: "Let me… 表示主动提出做某事。"
+    words:
+      - { w: "Let", ipa: "let", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "confirm", ipa: "kənˈfɜːm", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "spelling", ipa: "ˈspelɪŋ", pos: "n" }
+      - { w: "of", ipa: "ɒv", pos: "prep" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "name", ipa: "neɪm", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "objc", i: [1] }
+      - { r: "objc", i: [2, 3, 4, 5, 6, 7] }
   - en: "Can you make the salad without cheese for my friend?"
     zh: "能给我的朋友做份不要奶酪的沙拉吗？"
     scene: "快餐店点餐"
@@ -445,6 +790,63 @@ sentences:
       - { r: "link", i: [2] }
       - { r: "subj", i: [3, 4, 5] }
       - { r: "advl", i: [6, 7, 8] }
+  - en: "I am going to cancel this service."
+    zh: "我打算取消这项业务。"
+    scene: "手机与网络办理"
+    func: ""
+    pattern: "be going to + 动词原形"
+    note: "be going to 表已定计划。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "aux" }
+      - { w: "going", ipa: "ˈgəʊɪŋ", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "cancel", ipa: "ˈkænsəl", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "service", ipa: "ˈsɜːvɪs", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3, 4] }
+      - { r: "obj", i: [5, 6] }
+  - en: "I often exceed my data limit."
+    zh: "我经常超流量。"
+    scene: "手机与网络办理"
+    func: ""
+    pattern: "频率副词 + 动词"
+    note: "often 位于实义动词前。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "often", ipa: "ˈɒfən", pos: "adv" }
+      - { w: "exceed", ipa: "ɪkˈsiːd", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "data", ipa: "ˈdeɪtə", pos: "n" }
+      - { w: "limit", ipa: "ˈlɪmɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+  - en: "Please drive slowly, the road is wet."
+    zh: "请慢点开，路湿。"
+    scene: "打车"
+    func: ""
+    pattern: "祈使句 + 原因分句"
+    note: "祈使句表达建议，后接原因说明。"
+    words:
+      - { w: "Please", ipa: "pliːz", pos: "adv" }
+      - { w: "drive", ipa: "draɪv", pos: "v" }
+      - { w: "slowly", ipa: "ˈsləʊli", pos: "adv" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "road", ipa: "rəʊd", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "wet", ipa: "wet", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2] }
+      - { r: "subj", i: [3, 4] }
+      - { r: "pred", i: [5] }
+      - { r: "comp", i: [6] }
   - en: "Please turn on the meter for me."
     zh: "请帮我打表。"
     scene: "打车"
@@ -485,6 +887,271 @@ sentences:
       - { r: "pred", i: [3] }
       - { r: "obj", i: [4, 5] }
       - { r: "advl", i: [6, 7, 8] }
+  - en: "The meter says twenty dollars for this trip."
+    zh: "计价器显示这趟二十美元。"
+    scene: "打车"
+    func: ""
+    pattern: "主系表 + 介词短语补语"
+    note: "meter 计价器；say 此处作\"显示\"讲。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "meter", ipa: "ˈmiːtə", pos: "n" }
+      - { w: "says", ipa: "sez", pos: "v" }
+      - { w: "twenty", ipa: "ˈtwenti", pos: "num" }
+      - { w: "dollars", ipa: "ˈdɒləz", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "trip", ipa: "trɪp", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "The meter shows fifty dollars now."
+    zh: "计价器现在显示五十美元。"
+    scene: "打车"
+    func: ""
+    pattern: "一般现在时"
+    note: "shows 表示显示、表明，第三人称单数加 s。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "meter", ipa: "ˈmiːtə", pos: "n" }
+      - { w: "shows", ipa: "ʃəʊz", pos: "v" }
+      - { w: "fifty", ipa: "ˈfɪfti", pos: "num" }
+      - { w: "dollars", ipa: "ˈdɒləz", pos: "n" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5] }
+  - en: "Can you send someone to fix the shower?"
+    zh: "能派人来修一下淋浴吗？"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "can + 动词原形 + 宾语 + to do"
+    note: "send someone to fix... 是标准报修句式。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "send", ipa: "sɛnd", pos: "v" }
+      - { w: "someone", ipa: "ˈsʌmwʌn", pos: "pron" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "fix", ipa: "fɪks", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "shower", ipa: "ˈʃaʊə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "objc", i: [4, 5, 6, 7] }
+  - en: "I called yesterday but nobody came to repair it."
+    zh: "我昨天打电话了但没人来修。"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "past simple + but"
+    note: "called 过去式表示已完成的动作。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "called", ipa: "kɔːld", pos: "v" }
+      - { w: "yesterday", ipa: "ˈjestədeɪ", pos: "adv" }
+      - { w: "but", ipa: "bʌt", pos: "conj" }
+      - { w: "nobody", ipa: "ˈnəʊbɒdi", pos: "pron" }
+      - { w: "came", ipa: "keɪm", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "repair", ipa: "rɪˈpeə", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2] }
+      - { r: "marker", i: [3] }
+      - { r: "subj", i: [4] }
+      - { r: "pred", i: [5] }
+      - { r: "objc", i: [6, 7] }
+      - { r: "obj", i: [8] }
+  - en: "Please send a maintenance worker as soon as possible."
+    zh: "请尽快派维修工来。"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "imperative + as soon as possible"
+    note: "maintenance worker 是维修工正式称呼。"
+    words:
+      - { w: "Please", ipa: "pliːz", pos: "adv" }
+      - { w: "send", ipa: "send", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "maintenance", ipa: "ˈmeɪntənəns", pos: "n" }
+      - { w: "worker", ipa: "ˈwɜːkə", pos: "n" }
+      - { w: "as", ipa: "æz", pos: "conj" }
+      - { w: "soon", ipa: "suːn", pos: "adv" }
+      - { w: "as", ipa: "æz", pos: "conj" }
+      - { w: "possible", ipa: "ˈpɒsəbl", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6, 7, 8] }
+  - en: "The kitchen sink is leaking water onto the floor."
+    zh: "厨房水槽漏水到地板上。"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "be + V-ing + prep"
+    note: "leaking water 表示漏水，onto 表示到...表面。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "kitchen", ipa: "ˈkɪtʃɪn", pos: "n" }
+      - { w: "sink", ipa: "sɪŋk", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "leaking", ipa: "ˈliːkɪŋ", pos: "v" }
+      - { w: "water", ipa: "ˈwɔːtə", pos: "n" }
+      - { w: "onto", ipa: "ˈɒntʊ", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "floor", ipa: "flɔː", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "comp", i: [4] }
+      - { r: "obj", i: [5] }
+      - { r: "advl", i: [6, 7, 8] }
+  - en: "The neighbor plays loud music late."
+    zh: "邻居深夜放大声音乐。"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "主语 + 动词 + 宾语 + 状语"
+    note: "投诉邻居噪音的标准句。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "neighbor", ipa: "ˈneɪbə", pos: "n" }
+      - { w: "plays", ipa: "pleɪz", pos: "v" }
+      - { w: "loud", ipa: "laʊd", pos: "adj" }
+      - { w: "music", ipa: "ˈmjuːzɪk", pos: "n" }
+      - { w: "late", ipa: "leɪt", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5] }
+  - en: "There are cracks in the bedroom wall."
+    zh: "卧室墙壁有裂缝。"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "There are + pl n + in"
+    note: "复数名词用 there are。"
+    words:
+      - { w: "There", ipa: "ðeə", pos: "adv" }
+      - { w: "are", ipa: "ɑː", pos: "v" }
+      - { w: "cracks", ipa: "kræks", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bedroom", ipa: "ˈbedruːm", pos: "n" }
+      - { w: "wall", ipa: "wɔːl", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "subj", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+  - en: "We have been waiting for a repair since Monday."
+    zh: "我们从周一就在等修理。"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "have been V-ing + since"
+    note: "have been waiting 表示持续等待至今。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "been", ipa: "biːn", pos: "v" }
+      - { w: "waiting", ipa: "ˈweɪtɪŋ", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "repair", ipa: "rɪˈpeə", pos: "n" }
+      - { w: "since", ipa: "sɪns", pos: "prep" }
+      - { w: "Monday", ipa: "ˈmʌndeɪ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "advl", i: [4, 5, 6, 7, 8] }
+  - en: "When will someone come to repair it?"
+    zh: "什么时候有人来修？"
+    scene: "报修与投诉"
+    func: ""
+    pattern: "when + will + 主语 + 动词"
+    note: "询问维修上门时间的标准问法。"
+    words:
+      - { w: "When", ipa: "wen", pos: "wh" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "someone", ipa: "ˈsʌmwʌn", pos: "pron" }
+      - { w: "come", ipa: "kʌm", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "repair", ipa: "rɪˈpeə", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "marker", i: [1] }
+      - { r: "subj", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "objc", i: [4, 5] }
+      - { r: "obj", i: [6] }
+  - en: "I am going to cancel my reservation."
+    zh: "我打算取消预订。"
+    scene: "改签与退票"
+    func: ""
+    pattern: "be going to + 动词原形"
+    note: "be going to 表已决定的计划。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "aux" }
+      - { w: "going", ipa: "ˈɡəʊɪŋ", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "cancel", ipa: "ˈkænsəl", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "reservation", ipa: "ˌrezəˈveɪʃn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3, 4] }
+      - { r: "obj", i: [5, 6] }
+  - en: "The flight was cancelled due to bad weather."
+    zh: "航班因恶劣天气取消了。"
+    scene: "改签与退票"
+    func: ""
+    pattern: "被动语态 + due to"
+    note: "due to = because of，后接名词。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "aux" }
+      - { w: "cancelled", ipa: "ˈkænsəld", pos: "v" }
+      - { w: "due", ipa: "djuː", pos: "adj" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "bad", ipa: "bæd", pos: "adj" }
+      - { w: "weather", ipa: "ˈweðə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "advl", i: [4, 5, 6, 7] }
+  - en: "Will I get a full refund if I cancel now?"
+    zh: "现在取消能全额退款吗？"
+    scene: "改签与退票"
+    func: ""
+    pattern: "将来时疑问句 + if 条件状语"
+    note: "if 条件状语从句用一般现在时。"
+    words:
+      - { w: "Will", ipa: "wɪl", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "full", ipa: "fʊl", pos: "adj" }
+      - { w: "refund", ipa: "ˈriːfʌnd", pos: "n" }
+      - { w: "if", ipa: "ɪf", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "cancel", ipa: "ˈkænsəl", pos: "v" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "advl", i: [6, 7, 8, 9] }
   - en: "He can ride a bike at six."
     zh: "他六岁就会骑自行车了。"
     scene: "数字与年龄"
@@ -505,6 +1172,62 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6] }
+  - en: "How much is the entrance fee?"
+    zh: "门票多少钱？"
+    scene: "旅游景点"
+    func: ""
+    pattern: "简单疑问句"
+    note: "询问票价最常用的句式。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "wh" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "entrance", ipa: "ˈentrəns", pos: "n" }
+      - { w: "fee", ipa: "fiː", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "subj", i: [3, 4, 5] }
+  - en: "The view from the tower is amazing."
+    zh: "从塔上看风景太美了。"
+    scene: "旅游景点"
+    func: ""
+    pattern: "主系表结构"
+    note: "view from... 作主语，amazing 表感叹。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "view", ipa: "vjuː", pos: "n" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "tower", ipa: "ˈtaʊə", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "amazing", ipa: "əˈmeɪzɪŋ", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2, 3, 4] }
+      - { r: "pred", i: [5] }
+      - { r: "comp", i: [6] }
+  - en: "We will meet at the main gate at noon."
+    zh: "我们中午在大门口见。"
+    scene: "旅游景点"
+    func: ""
+    pattern: "will 将来时"
+    note: "will 表确定的未来安排。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "meet", ipa: "miːt", pos: "v" }
+      - { w: "at", ipa: "æt", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "main", ipa: "meɪn", pos: "adj" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+      - { w: "at", ipa: "æt", pos: "prep" }
+      - { w: "noon", ipa: "nuːn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+      - { r: "advl", i: [7, 8] }
   - en: "He is taking a shower because he is very tired."
     zh: "他在洗澡，因为他很累。"
     scene: "时间与作息"
@@ -649,6 +1372,24 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3] }
       - { r: "advl", i: [4, 5, 6, 7, 8] }
+  - en: "How much does this jacket cost?"
+    zh: "这件夹克多少钱？"
+    scene: "服装试穿"
+    func: ""
+    pattern: "一般疑问句"
+    note: "cost 作不及物动词表价格。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adv" }
+      - { w: "does", ipa: "dʌz", pos: "aux" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "jacket", ipa: "ˈdʒækɪt", pos: "n" }
+      - { w: "cost", ipa: "kɒst", pos: "v" }
+    chunks:
+      - { r: "marker", i: [0, 1] }
+      - { r: "marker", i: [2] }
+      - { r: "subj", i: [3, 4] }
+      - { r: "pred", i: [5] }
   - en: "I like the bright color of this short skirt."
     zh: "我喜欢这条短裙的亮色。"
     scene: "服装试穿"
@@ -752,6 +1493,23 @@ sentences:
       - { r: "link", i: [3] }
       - { r: "comp", i: [4, 5] }
       - { r: "advl", i: [6, 7, 8] }
+  - en: "These pants feel a bit tight."
+    zh: "这条裤子有点紧。"
+    scene: "服装试穿"
+    func: ""
+    pattern: "feel + 形容词"
+    note: "a bit tight = slightly tight。"
+    words:
+      - { w: "These", ipa: "ðiːz", pos: "pron" }
+      - { w: "pants", ipa: "pænts", pos: "n" }
+      - { w: "feel", ipa: "fiːl", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "bit", ipa: "bɪt", pos: "n" }
+      - { w: "tight", ipa: "taɪt", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3, 4, 5] }
   - en: "This jacket fits me very well, I think."
     zh: "这件夹克我穿很合身，我觉得。"
     scene: "服装试穿"
@@ -794,6 +1552,41 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "link", i: [2] }
       - { r: "advl", i: [3, 4, 5, 6, 7, 8, 9] }
+  - en: "This size feels too tight."
+    zh: "这个尺码感觉太紧了。"
+    scene: "服装试穿"
+    func: ""
+    pattern: "主系表 + 副词修饰"
+    note: "feel 后接形容词表示主观感受。"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "size", ipa: "saɪz", pos: "n" }
+      - { w: "feels", ipa: "fiːlz", pos: "v" }
+      - { w: "too", ipa: "tuː", pos: "adv" }
+      - { w: "tight", ipa: "taɪt", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3, 4] }
+  - en: "Can I have your frequent flyer number?"
+    zh: "能告诉我您的常旅客号码吗？"
+    scene: "机场值机"
+    func: ""
+    pattern: "can_question + have + obj"
+    note: "frequent flyer 固定搭配『常旅客』。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "frequent", ipa: "ˈfriːkwənt", pos: "adj" }
+      - { w: "flyer", ipa: "ˈflaɪə", pos: "n" }
+      - { w: "number", ipa: "ˈnʌmbə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5, 6] }
   - en: "Can you give me a window seat by the wing?"
     zh: "能给我一个靠机翼的靠窗座位吗？"
     scene: "机场值机"
@@ -817,6 +1610,25 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5, 6] }
       - { r: "advl", i: [7, 8, 9] }
+  - en: "Do you need special assistance today?"
+    zh: "您今天需要特殊协助吗？"
+    scene: "机场值机"
+    func: ""
+    pattern: "do_question + need + obj + adv"
+    note: "special assistance 行业术语，含轮椅、无障碍等。"
+    words:
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "special", ipa: "ˈspeʃl", pos: "adj" }
+      - { w: "assistance", ipa: "əˈsɪstəns", pos: "n" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5] }
   - en: "Is there a quiet cafe near the gate, do you know?"
     zh: "登机口附近有安静的咖啡店吗，你知道吗？"
     scene: "机场值机"
@@ -843,6 +1655,23 @@ sentences:
       - { r: "marker", i: [8] }
       - { r: "subj", i: [9] }
       - { r: "pred", i: [10] }
+  - en: "The gate closes in twenty minutes."
+    zh: "登机口二十分钟后关闭。"
+    scene: "机场值机"
+    func: ""
+    pattern: "subj + v + in + time"
+    note: "in + 时间表『……之后』，将来含义。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+      - { w: "closes", ipa: "ˈkləʊzɪz", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "twenty", ipa: "ˈtwenti", pos: "num" }
+      - { w: "minutes", ipa: "ˈmɪnɪts", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5] }
   - en: "The gate is number twelve, over there."
     zh: "登机口是十二号，在那边。"
     scene: "机场值机"
@@ -885,6 +1714,106 @@ sentences:
       - { r: "subj", i: [3, 4, 5, 6, 7] }
       - { r: "pred", i: [8] }
       - { r: "advl", i: [9] }
+  - en: "Where is the boarding gate for this flight?"
+    zh: "这个航班的登机口在哪？"
+    scene: "机场值机"
+    func: ""
+    pattern: "wh_疑问句 + 介词短语"
+    note: "boarding gate 登机口，for this flight 修饰 gate。"
+    words:
+      - { w: "Where", ipa: "weə", pos: "wh" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "boarding", ipa: "ˈbɔːdɪŋ", pos: "adj" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+    chunks:
+      - { r: "advl", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "subj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "Your flight leaves from gate twelve."
+    zh: "您的航班从十二号登机口起飞。"
+    scene: "机场值机"
+    func: ""
+    pattern: "subj + v + prep_phrase"
+    note: "leave 可作『起飞/出发』，现在时表时刻表。"
+    words:
+      - { w: "Your", ipa: "jɔː", pos: "pron" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+      - { w: "leaves", ipa: "liːvz", pos: "v" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+      - { w: "twelve", ipa: "twelv", pos: "num" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5] }
+  - en: "Your gate is B12, have a nice flight."
+    zh: "你的登机口是 B12，旅途愉快。"
+    scene: "机场值机"
+    func: ""
+    pattern: "be_present + 祈使句"
+    note: "值机结束时的标准送客话术。"
+    words:
+      - { w: "Your", ipa: "jɔː", pos: "pron" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "B12", ipa: "biː wʌn tuː", pos: "propn" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "nice", ipa: "naɪs", pos: "adj" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "pred", i: [4] }
+      - { r: "obj", i: [5, 6, 7] }
+  - en: "Can we get a refund if we cancel today?"
+    zh: "如果今天取消能退款吗？"
+    scene: "演出与门票"
+    func: ""
+    pattern: "情态动词疑问句 + 条件状语从句"
+    note: "get a refund 是「退款」的口语说法。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "refund", ipa: "ˈriːfʌnd", pos: "n" }
+      - { w: "if", ipa: "ɪf", pos: "conj" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "cancel", ipa: "ˈkænsl", pos: "v" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7, 8] }
+  - en: "What happens if the show is cancelled?"
+    zh: "演出取消了怎么办？"
+    scene: "演出与门票"
+    func: ""
+    pattern: "wh-question + verb + if_clause"
+    note: "happen 无被动；cancelled 作表语形容词。"
+    words:
+      - { w: "What", ipa: "wɒt", pos: "wh" }
+      - { w: "happens", ipa: "ˈhæpənz", pos: "v" }
+      - { w: "if", ipa: "ɪf", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "show", ipa: "ʃəʊ", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "cancelled", ipa: "ˈkæn səld", pos: "v" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "marker", i: [2] }
+      - { r: "subj", i: [3, 4] }
+      - { r: "pred", i: [5, 6] }
   - en: "Could you tell me the platform number?"
     zh: "能告诉我是几号站台吗？"
     scene: "火车站购票"
@@ -947,6 +1876,26 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "obj", i: [2] }
       - { r: "objc", i: [3, 4, 5, 6, 7] }
+  - en: "The machine only takes contactless or chip cards."
+    zh: "机器只收闪付卡或芯片卡。"
+    scene: "火车站购票"
+    func: ""
+    pattern: "主语 + only + 动词 + 宾语"
+    note: "contactless = 非接触式/闪付；chip card = 芯片卡。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "machine", ipa: "məˈʃiːn", pos: "n" }
+      - { w: "only", ipa: "ˈəʊnli", pos: "adv" }
+      - { w: "takes", ipa: "teɪks", pos: "v" }
+      - { w: "contactless", ipa: "ˌkɒntæktləs", pos: "adj" }
+      - { w: "or", ipa: "ɔː", pos: "conj" }
+      - { w: "chip", ipa: "tʃɪp", pos: "adj" }
+      - { w: "cards", ipa: "kɑːdz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "marker", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4, 5, 6, 7] }
   - en: "The ticket machine is near the entrance."
     zh: "自动售票机在入口附近。"
     scene: "火车站购票"
@@ -965,6 +1914,44 @@ sentences:
       - { r: "subj", i: [0, 1, 2] }
       - { r: "pred", i: [3] }
       - { r: "advl", i: [4, 5, 6] }
+  - en: "What is the arrival time in Nanjing?"
+    zh: "到南京几点？"
+    scene: "火车站购票"
+    func: ""
+    pattern: "What + be + 名词短语"
+    note: "arrival time 到达时间，对应 departure time 出发时间。"
+    words:
+      - { w: "What", ipa: "wɒt", pos: "wh" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "arrival", ipa: "əˈraɪvl", pos: "n" }
+      - { w: "time", ipa: "taɪm", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "Nanjing", ipa: "nænˈdʒɪŋ", pos: "propn" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2, 3, 4] }
+      - { r: "advl", i: [5, 6] }
+  - en: "Which platform does the train leave from?"
+    zh: "火车从几号站台开？"
+    scene: "火车站购票"
+    func: ""
+    pattern: "疑问词 + does + 主语 + 动词 + 介词"
+    note: "leave from 是固定搭配，介词不能漏。"
+    words:
+      - { w: "Which", ipa: "wɪtʃ", pos: "wh" }
+      - { w: "platform", ipa: "ˈplætfɔːm", pos: "n" }
+      - { w: "does", ipa: "dʌz", pos: "aux" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "train", ipa: "treɪn", pos: "n" }
+      - { w: "leave", ipa: "liːv", pos: "v" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "subj", i: [3, 4] }
+      - { r: "pred", i: [5] }
+      - { r: "advl", i: [6] }
   - en: "Which platform is for the train to York?"
     zh: "去约克的火车在哪个站台？"
     scene: "火车站购票"
@@ -1027,6 +2014,105 @@ sentences:
       - { r: "pred", i: [1, 2] }
       - { r: "advl", i: [3, 4, 5] }
       - { r: "advl", i: [6, 7, 8, 9] }
+  - en: "The portions here are bigger than the other shop."
+    zh: "这家分量比那家大。"
+    scene: "点外卖"
+    func: ""
+    pattern: "比较级"
+    note: "portion 可数指「一份/一客」；bigger 规则比较级。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "portions", ipa: "ˈpɔːʃnz", pos: "n" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "bigger", ipa: "ˈbɪɡə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "other", ipa: "ˈʌðə", pos: "adj" }
+      - { w: "shop", ipa: "ʃɒp", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "comp", i: [4, 5, 6, 7, 8] }
+  - en: "Could I see the back in the mirror?"
+    zh: "能照镜子看看后面吗？"
+    scene: "理发"
+    func: ""
+    pattern: "could疑问 + see + 介词短语"
+    note: "检查后脑勺造型的标准客套话。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "back", ipa: "bæk", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "mirror", ipa: "ˈmɪrə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "Do you need a deposit for the booking?"
+    zh: "订位需要付定金吗？"
+    scene: "电话订位"
+    func: ""
+    pattern: "一般疑问句 + for 短语"
+    note: "deposit 定金，booking 预订名词形式。"
+    words:
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "deposit", ipa: "dɪˈpɒzɪt", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "booking", ipa: "ˈbʊkɪŋ", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "We would like to cancel our reservation."
+    zh: "我们想取消预订。"
+    scene: "电话订位"
+    func: ""
+    pattern: "would like to + 动词原形"
+    note: "cancel 取消，would like to 客气表达。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "would", ipa: "wʊd", pos: "modal" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "cancel", ipa: "ˈkænsl", pos: "v" }
+      - { w: "our", ipa: "aʊə", pos: "pron" }
+      - { w: "reservation", ipa: "ˌrezəˈveɪʃn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "objc", i: [3, 4] }
+      - { r: "obj", i: [5, 6] }
+  - en: "Please fasten your seat belt now."
+    zh: "请现在系好安全带。"
+    scene: "登机与机上服务"
+    func: ""
+    pattern: "祈使句"
+    note: "起飞前乘务员的标准广播。"
+    words:
+      - { w: "Please", ipa: "pliːz", pos: "adv" }
+      - { w: "fasten", ipa: "ˈfɑːsən", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "seat", ipa: "siːt", pos: "n" }
+      - { w: "belt", ipa: "belt", pos: "n" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5] }
   - en: "Please put on your seat belt now."
     zh: "请现在系好安全带。"
     scene: "登机与机上服务"
@@ -1044,6 +2130,227 @@ sentences:
     chunks:
       - { r: "marker", i: [0] }
       - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "advl", i: [6] }
+  - en: "Please put your bag in the overhead bin."
+    zh: "请把包放进头顶行李架。"
+    scene: "登机与机上服务"
+    func: ""
+    pattern: "祈使句 + 方位介词短语"
+    note: "指引放行李的标准用语。"
+    words:
+      - { w: "Please", ipa: "pliːz", pos: "adv" }
+      - { w: "put", ipa: "pʊt", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "bag", ipa: "bæɡ", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "overhead", ipa: "ˌəʊvəˈhed", pos: "adj" }
+      - { w: "bin", ipa: "bɪn", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "advl", i: [4, 5, 6, 7] }
+  - en: "The overhead bin is full now."
+    zh: "头顶行李舱满了。"
+    scene: "登机与机上服务"
+    func: ""
+    pattern: "be动词现在时"
+    note: "告知行李舱已满的常用句。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "overhead", ipa: "ˌəʊvəˈhed", pos: "adj" }
+      - { w: "bin", ipa: "bɪn", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "full", ipa: "fʊl", pos: "adj" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "comp", i: [4] }
+      - { r: "advl", i: [5] }
+  - en: "Could I have a blood test to check for infection?"
+    zh: "能给我查个血看看有没有感染吗？"
+    scene: "看医生描述症状"
+    func: ""
+    pattern: "could_request_infinitive_purpose"
+    note: "to check for 表示目的；infection 可数名词。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "blood", ipa: "blʌd", pos: "n" }
+      - { w: "test", ipa: "test", pos: "n" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "check", ipa: "tʃek", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "infection", ipa: "ɪnˈfekʃn", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "advl", i: [6, 7, 8, 9] }
+  - en: "I have been coughing a lot for three days now."
+    zh: "我已经咳嗽三天了，挺厉害的。"
+    scene: "看医生描述症状"
+    func: ""
+    pattern: "present_perfect_continuous_for_duration"
+    note: "for + 段时间配合完成进行时，强调动作持续。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "been", ipa: "biːn", pos: "v" }
+      - { w: "coughing", ipa: "ˈkɒfɪŋ", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "lot", ipa: "lɒt", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "three", ipa: "θriː", pos: "num" }
+      - { w: "days", ipa: "deɪz", pos: "n" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "advl", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+      - { r: "advl", i: [9] }
+  - en: "I have been coughing since Monday."
+    zh: "我从周一就开始咳嗽。"
+    scene: "看医生描述症状"
+    func: ""
+    pattern: "present perfect continuous + since"
+    note: "have been coughing 强调动作持续到现在。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "been", ipa: "biːn", pos: "aux" }
+      - { w: "coughing", ipa: "ˈkɒfɪŋ", pos: "v" }
+      - { w: "since", ipa: "sɪns", pos: "prep" }
+      - { w: "Monday", ipa: "ˈmʌndeɪ", pos: "propn" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "advl", i: [4, 5] }
+  - en: "I think I pulled a muscle when I lifted that box."
+    zh: "我觉得搬那个箱子时拉伤肌肉了。"
+    scene: "看医生描述症状"
+    func: ""
+    pattern: "think_object_clause_past_simple_when"
+    note: "think 后接宾语从句；pulled a muscle 固定搭配。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "think", ipa: "θɪŋk", pos: "v" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "pulled", ipa: "pʊld", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "muscle", ipa: "ˈmʌsl", pos: "n" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "lifted", ipa: "ˈlɪftɪd", pos: "v" }
+      - { w: "that", ipa: "ðæt", pos: "art" }
+      - { w: "box", ipa: "bɒks", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5, 6, 7, 8, 9, 10] }
+  - en: "My chest feels tight when I breathe."
+    zh: "我呼吸时胸口发紧。"
+    scene: "看医生描述症状"
+    func: ""
+    pattern: "主语 + feel + 形容词 + when 从句"
+    note: "feel tight 形容胸闷感。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "chest", ipa: "tʃest", pos: "n" }
+      - { w: "feels", ipa: "fiːlz", pos: "v" }
+      - { w: "tight", ipa: "taɪt", pos: "adj" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "breathe", ipa: "briːð", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "marker", i: [4] }
+      - { r: "subj", i: [5] }
+      - { r: "pred", i: [6] }
+  - en: "My throat hurts when I swallow food or water."
+    zh: "我吞东西喝水嗓子都疼。"
+    scene: "看医生描述症状"
+    func: ""
+    pattern: "present_simple_with_when_clause"
+    note: "when 引导时间状语从句，主句用一般现在时。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "throat", ipa: "θrəʊt", pos: "n" }
+      - { w: "hurts", ipa: "hɜːts", pos: "v" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "swallow", ipa: "ˈswɒləʊ", pos: "v" }
+      - { w: "food", ipa: "fuːd", pos: "n" }
+      - { w: "or", ipa: "ɔː", pos: "conj" }
+      - { w: "water", ipa: "ˈwɔːtə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6, 7, 8] }
+  - en: "My throat hurts when I swallow."
+    zh: "我吞咽时嗓子疼。"
+    scene: "看医生描述症状"
+    func: ""
+    pattern: "主语 + 动词 + when 从句"
+    note: "hurt 不用被动，主语是疼痛部位。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "throat", ipa: "θrəʊt", pos: "n" }
+      - { w: "hurts", ipa: "hɜːts", pos: "v" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "swallow", ipa: "ˈswɒləʊ", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "marker", i: [3] }
+      - { r: "subj", i: [4] }
+      - { r: "pred", i: [5] }
+  - en: "I prefer action movies to comedies."
+    zh: "我更喜欢动作片而不是喜剧片。"
+    scene: "看电影"
+    func: ""
+    pattern: "比较级 prefer A to B"
+    note: "prefer…to… 比 like…better than 更正式。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "prefer", ipa: "prɪˈfɜː", pos: "v" }
+      - { w: "action", ipa: "ˈækʃn", pos: "adj" }
+      - { w: "movies", ipa: "ˈmuːviz", pos: "n" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "comedies", ipa: "ˈkɒmədiz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "comp", i: [4, 5] }
+  - en: "Shall we get some ice cream after?"
+    zh: "散场吃个冰淇淋吧？"
+    scene: "看电影"
+    func: ""
+    pattern: "Shall we 建议"
+    note: "Shall we…? 只用于我方提议，很英式。"
+    words:
+      - { w: "Shall", ipa: "ʃæl", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "some", ipa: "sʌm", pos: "adj" }
+      - { w: "ice", ipa: "aɪs", pos: "n" }
+      - { w: "cream", ipa: "kriːm", pos: "n" }
+      - { w: "after", ipa: "ˈɑːftə", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5] }
       - { r: "advl", i: [6] }
   - en: "She is eating ice cream in the cinema."
@@ -1067,6 +2374,189 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6, 7] }
+  - en: "The story was a bit confusing at the beginning."
+    zh: "开头剧情有点让人糊涂。"
+    scene: "看电影"
+    func: ""
+    pattern: "was + 副词 + 形容词"
+    note: "评价剧情开头难懂。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "story", ipa: "ˈstɔːri", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "bit", ipa: "bɪt", pos: "n" }
+      - { w: "confusing", ipa: "kənˈfjuːzɪŋ", pos: "adj" }
+      - { w: "at", ipa: "æt", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "beginning", ipa: "bɪˈɡɪnɪŋ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3, 4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+  - en: "The trailer looked better than the movie."
+    zh: "预告片比正片好看。"
+    scene: "看电影"
+    func: ""
+    pattern: "比较级"
+    note: "better 是 good/well 比较级，看起来用 looked。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "trailer", ipa: "ˈtreɪlə", pos: "n" }
+      - { w: "looked", ipa: "lʊkt", pos: "v" }
+      - { w: "better", ipa: "ˈbetə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "movie", ipa: "ˈmuːvi", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "comp", i: [4, 5, 6] }
+  - en: "Is the deposit one month or two?"
+    zh: "押金是押一付一还是押二付二？"
+    scene: "租房看房"
+    func: ""
+    pattern: "选择疑问句"
+    note: "deposit 指押金，常用 one/two month 表达押付方式。"
+    words:
+      - { w: "Is", ipa: "ɪz", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "deposit", ipa: "dɪˈpɒzɪt", pos: "n" }
+      - { w: "one", ipa: "wʌn", pos: "num" }
+      - { w: "month", ipa: "mʌnθ", pos: "n" }
+      - { w: "or", ipa: "ɔː", pos: "conj" }
+      - { w: "two", ipa: "tuː", pos: "num" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1, 2] }
+      - { r: "comp", i: [3, 4] }
+      - { r: "marker", i: [5] }
+      - { r: "comp", i: [6] }
+  - en: "Is there a deposit and agency fee?"
+    zh: "有押金和中介费吗？"
+    scene: "租房看房"
+    func: ""
+    pattern: "there be 句型"
+    note: "deposit 押金，agency fee 中介费，看房必确认。"
+    words:
+      - { w: "Is", ipa: "ɪz", pos: "v" }
+      - { w: "there", ipa: "ðeə", pos: "adv" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "deposit", ipa: "dɪˈpɒzɪt", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "agency", ipa: "ˈeɪdʒənsi", pos: "n" }
+      - { w: "fee", ipa: "fiː", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "marker", i: [1] }
+      - { r: "subj", i: [2, 3] }
+      - { r: "link", i: [4] }
+      - { r: "subj", i: [5, 6] }
+  - en: "Who pays for repairs if something breaks?"
+    zh: "东西坏了维修费谁出？"
+    scene: "租房看房"
+    func: ""
+    pattern: "疑问词疑问句"
+    note: "pay for 是“为……付费”的固定搭配。"
+    words:
+      - { w: "Who", ipa: "huː", pos: "wh" }
+      - { w: "pays", ipa: "peɪz", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "repairs", ipa: "rɪˈpeəz", pos: "n" }
+      - { w: "if", ipa: "ɪf", pos: "conj" }
+      - { w: "something", ipa: "ˈsʌmθɪŋ", pos: "pron" }
+      - { w: "breaks", ipa: "breɪks", pos: "v" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3] }
+      - { r: "marker", i: [4] }
+      - { r: "subj", i: [5] }
+      - { r: "pred", i: [6] }
+  - en: "Can you explain the excess amount, please?"
+    zh: "能解释一下免赔额吗？"
+    scene: "租车"
+    func: ""
+    pattern: "can_modal + 宾语从句性质"
+    note: "excess amount 保险免赔额/自付额，租车核心术语。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "explain", ipa: "ɪkˈspleɪn", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "excess", ipa: "ɪkˈses", pos: "n" }
+      - { w: "amount", ipa: "əˈmaʊnt", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "marker", i: [6] }
+  - en: "I will bring it back with a full tank."
+    zh: "我会加满油还车。"
+    scene: "租车"
+    func: ""
+    pattern: "将来时 + 方式状语"
+    note: "bring back 为“带回/归还”，full tank 为“满箱油”。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "bring", ipa: "brɪŋ", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "back", ipa: "bæk", pos: "adv" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "full", ipa: "fʊl", pos: "adj" }
+      - { w: "tank", ipa: "tæŋk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4] }
+      - { r: "advl", i: [5, 6, 7, 8] }
+  - en: "The car drives smoothly and feels comfortable."
+    zh: "这车开起来顺滑舒服。"
+    scene: "租车"
+    func: ""
+    pattern: "主系表 + 并列形容词"
+    note: "drives smoothly 表“开起来顺”，feels comfortable 系表结构。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "car", ipa: "kɑː", pos: "n" }
+      - { w: "drives", ipa: "draɪvz", pos: "v" }
+      - { w: "smoothly", ipa: "ˈsmuːðli", pos: "adv" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "feels", ipa: "fiːlz", pos: "v" }
+      - { w: "comfortable", ipa: "ˈkʌmftəbl", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3] }
+      - { r: "link", i: [4] }
+      - { r: "pred", i: [5] }
+      - { r: "comp", i: [6] }
+  - en: "The deposit will be refunded to your card."
+    zh: "押金会退回到你的卡里。"
+    scene: "租车"
+    func: ""
+    pattern: "被动语态 future_will"
+    note: "will be refunded 被动将来时，refunded to 退还给。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "deposit", ipa: "dɪˈpɒzɪt", pos: "n" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "be", ipa: "biː", pos: "v" }
+      - { w: "refunded", ipa: "rɪˈfʌndɪd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "card", ipa: "kɑːd", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
   - en: "Can we split the bill into three parts?"
     zh: "我们能把这个账单分成三份吗？"
     scene: "结账与买单"
@@ -1088,6 +2578,44 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6, 7] }
+  - en: "Could we split the bill, please?"
+    zh: "我们可以分开买单吗？"
+    scene: "结账与买单"
+    func: ""
+    pattern: "情态动词疑问句"
+    note: "split the bill = AA制、分摊账单。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "split", ipa: "splɪt", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bill", ipa: "bɪl", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "marker", i: [5] }
+  - en: "Could you split it three ways?"
+    zh: "能分成三份吗？"
+    scene: "结账与买单"
+    func: ""
+    pattern: "情态动词疑问句"
+    note: "split … ways = 分成……份，AA制常用。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "split", ipa: "splɪt", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "three", ipa: "θriː", pos: "num" }
+      - { w: "ways", ipa: "weɪz", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5] }
   - en: "How much do we owe you, please?"
     zh: "我们该付您多少钱？"
     scene: "结账与买单"
@@ -1129,6 +2657,20 @@ sentences:
       - { r: "marker", i: [0, 1] }
       - { r: "link", i: [2] }
       - { r: "subj", i: [3, 4, 5, 6, 7, 8] }
+  - en: "No need to hurry."
+    zh: "不急，慢慢来。"
+    scene: "结账与买单"
+    func: ""
+    pattern: "否定不定式"
+    note: "No need to… 表示“不需要……”，安慰服务员别着急。"
+    words:
+      - { w: "No", ipa: "nəʊ", pos: "adj" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "hurry", ipa: "ˈhʌri", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "objc", i: [2, 3] }
   - en: "Please give me the change in coins."
     zh: "请把零钱找成硬币。"
     scene: "结账与买单"
@@ -1187,6 +2729,83 @@ sentences:
       - { r: "link", i: [0] }
       - { r: "subj", i: [1, 2, 3, 4] }
       - { r: "advl", i: [5, 6, 7] }
+  - en: "Can I split the bill between two cards?"
+    zh: "能把账单分两张卡付吗？"
+    scene: "结账与支付方式"
+    func: ""
+    pattern: "情态动词 + split 动词"
+    note: "split the bill = 分摊账单/分开付款。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "split", ipa: "splɪt", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bill", ipa: "bɪl", pos: "n" }
+      - { w: "between", ipa: "bɪˈtwiːn", pos: "prep" }
+      - { w: "two", ipa: "tuː", pos: "num" }
+      - { w: "cards", ipa: "kɑːdz", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "I need to split the bill."
+    zh: "我要分摊账单。"
+    scene: "结账与支付方式"
+    func: ""
+    pattern: "need to + 动词原形"
+    note: "split the bill 是「AA制、分摊账单」的地道说法。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "split", ipa: "splɪt", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bill", ipa: "bɪl", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3] }
+      - { r: "obj", i: [4, 5] }
+  - en: "Please tap your card on the reader."
+    zh: "请把卡轻触读卡器。"
+    scene: "结账与支付方式"
+    func: ""
+    pattern: "祈使句 + 介词短语"
+    note: "tap = 轻触（非接触支付动作）。"
+    words:
+      - { w: "Please", ipa: "pliːz", pos: "adv" }
+      - { w: "tap", ipa: "tæp", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "card", ipa: "kɑːd", pos: "n" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "reader", ipa: "ˈriːdə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "My order status has not updated in days."
+    zh: "我订单状态好几天没更新了。"
+    scene: "网购与配送"
+    func: ""
+    pattern: "现在完成时（否定）+ 时间段"
+    note: "has not updated 是现在完成时被动含义主动形式，in days 表「好几天」。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "order", ipa: "ˈɔːdə", pos: "n" }
+      - { w: "status", ipa: "ˈsteɪtəs", pos: "n" }
+      - { w: "has", ipa: "hæz", pos: "aux" }
+      - { w: "not", ipa: "nɒt", pos: "adv" }
+      - { w: "updated", ipa: "ˈʌpdeɪtɪd", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "days", ipa: "deɪz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "pred", i: [3, 4, 5] }
+      - { r: "advl", i: [6, 7] }
   - en: "Can I borrow your brother's bike for an hour?"
     zh: "我能借你哥哥的自行车用一个小时吗？"
     scene: "聊家人"
@@ -1528,6 +3147,27 @@ sentences:
       - { r: "pred", i: [4] }
       - { r: "obj", i: [5, 6] }
       - { r: "advl", i: [7, 8] }
+  - en: "I am planning to learn guitar this summer."
+    zh: "我打算这个夏天学吉他。"
+    scene: "聊爱好与周末"
+    func: ""
+    pattern: "现在进行时表将来安排 + 不定式"
+    note: "am planning to 表示已有安排的将来计划。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "aux" }
+      - { w: "planning", ipa: "ˈplænɪŋ", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "learn", ipa: "lɜːn", pos: "v" }
+      - { w: "guitar", ipa: "ɡɪˈtɑː", pos: "n" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "summer", ipa: "ˈsʌmə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "objc", i: [3, 4] }
+      - { r: "obj", i: [5] }
+      - { r: "advl", i: [6, 7] }
   - en: "I like riding my bike to the lake more than walking."
     zh: "比起走路，我更喜欢骑车去湖边。"
     scene: "聊爱好与周末"
@@ -1574,6 +3214,26 @@ sentences:
       - { r: "pred", i: [1, 2, 3, 4] }
       - { r: "obj", i: [5, 6] }
       - { r: "advl", i: [7, 8] }
+  - en: "My brother can play the guitar very well."
+    zh: "我弟弟吉他弹得很好。"
+    scene: "聊爱好与周末"
+    func: ""
+    pattern: "情态动词 can + 动词原形"
+    note: "can 后接动词原形，well 是副词修饰 play。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "brother", ipa: "ˈbrʌðə", pos: "n" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "play", ipa: "pleɪ", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "guitar", ipa: "ɡɪˈtɑː", pos: "n" }
+      - { w: "very", ipa: "ˈveri", pos: "adv" }
+      - { w: "well", ipa: "wel", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7] }
   - en: "My brother is learning to play the guitar this month."
     zh: "我弟弟这个月正在学弹吉他。"
     scene: "聊爱好与周末"
@@ -1596,6 +3256,26 @@ sentences:
       - { r: "pred", i: [2, 3] }
       - { r: "objc", i: [4, 5, 6, 7] }
       - { r: "advl", i: [8, 9] }
+  - en: "My friends and I play board games weekly."
+    zh: "我和朋友们每周玩桌游。"
+    scene: "聊爱好与周末"
+    func: ""
+    pattern: "并列主语 + 一般现在时 + 频率副词"
+    note: "and 连接并列主语，动词用复数形式。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "friends", ipa: "frendz", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "play", ipa: "pleɪ", pos: "v" }
+      - { w: "board", ipa: "bɔːd", pos: "n" }
+      - { w: "games", ipa: "ɡeɪmz", pos: "n" }
+      - { w: "weekly", ipa: "ˈwiːkli", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2, 3] }
+      - { r: "pred", i: [4] }
+      - { r: "obj", i: [5, 6] }
+      - { r: "advl", i: [7] }
   - en: "She plays the guitar better than her sister."
     zh: "她吉他弹得比她姐姐好。"
     scene: "聊爱好与周末"
@@ -1776,6 +3456,198 @@ sentences:
       - { r: "pred", i: [6] }
       - { r: "obj", i: [7, 8] }
       - { r: "advl", i: [9] }
+  - en: "My apartment is smaller than my parents' house."
+    zh: "我公寓比我父母家小。"
+    scene: "自我介绍"
+    func: ""
+    pattern: "be_present + 比较级"
+    note: "比较级 smaller than 表对比。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "apartment", ipa: "əˈpɑːtmənt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "smaller", ipa: "ˈsmɔːlə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "parents'", ipa: "ˈpeərənts", pos: "n" }
+      - { w: "house", ipa: "haʊs", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "marker", i: [4] }
+      - { r: "comp", i: [5, 6, 7] }
+  - en: "I have been coughing for three days."
+    zh: "我咳嗽三天了。"
+    scene: "药店买药"
+    func: ""
+    pattern: "present_continuous 表持续"
+    note: "have been -ing 强调持续到现在，看病常用。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "aux" }
+      - { w: "been", ipa: "biːn", pos: "v" }
+      - { w: "coughing", ipa: "ˈkɒfɪŋ", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "three", ipa: "θriː", pos: "num" }
+      - { w: "days", ipa: "deɪz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "I need medicine for my sore throat."
+    zh: "我要买点治嗓子疼的药。"
+    scene: "药店买药"
+    func: ""
+    pattern: "need + 名词 + for"
+    note: "sore throat 是固定搭配，别说 painful throat。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "medicine", ipa: "ˈmedsn", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "sore", ipa: "sɔː", pos: "adj" }
+      - { w: "throat", ipa: "θrəʊt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+  - en: "I need something for my sore throat."
+    zh: "我需要治嗓子疼的药。"
+    scene: "药店买药"
+    func: ""
+    pattern: "现在简单式"
+    note: "need + 名词/代词，直接说需求。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "something", ipa: "ˈsʌmθɪŋ", pos: "pron" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "sore", ipa: "sɔː", pos: "adj" }
+      - { w: "throat", ipa: "θrəʊt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+  - en: "My doctor told me to use this cream."
+    zh: "医生让我用这药膏。"
+    scene: "药店买药"
+    func: ""
+    pattern: "宾语从句 (tell + sb + to do)"
+    note: "tell sb to do 转述医嘱的标准结构。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "doctor", ipa: "ˈdɒktə", pos: "n" }
+      - { w: "told", ipa: "təʊld", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "use", ipa: "juːz", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "cream", ipa: "kriːm", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3] }
+      - { r: "obj", i: [4, 5, 6, 7] }
+  - en: "I always take valuables in my carry-on."
+    zh: "我总把贵重物品带在手提行李里。"
+    scene: "行李问题"
+    func: ""
+    pattern: "present_simple + 频率副词"
+    note: "always 位于行为动词前。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "always", ipa: "ˈɔːlweɪz", pos: "adv" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "valuables", ipa: "ˈvæljuəblz", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "carry-on", ipa: "ˈkæri ɒn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "The airline lost my checked bag yesterday."
+    zh: "航空公司昨天弄丢了我的托运行李。"
+    scene: "行李问题"
+    func: ""
+    pattern: "past_simple 主谓宾"
+    note: "lose-lost-lost 是不规则动词过去式。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "airline", ipa: "ˈeəlaɪn", pos: "n" }
+      - { w: "lost", ipa: "lɒst", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "checked", ipa: "tʃekt", pos: "adj" }
+      - { w: "bag", ipa: "bæɡ", pos: "n" }
+      - { w: "yesterday", ipa: "ˈjestədeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "advl", i: [6] }
+  - en: "The airline lost my checked baggage."
+    zh: "航空公司弄丢了我的托运行李。"
+    scene: "行李问题"
+    func: ""
+    pattern: "past_simple"
+    note: "checked baggage = 托运行李，固定搭配。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "airline", ipa: "ˈeəlaɪn", pos: "n" }
+      - { w: "lost", ipa: "lɒst", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "checked", ipa: "tʃekt", pos: "adj" }
+      - { w: "baggage", ipa: "ˈbæɡɪdʒ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+  - en: "The wheel fell off during the flight."
+    zh: "飞行途中轮子掉了。"
+    scene: "行李问题"
+    func: ""
+    pattern: "past_simple"
+    note: "fall off 掉下来，不规则动词 fall-fell。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "wheel", ipa: "wiːl", pos: "n" }
+      - { w: "fell", ipa: "fel", pos: "v" }
+      - { w: "off", ipa: "ɒf", pos: "part" }
+      - { w: "during", ipa: "ˈdjʊərɪŋ", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "There are many bags on the belt right now."
+    zh: "传送带上现在有很多行李。"
+    scene: "行李问题"
+    func: ""
+    pattern: "there_be 存在句"
+    note: "there be 后接复数名词用 are。"
+    words:
+      - { w: "There", ipa: "ðeə", pos: "adv" }
+      - { w: "are", ipa: "ɑː", pos: "v" }
+      - { w: "many", ipa: "ˈmeni", pos: "adj" }
+      - { w: "bags", ipa: "bæɡz", pos: "n" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "belt", ipa: "belt", pos: "n" }
+      - { w: "right", ipa: "raɪt", pos: "adv" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "subj", i: [2, 3] }
+      - { r: "advl", i: [4, 5, 6, 7, 8] }
   - en: "Do you like my brown leather shoes?"
     zh: "你喜欢我的棕色皮鞋吗？"
     scene: "衣服与穿着"
@@ -1929,6 +3801,159 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "link", i: [2] }
       - { r: "comp", i: [3, 4, 5, 6] }
+  - en: "I disagree because it costs too much money."
+    zh: "我不同意，因为那花费太多钱。"
+    scene: "表达赞同与反对"
+    func: ""
+    pattern: "主语 + 动词 + 原因状语从句"
+    note: "disagree 直接表达反对，because 引导原因。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "disagree", ipa: "ˌdɪsəˈɡriː", pos: "v" }
+      - { w: "because", ipa: "bɪˈkɒz", pos: "conj" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "costs", ipa: "kɒsts", pos: "v" }
+      - { w: "too", ipa: "tuː", pos: "adv" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adj" }
+      - { w: "money", ipa: "ˈmʌni", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3, 4, 5, 6, 7] }
+  - en: "I disagree with that idea."
+    zh: "我不同意那个想法。"
+    scene: "表达赞同与反对"
+    func: ""
+    pattern: "present_simple + prep + obj"
+    note: "disagree with 为固定搭配。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "disagree", ipa: "ˌdɪsəˈɡriː", pos: "v" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "that", ipa: "ðæt", pos: "pron" }
+      - { w: "idea", ipa: "aɪˈdɪə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3, 4] }
+  - en: "I see it differently."
+    zh: "我看法不同。"
+    scene: "表达赞同与反对"
+    func: ""
+    pattern: "present_simple + obj + adv"
+    note: "see…differently 表「对…有不同看法」。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "differently", ipa: "ˈdɪfrəntli", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3] }
+  - en: "I see your point but I think differently."
+    zh: "我理解你的观点，但我有不同看法。"
+    scene: "表达赞同与反对"
+    func: ""
+    pattern: "主语 + 动词 + 宾语 + 转折连词 + 主语 + 动词 + 副词"
+    note: "see your point 表示理解对方，but 转折表达不同意见。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "point", ipa: "pɔɪnt", pos: "n" }
+      - { w: "but", ipa: "bʌt", pos: "conj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "think", ipa: "θɪŋk", pos: "v" }
+      - { w: "differently", ipa: "ˈdɪfrəntli", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "marker", i: [4] }
+      - { r: "subj", i: [5] }
+      - { r: "pred", i: [6] }
+      - { r: "advl", i: [7] }
+  - en: "Can I substitute fries with vegetables?"
+    zh: "薯条能换成蔬菜吗？"
+    scene: "询问菜品与推荐"
+    func: ""
+    pattern: "情态动词疑问句 + substitute with"
+    note: "substitute A with B 把 A 换成 B；点餐改配菜常用。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "substitute", ipa: "ˈsʌbstɪtjuːt", pos: "v" }
+      - { w: "fries", ipa: "fraɪz", pos: "n" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "vegetables", ipa: "ˈvedʒtəblz", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5] }
+  - en: "I have a family emergency to handle."
+    zh: "我有家庭急事要处理。"
+    scene: "请假与汇报"
+    func: ""
+    pattern: "have + 名词 + 不定式"
+    note: "family emergency 是请假的常用正当理由。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "family", ipa: "ˈfæməli", pos: "adj" }
+      - { w: "emergency", ipa: "ɪˈmɜːdʒənsi", pos: "n" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "handle", ipa: "ˈhændl", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "objc", i: [5, 6] }
+  - en: "I have a family emergency today."
+    zh: "我今天有家庭急事。"
+    scene: "请假与汇报"
+    func: ""
+    pattern: "have + 名词短语"
+    note: "family emergency 是固定搭配。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "family", ipa: "ˈfæməli", pos: "n" }
+      - { w: "emergency", ipa: "ɪˈmɜːdʒənsi", pos: "n" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5] }
+  - en: "Can you tell me which platform the train leaves from?"
+    zh: "能告诉我火车从哪个站台发车吗？"
+    scene: "请教问题"
+    func: ""
+    pattern: "情态动词疑问句 + 宾语从句"
+    note: "介词 from 后置是口语习惯。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "tell", ipa: "tel", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "which", ipa: "wɪtʃ", pos: "wh" }
+      - { w: "platform", ipa: "ˈplætfɔːm", pos: "n" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "train", ipa: "treɪn", pos: "n" }
+      - { w: "leaves", ipa: "liːvz", pos: "v" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3] }
+      - { r: "obj", i: [4, 5, 6, 7, 8, 9] }
   - en: "How do you spell the word weather in class?"
     zh: "这个 weather 这个词在课堂上怎么拼？"
     scene: "请教问题"
@@ -2176,6 +4201,22 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5] }
+  - en: "Please step through the scanner."
+    zh: "请走过安检门。"
+    scene: "过安检"
+    func: ""
+    pattern: "祈使句 + 介词短语"
+    note: "step through 专指穿过金属探测门。"
+    words:
+      - { w: "Please", ipa: "pliːz", pos: "adv" }
+      - { w: "step", ipa: "step", pos: "v" }
+      - { w: "through", ipa: "θruː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "scanner", ipa: "ˈskænə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3, 4] }
   - en: "Please walk through the gate slowly."
     zh: "请慢慢走过安检门。"
     scene: "过安检"
@@ -2194,6 +4235,78 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "advl", i: [2, 3, 4] }
       - { r: "advl", i: [5] }
+  - en: "Put the tray on the belt."
+    zh: "把托盘放上传送带。"
+    scene: "过安检"
+    func: ""
+    pattern: "祈使句 + 介词短语"
+    note: "tray 托盘，belt 传送带，固定搭配。"
+    words:
+      - { w: "Put", ipa: "pʊt", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "tray", ipa: "treɪ", pos: "n" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "belt", ipa: "belt", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "advl", i: [3, 4, 5] }
+  - en: "Put your bag on the belt, please."
+    zh: "请把包放在传送带上。"
+    scene: "过安检"
+    func: ""
+    pattern: "祈使句 + 介词短语"
+    note: "Put … on the belt 是安检标准用语。"
+    words:
+      - { w: "Put", ipa: "pʊt", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "bag", ipa: "bæɡ", pos: "n" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "belt", ipa: "belt", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "advl", i: [3, 4, 5] }
+      - { r: "marker", i: [6] }
+  - en: "Put your belt and watch in the tray."
+    zh: "把皮带和手表放进托盘。"
+    scene: "过安检"
+    func: ""
+    pattern: "祈使句 + 复合宾语 + 方位"
+    note: "金属物品需单独放托盘。"
+    words:
+      - { w: "Put", ipa: "pʊt", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "belt", ipa: "belt", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "watch", ipa: "wɒtʃ", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "tray", ipa: "treɪ", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "obj", i: [1, 2, 3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "Remove your shoes and belt."
+    zh: "脱掉鞋子和腰带。"
+    scene: "过安检"
+    func: ""
+    pattern: "祈使句 + 并列宾语"
+    note: "Remove 比 take off 略正式，安检常用。"
+    words:
+      - { w: "Remove", ipa: "rɪˈmuːv", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "shoes", ipa: "ʃuːz", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "belt", ipa: "belt", pos: "n" }
+    chunks:
+      - { r: "pred", i: [0] }
+      - { r: "obj", i: [1, 2] }
+      - { r: "marker", i: [3] }
+      - { r: "obj", i: [4] }
   - en: "Step through the gate and wait for the light."
     zh: "走过安检门，等指示灯。"
     scene: "过安检"
@@ -2239,6 +4352,77 @@ sentences:
       - { r: "marker", i: [6] }
       - { r: "subj", i: [7] }
       - { r: "pred", i: [8, 9] }
+  - en: "Take off your jacket, please."
+    zh: "请脱下外套。"
+    scene: "过安检"
+    func: ""
+    pattern: "祈使句 + 宾语"
+    note: "take off 穿戴类通用，含鞋/外套/腰带。"
+    words:
+      - { w: "Take", ipa: "teɪk", pos: "v" }
+      - { w: "off", ipa: "ɒf", pos: "adv" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "jacket", ipa: "ˈdʒækɪt", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "pred", i: [0, 1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "marker", i: [4] }
+  - en: "The alarm went off."
+    zh: "警报响了。"
+    scene: "过安检"
+    func: ""
+    pattern: "主语 + 不及物动词短语"
+    note: "go off 专指警报/闹钟「响起」。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "alarm", ipa: "əˈlɑːm", pos: "n" }
+      - { w: "went", ipa: "went", pos: "v" }
+      - { w: "off", ipa: "ɒf", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+  - en: "The scanner shows something in your bag."
+    zh: "扫描仪显示你包里有东西。"
+    scene: "过安检"
+    func: ""
+    pattern: "主语 动词 宾语从句"
+    note: "scanner 安检扫描仪。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "scanner", ipa: "ˈskænə", pos: "n" }
+      - { w: "shows", ipa: "ʃəʊz", pos: "v" }
+      - { w: "something", ipa: "ˈsʌmθɪŋ", pos: "pron" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "bag", ipa: "bæɡ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5, 6] }
+  - en: "Walk through the gate when the light is green."
+    zh: "灯绿了请走过安检门。"
+    scene: "过安检"
+    func: ""
+    pattern: "祈使句 + 时间状语从句"
+    note: "gate 指安检门，green 亮灯放行。"
+    words:
+      - { w: "Walk", ipa: "wɔːk", pos: "v" }
+      - { w: "through", ipa: "θruː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+      - { w: "when", ipa: "wen", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "light", ipa: "laɪt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "green", ipa: "ɡriːn", pos: "adj" }
+    chunks:
+      - { r: "pred", i: [0, 1] }
+      - { r: "advl", i: [2, 3] }
+      - { r: "marker", i: [4] }
+      - { r: "subj", i: [5, 6] }
+      - { r: "pred", i: [7] }
+      - { r: "comp", i: [8] }
   - en: "Where do I put my coat before the scan?"
     zh: "扫描前外套放哪儿？"
     scene: "过安检"
@@ -2262,6 +4446,25 @@ sentences:
       - { r: "pred", i: [3] }
       - { r: "obj", i: [4, 5] }
       - { r: "advl", i: [6, 7, 8] }
+  - en: "You are not allowed to bring knives."
+    zh: "不允许带刀具。"
+    scene: "过安检"
+    func: ""
+    pattern: "be not allowed to + 动词"
+    note: "knives knife 复数，禁带品。"
+    words:
+      - { w: "You", ipa: "juː", pos: "pron" }
+      - { w: "are", ipa: "ɑː", pos: "v" }
+      - { w: "not", ipa: "nɒt", pos: "adv" }
+      - { w: "allowed", ipa: "əˈlaʊd", pos: "adj" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "bring", ipa: "brɪŋ", pos: "v" }
+      - { w: "knives", ipa: "naɪvz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "objc", i: [4, 5] }
+      - { r: "obj", i: [6] }
   - en: "You can keep your watch, but not your belt."
     zh: "手表可以戴着，皮带不行。"
     scene: "过安检"
@@ -2285,6 +4488,123 @@ sentences:
       - { r: "marker", i: [5] }
       - { r: "pred", i: [6] }
       - { r: "obj", i: [7, 8] }
+  - en: "You can put your jacket back on now."
+    zh: "现在可以把外套穿回去了。"
+    scene: "过安检"
+    func: ""
+    pattern: "can + 动词 + 宾语 + 回复副词"
+    note: "put ... back on 穿回。"
+    words:
+      - { w: "You", ipa: "juː", pos: "pron" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "put", ipa: "pʊt", pos: "v" }
+      - { w: "your", ipa: "jɔː", pos: "pron" }
+      - { w: "jacket", ipa: "ˈdʒækɪt", pos: "n" }
+      - { w: "back", ipa: "bæk", pos: "adv" }
+      - { w: "on", ipa: "ɒn", pos: "part" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }
+      - { r: "advl", i: [7] }
+  - en: "Your flight leaves in thirty minutes, hurry up."
+    zh: "航班三十分钟后起飞，快点。"
+    scene: "过安检"
+    func: ""
+    pattern: "主语 动词 时间 + 祈使句"
+    note: "leaves 现在时表将来时刻表。"
+    words:
+      - { w: "Your", ipa: "jɔː", pos: "pron" }
+      - { w: "flight", ipa: "flaɪt", pos: "n" }
+      - { w: "leaves", ipa: "liːvz", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "thirty", ipa: "ˈθɜːti", pos: "num" }
+      - { w: "minutes", ipa: "ˈmɪnɪts", pos: "n" }
+      - { w: "hurry", ipa: "ˈhʌri", pos: "v" }
+      - { w: "up", ipa: "ʌp", pos: "part" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5] }
+      - { r: "pred", i: [6, 7] }
+  - en: "The treadmill is faster than the bike."
+    zh: "跑步机比健身车快。"
+    scene: "运动与健身"
+    func: ""
+    pattern: "比较级 than 结构"
+    note: "fast 比较级 faster，than 后接比较对象。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "treadmill", ipa: "ˈtredmɪl", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "faster", ipa: "fɑːstə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bike", ipa: "baɪk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "Could you gift-wrap the replacement, please?"
+    zh: "麻烦把换的新货包装成礼物好吗？"
+    scene: "退换货"
+    func: ""
+    pattern: "Could you + 动词 + 宾语 + 请求语气词"
+    note: "gift-wrap 合成动词「包装成礼物」，replacement 指换货的新品。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "gift-wrap", ipa: "ˈɡɪft wreɪp", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "replacement", ipa: "rɪˈpleɪsmənt", pos: "n" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "marker", i: [5] }
+  - en: "The zipper is broken on this jacket."
+    zh: "这件夹克的拉链坏了。"
+    scene: "退换货"
+    func: ""
+    pattern: "主语 + be + 形容词 + 介词短语"
+    note: "broken 作表语形容词表示「坏了」，on 标明部位。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "zipper", ipa: "ˈzɪpə", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "broken", ipa: "ˈbrəʊkən", pos: "adj" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "jacket", ipa: "ˈdʒækɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "These shoes are too tight for me."
+    zh: "这鞋对我来说太紧了。"
+    scene: "退换货"
+    func: ""
+    pattern: "主系表 + too + 形容词 + for sb"
+    note: "too... for me 表示“对我来说太……了”。"
+    words:
+      - { w: "These", ipa: "ðiːz", pos: "adj" }
+      - { w: "shoes", ipa: "ʃuːz", pos: "n" }
+      - { w: "are", ipa: "ɑː", pos: "v" }
+      - { w: "too", ipa: "tuː", pos: "adv" }
+      - { w: "tight", ipa: "taɪt", pos: "adj" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }
   - en: "I am very sorry about the loud noise."
     zh: "很抱歉，刚才声音太大了。"
     scene: "道歉与致谢"
@@ -2306,6 +4626,75 @@ sentences:
       - { r: "advl", i: [2] }
       - { r: "comp", i: [3] }
       - { r: "advl", i: [4, 5, 6, 7] }
+  - en: "I apologize for the confusion."
+    zh: "我为混淆道歉。"
+    scene: "道歉与致谢"
+    func: ""
+    pattern: "apologize for + 名词"
+    note: "confusion指信息不清造成的混乱，商务道歉常用。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "apologize", ipa: "əˈpɒlədʒaɪz", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "confusion", ipa: "kənˈfjuːʒn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3, 4] }
+  - en: "I apologize for the delay in replying."
+    zh: "抱歉回复晚了。"
+    scene: "道歉与致谢"
+    func: ""
+    pattern: "apologize for + n + in + V-ing"
+    note: "delay in doing sth 做某事的延迟，固定搭配。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "apologize", ipa: "əˈpɒlədʒaɪz", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "delay", ipa: "dɪˈleɪ", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "replying", ipa: "rɪˈplaɪɪŋ", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3, 4, 5, 6] }
+  - en: "I apologize for the mistake yesterday."
+    zh: "我为昨天的错误道歉。"
+    scene: "道歉与致谢"
+    func: ""
+    pattern: "apologize for + n"
+    note: "apologize 比 sorry 更正式，常用于书面或严肃场合。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "apologize", ipa: "əˈpɒlədʒaɪz", pos: "v" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "mistake", ipa: "mɪˈsteɪk", pos: "n" }
+      - { w: "yesterday", ipa: "ˈjestədeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "advl", i: [2, 3, 4, 5] }
+  - en: "I regret not telling you sooner."
+    zh: "我后悔没早点告诉你。"
+    scene: "道歉与致谢"
+    func: ""
+    pattern: "regret + not + V-ing"
+    note: "regret doing 后悔做了某事，sooner = earlier。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "regret", ipa: "rɪˈɡret", pos: "v" }
+      - { w: "not", ipa: "nɒt", pos: "adv" }
+      - { w: "telling", ipa: "ˈtelɪŋ", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "sooner", ipa: "ˈsuːnə", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4] }
+      - { r: "advl", i: [5] }
   - en: "Many thanks for the delicious cake."
     zh: "多谢你做的美味蛋糕。"
     scene: "道歉与致谢"
@@ -2342,6 +4731,25 @@ sentences:
       - { r: "marker", i: [0, 1] }
       - { r: "advl", i: [2, 3, 4, 5] }
       - { r: "advl", i: [6, 7] }
+  - en: "Sorry about that, it was my fault."
+    zh: "那件事对不起，是我的错。"
+    scene: "道歉与致谢"
+    func: ""
+    pattern: "Sorry about + n, it was + n"
+    note: "it was my fault 承认责任的固定说法。"
+    words:
+      - { w: "Sorry", ipa: "ˈsɒri", pos: "adj" }
+      - { w: "about", ipa: "əˈbaʊt", pos: "prep" }
+      - { w: "that", ipa: "ðæt", pos: "pron" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "was", ipa: "wɒz", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "fault", ipa: "fɔːlt", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0, 1, 2] }
+      - { r: "subj", i: [3] }
+      - { r: "pred", i: [4] }
+      - { r: "comp", i: [5, 6] }
   - en: "Thank you for lending me your book."
     zh: "谢谢你把书借给我。"
     scene: "道歉与致谢"
@@ -2377,6 +4785,511 @@ sentences:
     chunks:
       - { r: "marker", i: [0, 1, 2] }
       - { r: "advl", i: [3, 4, 5, 6, 7] }
+  - en: "My wallet was in the black jacket."
+    zh: "我的钱包在黑夹克里。"
+    scene: "遗失与寻物"
+    func: ""
+    pattern: "be 过去时"
+    note: "描述丢失物品最后已知位置。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "wallet", ipa: "ˈwɒlɪt", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "black", ipa: "blæk", pos: "adj" }
+      - { w: "jacket", ipa: "ˈdʒækɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6] }
+  - en: "The keys were found near the gate."
+    zh: "钥匙在大门附近被捡到。"
+    scene: "遗失与寻物"
+    func: ""
+    pattern: "被动语态(过去)"
+    note: "were found 是被动语态，表示“被捡到”。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "keys", ipa: "kiːz", pos: "n" }
+      - { w: "were", ipa: "wɜː", pos: "v" }
+      - { w: "found", ipa: "faʊnd", pos: "v" }
+      - { w: "near", ipa: "nɪə", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "gate", ipa: "ɡeɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "Are you free this Friday for a bike ride?"
+    zh: "这周五骑车去吗？你有空吗？"
+    scene: "邀请与婉拒"
+    func: ""
+    pattern: "be + 形容词 + 时间 + for 短语"
+    note: "free 表示有空，for a bike ride 说明活动内容。"
+    words:
+      - { w: "Are", ipa: "ɑː", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "free", ipa: "friː", pos: "adj" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "Friday", ipa: "ˈfraɪdeɪ", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "bike", ipa: "baɪk", pos: "n" }
+      - { w: "ride", ipa: "raɪd", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "comp", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6, 7, 8] }
+  - en: "Would you like to grab a coffee later?"
+    zh: "待会儿想喝杯咖啡吗？"
+    scene: "邀请与婉拒"
+    func: ""
+    pattern: "would like to + 动词原形"
+    note: "grab a coffee 口语常用，比 have a coffee 更随意。"
+    words:
+      - { w: "Would", ipa: "wʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "grab", ipa: "ɡræb", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "coffee", ipa: "ˈkɒfi", pos: "n" }
+      - { w: "later", ipa: "ˈleɪtə", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3, 4] }
+      - { r: "obj", i: [5, 6] }
+      - { r: "advl", i: [7] }
+  - en: "Could you please attach the agenda to the email?"
+    zh: "能把议程附在邮件里吗？"
+    scene: "邮件与日程安排"
+    func: ""
+    pattern: "礼貌请求 + 宾语 + 介词短语"
+    note: "attach…to… 把……附在……上；please 可前置也可后置。"
+    words:
+      - { w: "Could", ipa: "kʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+      - { w: "attach", ipa: "əˈtætʃ", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "agenda", ipa: "əˈdʒendə", pos: "n" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "email", ipa: "ˈiːmeɪl", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "marker", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+  - en: "The deadline is next Friday, so please hurry."
+    zh: "截止日期是下周五，所以请抓紧。"
+    scene: "邮件与日程安排"
+    func: ""
+    pattern: "be_present + 主语补足语 + 结果状语"
+    note: "deadline 截止日期；so 引导结果状语从句。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "deadline", ipa: "ˈdedlaɪn", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "next", ipa: "nekst", pos: "adj" }
+      - { w: "Friday", ipa: "ˈfraɪdeɪ", pos: "propn" }
+      - { w: "so", ipa: "səʊ", pos: "conj" }
+      - { w: "please", ipa: "pliːz", pos: "adv" }
+      - { w: "hurry", ipa: "ˈhʌri", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3, 4] }
+      - { r: "marker", i: [5] }
+      - { r: "marker", i: [6] }
+      - { r: "pred", i: [7] }
+  - en: "We need to change our weekly meeting."
+    zh: "我们得改一下周会时间。"
+    scene: "邮件与日程安排"
+    func: ""
+    pattern: "need to + 动词原形"
+    note: "need to 表主观必要性。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "change", ipa: "tʃeɪndʒ", pos: "v" }
+      - { w: "our", ipa: "aʊə", pos: "pron" }
+      - { w: "weekly", ipa: "ˈwiːkli", pos: "adj" }
+      - { w: "meeting", ipa: "ˈmiːtɪŋ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5, 6] }
+  - en: "Would you like me to forward the invitation?"
+    zh: "要我转发邀请函吗？"
+    scene: "邮件与日程安排"
+    func: ""
+    pattern: "would_like + 宾语 + 不定式"
+    note: "would you like me to…? 是主动提供帮助的礼貌句式。"
+    words:
+      - { w: "Would", ipa: "wʊd", pos: "modal" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "forward", ipa: "ˈfɔːwəd", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "invitation", ipa: "ˌɪnvɪˈteɪʃn", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3] }
+      - { r: "objc", i: [4, 5, 6, 7] }
+  - en: "I need to fill out the customs form now."
+    zh: "我现在得填海关单据。"
+    scene: "邮寄快递"
+    func: ""
+    pattern: "need to + 动词原形"
+    note: "fill out 是 fill 的短语动词，表示填写表格。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "fill", ipa: "fɪl", pos: "v" }
+      - { w: "out", ipa: "aʊt", pos: "part" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "customs", ipa: "ˈkʌstəmz", pos: "n" }
+      - { w: "form", ipa: "fɔːm", pos: "n" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3, 4] }
+      - { r: "obj", i: [5, 6, 7] }
+      - { r: "advl", i: [8] }
+  - en: "I need to fill out this customs form."
+    zh: "我需要填这张海关单。"
+    scene: "邮寄快递"
+    func: ""
+    pattern: "need to + 动词原形"
+    note: "fill out = 填写；customs form 海关申报单。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "fill", ipa: "fɪl", pos: "v" }
+      - { w: "out", ipa: "aʊt", pos: "part" }
+      - { w: "this", ipa: "ðɪs", pos: "adj" }
+      - { w: "customs", ipa: "ˈkʌstəmz", pos: "n" }
+      - { w: "form", ipa: "fɔːm", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3, 4] }
+      - { r: "obj", i: [5, 6, 7] }
+  - en: "I'm thinking of adopting a cat from the shelter."
+    zh: "我打算从收容所领养只猫。"
+    scene: "邻里往来"
+    func: ""
+    pattern: "be thinking of + 动名词"
+    note: "think of doing 考虑做某事；adopt 领养；shelter 动物收容所。"
+    words:
+      - { w: "I'm", ipa: "aɪm", pos: "v" }
+      - { w: "thinking", ipa: "ˈθɪŋkɪŋ", pos: "v" }
+      - { w: "of", ipa: "ɒv", pos: "prep" }
+      - { w: "adopting", ipa: "əˈdɒptɪŋ", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "cat", ipa: "kæt", pos: "n" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "shelter", ipa: "ˈʃeltə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+  - en: "My neighbor helps me fix the fence."
+    zh: "我邻居帮我修篱笆。"
+    scene: "邻里往来"
+    func: ""
+    pattern: "主语 + 动词 + 宾语 + 不定式(省略 to)"
+    note: "help sb (to) do sth 中 to 常省略。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "neighbor", ipa: "ˈneɪbə", pos: "n" }
+      - { w: "helps", ipa: "helps", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "fix", ipa: "fɪks", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "fence", ipa: "fens", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3] }
+      - { r: "objc", i: [4] }
+      - { r: "obj", i: [5, 6] }
+  - en: "She always greets everyone with a smile."
+    zh: "她总是微笑着跟每个人打招呼。"
+    scene: "邻里往来"
+    func: ""
+    pattern: "主语 + 频率副词 + 动词 + 宾语 + 介词短语"
+    note: "with a smile 表伴随方式的状语。"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "always", ipa: "ˈɔːlweɪz", pos: "adv" }
+      - { w: "greets", ipa: "ɡriːts", pos: "v" }
+      - { w: "everyone", ipa: "ˈevriwʌn", pos: "pron" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "smile", ipa: "smaɪl", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "The shower has no hot water."
+    zh: "淋浴没热水。"
+    scene: "酒店入住"
+    func: ""
+    pattern: "present_simple"
+    note: "has no 比 doesn't have 更口语化。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "shower", ipa: "ˈʃaʊə", pos: "n" }
+      - { w: "has", ipa: "hæz", pos: "v" }
+      - { w: "no", ipa: "nəʊ", pos: "adj" }
+      - { w: "hot", ipa: "hɒt", pos: "adj" }
+      - { w: "water", ipa: "ˈwɔːtə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4, 5] }
+  - en: "The TV remote is broken."
+    zh: "电视遥控器坏了。"
+    scene: "酒店问题与退房"
+    func: ""
+    pattern: "主语 + be + 形容词(作表语)"
+    note: "TV remote = television remote；broken 此处作形容词“损坏的”。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "TV", ipa: "ˌtiːˈviː", pos: "n" }
+      - { w: "remote", ipa: "rɪˈməʊt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "broken", ipa: "ˈbrəʊkən", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "comp", i: [4] }
+  - en: "The neighbor was loud last night."
+    zh: "邻居昨晚吵得很。"
+    scene: "酒店问题与退房"
+    func: ""
+    pattern: "主语 + be_过去式 + 形容词 + 时间状语"
+    note: "last night 过去时间标志，be 用 was。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "neighbor", ipa: "ˈneɪbə", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "v" }
+      - { w: "loud", ipa: "laʊd", pos: "adj" }
+      - { w: "last", ipa: "lɑːst", pos: "adj" }
+      - { w: "night", ipa: "naɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "advl", i: [4, 5] }
+  - en: "The shower drain is blocked."
+    zh: "淋浴排水口堵了。"
+    scene: "酒店问题与退房"
+    func: ""
+    pattern: "主语 + be + 过去分词作表语"
+    note: "shower drain “淋浴排水口”；blocked 作形容词“堵塞的”。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "shower", ipa: "ˈʃaʊə", pos: "n" }
+      - { w: "drain", ipa: "dreɪn", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "blocked", ipa: "blɒkt", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "comp", i: [4] }
+  - en: "There is no hot water in the shower."
+    zh: "淋浴没热水。"
+    scene: "酒店问题与退房"
+    func: ""
+    pattern: "There be + no + 名词 + 方位介词短语"
+    note: "There is no… 表示“没有……”，比 not have 更地道。"
+    words:
+      - { w: "There", ipa: "ðeə", pos: "adv" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "no", ipa: "nəʊ", pos: "adj" }
+      - { w: "hot", ipa: "hɒt", pos: "adj" }
+      - { w: "water", ipa: "ˈwɔːtə", pos: "n" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "shower", ipa: "ˈʃaʊə", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "subj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "Can I withdraw money from this ATM?"
+    zh: "能从这台取款机取钱吗？"
+    scene: "银行开户与取款"
+    func: ""
+    pattern: "can + 主语 + 动词 + from 短语"
+    note: "ATM 读字母音，from 指明来源。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "withdraw", ipa: "wɪðˈdrɔː", pos: "v" }
+      - { w: "money", ipa: "ˈmʌni", pos: "n" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "ATM", ipa: "eɪ tiː em", pos: "propn" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "Can I withdraw money with this card?"
+    zh: "这张卡能取现金吗？"
+    scene: "银行开户与取款"
+    func: ""
+    pattern: "can + 主语 + 动词原形"
+    note: "withdraw money 是取款的标准说法。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "withdraw", ipa: "wɪðˈdrɔː", pos: "v" }
+      - { w: "money", ipa: "ˈmʌni", pos: "n" }
+      - { w: "with", ipa: "wɪð", pos: "prep" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "card", ipa: "kɑːd", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
+  - en: "How much is the minimum deposit?"
+    zh: "最低存款要多少钱？"
+    scene: "银行开户与取款"
+    func: ""
+    pattern: "How much + be + 主语"
+    note: "minimum deposit 固定搭配，柜员常挂在嘴边。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "wh" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "minimum", ipa: "ˈmɪnɪməm", pos: "adj" }
+      - { w: "deposit", ipa: "dɪˈpɒzɪt", pos: "n" }
+    chunks:
+      - { r: "obj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "subj", i: [3, 4, 5] }
+  - en: "How much is the monthly service fee?"
+    zh: "每月服务费多少钱？"
+    scene: "银行开户与取款"
+    func: ""
+    pattern: "how much + be + 主语"
+    note: "monthly service fee 月费，很多银行有免费条件。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "wh" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "monthly", ipa: "ˈmʌnθli", pos: "adj" }
+      - { w: "service", ipa: "ˈsɜːvɪs", pos: "n" }
+      - { w: "fee", ipa: "fiː", pos: "n" }
+    chunks:
+      - { r: "obj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "subj", i: [3, 4, 5, 6] }
+  - en: "I need to deposit this check today."
+    zh: "我今天得存这张支票。"
+    scene: "银行开户与取款"
+    func: ""
+    pattern: "need to + 动词原形"
+    note: "deposit 存入，check 美式支票，英式 cheque。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "deposit", ipa: "dɪˈpɒzɪt", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "check", ipa: "tʃek", pos: "n" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6] }
+  - en: "I need to update my phone number."
+    zh: "我得更新手机号码。"
+    scene: "银行开户与取款"
+    func: ""
+    pattern: "need to + 动词原形"
+    note: "update 更新，phone number 电话号码。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "update", ipa: "ʌpˈdeɪt", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "phone", ipa: "fəʊn", pos: "n" }
+      - { w: "number", ipa: "ˈnʌmbə", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3] }
+      - { r: "obj", i: [4, 5, 6] }
+  - en: "I would like to withdraw some cash."
+    zh: "我想取点现金。"
+    scene: "银行开户与取款"
+    func: ""
+    pattern: "would like to + 动词原形"
+    note: "withdraw 取款，cash 不可数。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "would", ipa: "wʊd", pos: "modal" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "withdraw", ipa: "wɪðˈdrɔː", pos: "v" }
+      - { w: "some", ipa: "sʌm", pos: "adj" }
+      - { w: "cash", ipa: "kæʃ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "objc", i: [3, 4] }
+      - { r: "obj", i: [5, 6] }
+  - en: "Okay, deal, but wrap it nicely."
+    zh: "成交，但包装好点。"
+    scene: "问价与讲价"
+    func: ""
+    pattern: "感叹词 + 名词 + 连词 + 动词 + 宾语 + 副词"
+    note: "wrap it nicely 成交后附加条件。"
+    words:
+      - { w: "Okay", ipa: "ˈəʊˈkeɪ", pos: "part" }
+      - { w: "deal", ipa: "diːl", pos: "n" }
+      - { w: "but", ipa: "bʌt", pos: "conj" }
+      - { w: "wrap", ipa: "ræp", pos: "v" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "nicely", ipa: "ˈnaɪsli", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "obj", i: [1] }
+      - { r: "marker", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4] }
+      - { r: "advl", i: [5] }
   - en: "It was great to chat with you in the park."
     zh: "刚才在公园跟你聊天，真不错。"
     scene: "问候与寒暄"
@@ -2400,6 +5313,25 @@ sentences:
       - { r: "objc", i: [3, 4] }
       - { r: "advl", i: [5, 6] }
       - { r: "advl", i: [7, 8, 9] }
+  - en: "It takes about ten minutes by bike."
+    zh: "骑车大概十分钟。"
+    scene: "问路"
+    func: ""
+    pattern: "It takes 时间 + 方式状语"
+    note: "by bike 骑车；about 大约。"
+    words:
+      - { w: "It", ipa: "ɪt", pos: "pron" }
+      - { w: "takes", ipa: "teɪks", pos: "v" }
+      - { w: "about", ipa: "əˈbaʊt", pos: "adv" }
+      - { w: "ten", ipa: "ten", pos: "num" }
+      - { w: "minutes", ipa: "ˈmɪnɪts", pos: "n" }
+      - { w: "by", ipa: "baɪ", pos: "prep" }
+      - { w: "bike", ipa: "baɪk", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4] }
+      - { r: "advl", i: [5, 6] }
   - en: "Sorry, I am a stranger here too."
     zh: "抱歉，我对这儿也不熟。"
     scene: "问路"
@@ -2420,6 +5352,23 @@ sentences:
       - { r: "link", i: [2] }
       - { r: "comp", i: [3, 4] }
       - { r: "advl", i: [5, 6] }
+  - en: "The entrance is behind the supermarket."
+    zh: "入口在超市后面。"
+    scene: "问路"
+    func: ""
+    pattern: "be动词 + 方位介词短语"
+    note: "behind 在...后面，表具体方位。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "entrance", ipa: "ˈentrəns", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "behind", ipa: "bɪˈhaɪnd", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "supermarket", ipa: "ˈsuːpəmɑːkɪt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5] }
   - en: "Is it raining heavily outside now?"
     zh: "外面现在雨下得很大吗？"
     scene: "闲聊天气"
@@ -2634,6 +5583,125 @@ sentences:
       - { r: "subj", i: [6, 7] }
       - { r: "link", i: [8] }
       - { r: "comp", i: [9] }
+  - en: "I am confident I can do this job well."
+    zh: "我相信我能把这份工作做好。"
+    scene: "面试自我介绍"
+    func: ""
+    pattern: "be confident + 宾语从句"
+    note: "confident that 从句中 that 可省略。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "v" }
+      - { w: "confident", ipa: "ˈkɒnfɪdənt", pos: "adj" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "can", ipa: "kæn", pos: "modal" }
+      - { w: "do", ipa: "duː", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "job", ipa: "dʒɒb", pos: "n" }
+      - { w: "well", ipa: "wel", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4, 5, 6, 7, 8] }
+  - en: "I am more confident than before now."
+    zh: "我现在比以前自信多了。"
+    scene: "面试自我介绍"
+    func: ""
+    pattern: "comparative"
+    note: "more...than 比较级，confident 自信的，before 以前，now 现在。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "am", ipa: "æm", pos: "v" }
+      - { w: "more", ipa: "mɔː", pos: "adj" }
+      - { w: "confident", ipa: "ˈkɒnfɪdənt", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "before", ipa: "bɪˈfɔː", pos: "adv" }
+      - { w: "now", ipa: "naʊ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "comp", i: [2, 3, 4, 5] }
+      - { r: "advl", i: [6] }
+  - en: "I learn quickly and adapt to changes well."
+    zh: "我学得快，适应变化强。"
+    scene: "面试自我介绍"
+    func: ""
+    pattern: "present_simple + 并列谓语"
+    note: "adapt to 表示适应。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "learn", ipa: "lɜːn", pos: "v" }
+      - { w: "quickly", ipa: "ˈkwɪkli", pos: "adv" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "adapt", ipa: "əˈdæpt", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "prep" }
+      - { w: "changes", ipa: "tʃeɪndʒɪz", pos: "n" }
+      - { w: "well", ipa: "wel", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "pred", i: [3, 4, 5, 6, 7] }
+  - en: "How much is the registration fee?"
+    zh: "挂号费多少钱？"
+    scene: "预约挂号"
+    func: ""
+    pattern: "疑问词疑问句"
+    note: "registration fee = 挂号费，how much is… 问价格。"
+    words:
+      - { w: "How", ipa: "haʊ", pos: "wh" }
+      - { w: "much", ipa: "mʌtʃ", pos: "adj" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "registration", ipa: "ˌredʒɪˈstreɪʃn", pos: "n" }
+      - { w: "fee", ipa: "fiː", pos: "n" }
+    chunks:
+      - { r: "obj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "subj", i: [3, 4, 5] }
+  - en: "I need to see a doctor about my cough."
+    zh: "我得找医生看看咳嗽。"
+    scene: "预约挂号"
+    func: ""
+    pattern: "need to + 动词原形"
+    note: "see a doctor about… 说明就诊原因的固定搭配。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "need", ipa: "niːd", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "see", ipa: "siː", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "doctor", ipa: "ˈdɒktə", pos: "n" }
+      - { w: "about", ipa: "əˈbaʊt", pos: "prep" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "cough", ipa: "kɒf", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+  - en: "I would like to cancel my appointment for today."
+    zh: "我想取消今天的预约。"
+    scene: "预约挂号"
+    func: ""
+    pattern: "would like to + 动词原形"
+    note: "cancel an appointment = 取消预约。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "would", ipa: "wʊd", pos: "modal" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "cancel", ipa: "ˈkænsl", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "appointment", ipa: "əˈpɔɪntmənt", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "today", ipa: "təˈdeɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "objc", i: [3, 4] }
+      - { r: "obj", i: [5, 6] }
+      - { r: "advl", i: [7, 8] }
   - en: "She is cooking fish and potatoes in the kitchen."
     zh: "她正在厨房里做鱼和土豆。"
     scene: "食物与饮料"
@@ -2716,6 +5784,26 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5, 6] }
       - { r: "advl", i: [7] }
+  - en: "Can we split the bill three ways?"
+    zh: "能三人分摊买单吗？"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "Can we split + 宾语 + 数字 ways"
+    note: "split the bill … ways 是 AA 制最地道的说法。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "we", ipa: "wiː", pos: "pron" }
+      - { w: "split", ipa: "splɪt", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "bill", ipa: "bɪl", pos: "n" }
+      - { w: "three", ipa: "θriː", pos: "num" }
+      - { w: "ways", ipa: "weɪz", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }
   - en: "I want a small pizza with extra cheese."
     zh: "我要一个小披萨加额外的奶酪。"
     scene: "餐厅点餐"
@@ -2736,6 +5824,26 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "obj", i: [2, 3, 4] }
       - { r: "advl", i: [5, 6, 7] }
+  - en: "I will take the chocolate cake for dessert."
+    zh: "甜点我要巧克力蛋糕。"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "will take + 宾语 + for"
+    note: "点甜点常用 take … for dessert，比 order 更口语化。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "will", ipa: "wɪl", pos: "modal" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "chocolate", ipa: "ˈtʃɒklət", pos: "adj" }
+      - { w: "cake", ipa: "keɪk", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "dessert", ipa: "dɪˈzɜːt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4, 5] }
+      - { r: "advl", i: [6, 7] }
   - en: "May I order one more cup of beer?"
     zh: "我可以再来一杯啤酒吗？"
     scene: "餐厅点餐"
@@ -2756,3 +5864,54 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5, 6, 7] }
+  - en: "The food was delicious, thank you."
+    zh: "饭菜很好吃，谢谢。"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "主语 + be + 形容词"
+    note: "结账前夸一句 delicious / tasty / amazing 很自然。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "food", ipa: "fuːd", pos: "n" }
+      - { w: "was", ipa: "wɒz", pos: "aux" }
+      - { w: "delicious", ipa: "dɪˈlɪʃəs", pos: "adj" }
+      - { w: "thank", ipa: "θæŋk", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2, 3] }
+      - { r: "marker", i: [4, 5] }
+  - en: "The portion is bigger than expected."
+    zh: "分量比预想的大。"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "比较级 than 从句省略"
+    note: "bigger than expected 评价分量的常用比较句。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "portion", ipa: "ˈpɔːʃn", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "v" }
+      - { w: "bigger", ipa: "ˈbɪɡə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "expected", ipa: "ɪkˈspektɪd", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "marker", i: [4] }
+      - { r: "obj", i: [5] }
+  - en: "The steak looks delicious."
+    zh: "这牛排看起来很好吃。"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "系动词 look + 形容词"
+    note: "look + 形容词 表示看起来怎么样。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "steak", ipa: "steɪk", pos: "n" }
+      - { w: "looks", ipa: "lʊks", pos: "v" }
+      - { w: "delicious", ipa: "dɪˈlɪʃəs", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }

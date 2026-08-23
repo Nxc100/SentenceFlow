@@ -1,9 +1,50 @@
-# AI 生成的出厂句(L6,4 句)
+# AI 生成的出厂句(L6,7 句)
 # 由 `sf factory harvest` 从 generated.db 收上来。
 # 手改这个文件是可以的(人工抽审改错句就直接改这里);
 # 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
 level: L6
 sentences:
+  - en: "I usually get a fade every month"
+    zh: "我通常每个月都做渐变"
+    scene: "理发"
+    func: ""
+    pattern: "频率副词 + 固定搭配"
+    note: "get a fade 是「做渐变发型」的地道说法。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "usually", ipa: "ˈjuːʒuəli", pos: "adv" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "fade", ipa: "feɪd", pos: "n" }
+      - { w: "every", ipa: "ˈevri", pos: "adj" }
+      - { w: "month", ipa: "mʌnθ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }
+  - en: "I usually get a fade on the sides."
+    zh: "我通常两边做渐变。"
+    scene: "理发"
+    func: ""
+    pattern: "频率副词 + get + 名词"
+    note: "fade 指“渐变/圆寸”，get a fade 是固定搭配。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "usually", ipa: "ˈjuːʒuəli", pos: "adv" }
+      - { w: "get", ipa: "ɡet", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "fade", ipa: "feɪd", pos: "n" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "sides", ipa: "saɪdz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "advl", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
   - en: "My aunt has two children and a dog."
     zh: "我姑姑有两个孩子和一只狗。"
     scene: "聊家人"
@@ -88,3 +129,26 @@ sentences:
       - { r: "pred", i: [1, 2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6] }
+  - en: "I want to insure this parcel for five hundred pounds."
+    zh: "我想给这个包裹保价五百镑。"
+    scene: "邮寄快递"
+    func: ""
+    pattern: "want to + 动词原形 + 宾语 + for + 金额"
+    note: "insure… for… 表示“为……保价/投保”。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "want", ipa: "wɒnt", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "insure", ipa: "ɪnˈʃʊə", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "adj" }
+      - { w: "parcel", ipa: "ˈpɑːsəl", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "five", ipa: "faɪv", pos: "num" }
+      - { w: "hundred", ipa: "ˈhʌndrəd", pos: "num" }
+      - { w: "pounds", ipa: "paʊndz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8, 9] }
