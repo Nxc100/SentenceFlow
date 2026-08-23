@@ -63,6 +63,21 @@ enum FactoryCmd {
         #[arg(long, default_value = "content")]
         content_dir: PathBuf,
     },
+    /// 把 `generated.db` 收成种子格式的 YAML,落进 `content/generated/`。
+    ///
+    /// 为什么必须收:`content/build/` 与 `*.db` 都在 .gitignore 里
+    /// (源 YAML 进 git,编译产物不进)。生成内容留在 db 里就是**只存在于
+    /// 一台机器上的未跟踪二进制** —— 丢了等于白跑,5% 人工抽审也没法看。
+    /// 收成 YAML 之后:进 git、可 diff、可审,`build` 也会像读种子一样读它。
+    Harvest {
+        #[arg(long, default_value = "content/build/generated.db")]
+        db: PathBuf,
+        #[arg(long, default_value = "content/generated")]
+        out_dir: PathBuf,
+        /// 只收这一级(缺省全收)
+        #[arg(long)]
+        level: Option<String>,
+    },
     /// 按 `content/scenes.yaml` 跑**整级生产**:该级的每个场景各跑若干批,
     /// 写进内容库。
     ///
@@ -242,6 +257,7 @@ fn main() -> Result<()> {
                 run_placement(&content_dir)?;
                 run_scenario_packs(&content_dir, None, 1).map(|_| ())
             }
+            FactoryCmd::Harvest { db, out_dir, level } => harvest(&db, &out_dir, level.as_deref()),
             FactoryCmd::Run {
                 level,
                 batches,
@@ -411,13 +427,32 @@ fn load_lexicon(content_dir: &Path) -> Result<Lexicon> {
     Ok(lex)
 }
 
-fn seed_files(content_dir: &Path) -> Result<Vec<PathBuf>> {
-    let dir = content_dir.join("seed");
-    let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
-        .with_context(|| format!("reading {}", dir.display()))?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("yaml"))
-        .collect();
+/// 种子文件 = 人工写的 `content/seed/` + AI 收上来的 `content/generated/`
+/// (后者由 `sf factory harvest` 产出,可缺)。两者同格式、同校验,
+/// 区别只在来源与是否经过人工抽审。
+/// 种子文件与它的来源。
+///
+/// 两类同格式、同校验器,但**分诊方式不同**:
+/// * `content/seed/`(人工写)—— 严格,过不了就报错。写错了要当场知道,
+///   这正是 gold 回归的价值。
+/// * `content/generated/`(AI 产出,`sf factory harvest` 收上来)—— 走 Factory
+///   分诊:越级的改存到合适等级,而不是让整个构建中止。词表一动,先前
+///   收上来的句子等级就可能要调整,这是常态,不该当成错误。
+fn seed_files(content_dir: &Path) -> Result<Vec<(PathBuf, bool)>> {
+    let mut files = Vec::new();
+    for (sub, required, generated) in [("seed", true, false), ("generated", false, true)] {
+        let dir = content_dir.join(sub);
+        match std::fs::read_dir(&dir) {
+            Ok(entries) => files.extend(
+                entries
+                    .filter_map(|e| e.ok().map(|e| e.path()))
+                    .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("yaml"))
+                    .map(|p| (p, generated)),
+            ),
+            Err(e) if !required && e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e).with_context(|| format!("reading {}", dir.display())),
+        }
+    }
     files.sort();
     Ok(files)
 }
@@ -437,7 +472,9 @@ fn run_seeds(content_dir: &Path) -> Result<SeedRun> {
     let mut accepted = Vec::new();
     let mut problems = Vec::new();
 
-    for file in seed_files(content_dir)? {
+    let all_specs: Vec<LevelSpec> = specs.values().map(|(sp, _)| sp.clone()).collect();
+    let mut relevelled = 0usize;
+    for (file, generated) in seed_files(content_dir)? {
         let yaml = std::fs::read_to_string(&file)?;
         let seed =
             SeedFile::from_yaml(&yaml).map_err(|e| anyhow::anyhow!("{}: {e}", file.display()))?;
@@ -447,6 +484,21 @@ fn run_seeds(content_dir: &Path) -> Result<SeedRun> {
         let validator = Validator::new(spec, &lexicon);
         for (idx, s) in seed.sentences.iter().enumerate() {
             let report = validator.validate(&s.to_draft(), &s.scene, &s.func, &dedupe);
+            // AI 产出的越级句改级收下,不算错误(词表一动等级就会漂,是常态)
+            if generated
+                && report.verdict == VerdictKind::OverLevel
+                && let TriageOutcome::Relevel {
+                    mut sentence,
+                    new_level,
+                } = triage(report.clone(), GenProfile::Factory, &all_specs)
+            {
+                sentence.level = new_level;
+                sentence.note = s.note.clone();
+                dedupe.add(sentence.en.as_str());
+                accepted.push(sentence);
+                relevelled += 1;
+                continue;
+            }
             match report.verdict {
                 VerdictKind::Pass => {
                     let mut sentence = report.sentence.expect("Pass carries a sentence");
@@ -472,6 +524,9 @@ fn run_seeds(content_dir: &Path) -> Result<SeedRun> {
                 }
             }
         }
+    }
+    if relevelled > 0 {
+        println!("generated: {relevelled} 句改级收下(词表变动后等级重算)");
     }
     Ok(SeedRun { accepted, problems })
 }
@@ -1522,6 +1577,79 @@ fn report_yield(st: &YieldStats) {
     dump("越带", &st.over_words);
 }
 
+/// `sf factory harvest` —— 见 [`FactoryCmd::Harvest`] 的说明。
+fn harvest(db: &Path, out_dir: &Path, level: Option<&str>) -> Result<()> {
+    let store =
+        ContentStore::open_rw(db).map_err(|e| anyhow::anyhow!("opening {}: {e}", db.display()))?;
+    let all = store
+        .all_sentences()
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    std::fs::create_dir_all(out_dir)?;
+
+    let mut by_level: BTreeMap<LevelId, Vec<&Sentence>> = BTreeMap::new();
+    for s in &all {
+        if level.is_none_or(|l| s.level.as_str() == l) {
+            by_level.entry(s.level).or_default().push(s);
+        }
+    }
+    if by_level.is_empty() {
+        bail!("{} 里没有可收的句子", db.display());
+    }
+
+    for (lv, mut rows) in by_level {
+        // 按 场景 → 英文 排序:输出稳定,diff 才有意义
+        rows.sort_by(|a, b| (&a.scene, &a.en).cmp(&(&b.scene, &b.en)));
+        let path = out_dir.join(format!("{lv}.yaml"));
+        let mut out = String::new();
+        // 别用 Rust 的字符串续行拼 YAML —— 续行会把缩进带进输出,
+        // `level:` 一缩进就不是合法的顶层键了(踩过:harvest 出来的
+        // 文件 YAML 解析直接失败)。逐行 push,眼睛看到什么就是什么。
+        out.push_str(&format!("# AI 生成的出厂句({lv},{} 句)\n", rows.len()));
+        out.push_str("# 由 `sf factory harvest` 从 generated.db 收上来。\n");
+        out.push_str("# 手改这个文件是可以的(人工抽审改错句就直接改这里);\n");
+        out.push_str("# 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。\n");
+        out.push_str(&format!("level: {lv}\nsentences:\n"));
+        let n = rows.len();
+        for s in &rows {
+            out.push_str(&format!(
+                "  - en: {}\n    zh: {}\n    scene: {}\n    func: {}\n    pattern: {}\n    note: {}\n",
+                yaml_str(&s.en),
+                yaml_str(&s.zh),
+                yaml_str(&s.scene),
+                yaml_str(&s.func),
+                yaml_str(&s.pattern),
+                yaml_str(&s.note),
+            ));
+            out.push_str("    words:\n");
+            for w in &s.words {
+                out.push_str(&format!(
+                    "      - {{ w: {}, ipa: {}, pos: \"{}\" }}\n",
+                    yaml_str(&w.w),
+                    yaml_str(&w.ipa),
+                    serde_json::to_value(w.pos)?.as_str().unwrap_or("n"),
+                ));
+            }
+            out.push_str("    chunks:\n");
+            for c in &s.chunks {
+                let idx: Vec<String> = c.i.iter().map(|i| i.to_string()).collect();
+                out.push_str(&format!(
+                    "      - {{ r: \"{}\", i: [{}] }}\n",
+                    serde_json::to_value(c.r)?.as_str().unwrap_or("subj"),
+                    idx.join(", ")
+                ));
+            }
+        }
+        std::fs::write(&path, out)?;
+        println!("  {} ← {n} 句", path.display());
+    }
+    Ok(())
+}
+
+/// YAML 双引号字符串(转义反斜杠与引号)。句子里出现引号是常事。
+fn yaml_str(v: &str) -> String {
+    format!("\"{}\"", v.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
 /// `sf factory run` —— 见 [`FactoryCmd::Run`] 的说明。
 #[allow(clippy::too_many_arguments)]
 fn run_level(
@@ -2047,26 +2175,26 @@ fn gen_cmd(
                             Ok(d) => {
                                 let report = validator.validate(&d, scene, "", &dedupe);
                                 match triage(report, GenProfile::Factory, &all_specs) {
-                                    TriageOutcome::Accept { sentence }
-                                    | TriageOutcome::Relevel { sentence, .. } => {
-                                        // 完全同文兜底:近重阈值之外再挡一次,
-                                        // 保证成品库里不会出现两条一模一样的句子
-                                        // (工坊的 exists_by_en 对应物)。
-                                        if store
-                                            .sentence_id_by_en(&sentence.en)
-                                            .map_err(|e| anyhow::anyhow!(e.to_string()))?
-                                            .is_some()
-                                        {
-                                            println!("  ✕ 已有完全相同的句子:{}", sentence.en);
-                                            discarded += 1;
-                                            continue;
+                                    // 改级 = 换个等级归属入库。**必须应用 new_level**:
+                                    // 不应用的话越级句会原样存成原等级,L1 里就混进
+                                    // soup/pizza/menu 这些 L2/L3 的词。踩过 ——
+                                    // 685 句里 224 句如此,build 严格校验种子时
+                                    // 整个构建中止。
+                                    TriageOutcome::Accept { sentence } => {
+                                        match bank(&store, &mut dedupe, &sentence)? {
+                                            true => accepted += 1,
+                                            false => discarded += 1,
                                         }
-                                        dedupe.add(sentence.en.as_str());
-                                        store
-                                            .insert_sentence(&sentence, "", 1)
-                                            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-                                        accepted += 1;
-                                        println!("  ✓ {}", sentence.en);
+                                    }
+                                    TriageOutcome::Relevel {
+                                        mut sentence,
+                                        new_level,
+                                    } => {
+                                        sentence.level = new_level;
+                                        match bank(&store, &mut dedupe, &sentence)? {
+                                            true => accepted += 1,
+                                            false => discarded += 1,
+                                        }
                                     }
                                     TriageOutcome::Repair { sentence, issues } => {
                                         // 排队,流结束后统一发修补调用(仅传差异,§7.4)。
@@ -2106,14 +2234,10 @@ fn gen_cmd(
         // ---- 修补循环:每句一次,仅传差异;修不好才算丢 ----
         for (broken, reasons) in pending_repairs {
             match repair_one(&*adapter, model, &broken, &reasons, &validator, &dedupe).await {
-                Some(fixed) => {
-                    dedupe.add(fixed.en.as_str());
-                    store
-                        .insert_sentence(&fixed, "", 1)
-                        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
-                    accepted += 1;
-                    println!("  ✓ {} (已修补)", fixed.en);
-                }
+                Some(fixed) => match bank(&store, &mut dedupe, &fixed)? {
+                    true => accepted += 1,
+                    false => discarded += 1,
+                },
                 None => {
                     println!("  ✕ 修补未过:{}", broken.en);
                     discarded += 1;
@@ -2123,6 +2247,27 @@ fn gen_cmd(
         println!("accepted {accepted} · discarded {discarded}");
         Ok(())
     })
+}
+
+/// 入库一条句子:完全同文兜底 + 写库。收下返回 true,撞车返回 false。
+///
+/// 近重阈值之外还要挡一次完全同文 —— 成品库里不该出现两条一模一样的句子
+/// (对应工坊的 `exists_by_en`)。
+fn bank(store: &ContentStore, dedupe: &mut DedupeIndex, sentence: &Sentence) -> Result<bool> {
+    if store
+        .sentence_id_by_en(&sentence.en)
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?
+        .is_some()
+    {
+        println!("  ✕ 已有完全相同的句子:{}", sentence.en);
+        return Ok(false);
+    }
+    dedupe.add(sentence.en.as_str());
+    store
+        .insert_sentence(sentence, "", 1)
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    println!("  ✓ [{}] {}", sentence.level, sentence.en);
+    Ok(true)
 }
 
 /// 单次修补调用(§7.4 仅传差异):让模型只改这几处问题,重新校验,
