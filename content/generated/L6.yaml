@@ -1,4 +1,4 @@
-# AI 生成的出厂句(L6,2 句)
+# AI 生成的出厂句(L6,4 句)
 # 由 `sf factory harvest` 从 generated.db 收上来。
 # 手改这个文件是可以的(人工抽审改错句就直接改这里);
 # 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
@@ -25,6 +25,50 @@ sentences:
       - { r: "obj", i: [3, 4] }
       - { r: "marker", i: [5] }
       - { r: "obj", i: [6, 7] }
+  - en: "My aunt lives in a small town near the sea."
+    zh: "我姨妈住在海边的一个小镇上。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主语 + 动词 + 地点 + near 参照"
+    note: "一般现在时介绍家人居住的地方。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "aunt", ipa: "ɑːnt", pos: "n" }
+      - { w: "lives", ipa: "lɪvz", pos: "v" }
+      - { w: "in", ipa: "ɪn", pos: "prep" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "small", ipa: "smɔːl", pos: "adj" }
+      - { w: "town", ipa: "taʊn", pos: "n" }
+      - { w: "near", ipa: "nɪə", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "sea", ipa: "siː", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6, 7, 8, 9] }
+  - en: "My aunt often brings us fresh fruit from her garden."
+    zh: "我姨妈常从她花园带新鲜水果给我们。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主语 + 频度副词 + 动词 + 宾语"
+    note: "often 放动词前，聊家人常做的事。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "aunt", ipa: "ɑːnt", pos: "n" }
+      - { w: "often", ipa: "ˈɒfən", pos: "adv" }
+      - { w: "brings", ipa: "brɪŋz", pos: "v" }
+      - { w: "us", ipa: "ʌs", pos: "pron" }
+      - { w: "fresh", ipa: "freʃ", pos: "adj" }
+      - { w: "fruit", ipa: "fruːt", pos: "n" }
+      - { w: "from", ipa: "frɒm", pos: "prep" }
+      - { w: "her", ipa: "hɜː", pos: "pron" }
+      - { w: "garden", ipa: "ˈɡɑːdn", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "advl", i: [2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4, 5, 6] }
+      - { r: "advl", i: [7, 8, 9] }
   - en: "We are visiting my aunt this weekend."
     zh: "这个周末我们要去看我姑姑。"
     scene: "聊家人"
