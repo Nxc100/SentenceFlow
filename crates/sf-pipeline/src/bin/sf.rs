@@ -63,6 +63,38 @@ enum FactoryCmd {
         #[arg(long, default_value = "content")]
         content_dir: PathBuf,
     },
+    /// 按 `content/scenes.yaml` 跑**整级生产**:该级的每个场景各跑若干批,
+    /// 写进内容库。
+    ///
+    /// 循环放在工具内部而不是外面套 shell 脚本 —— 中文场景名经 shell 传参会
+    /// 被按控制台编码(Windows 上是 GBK)转一道,存进库里就是乱码
+    /// (踩过:`数字与年龄` 存成 `Êý×ÖÓëÄêÁä\r`,345 句全归档到乱码场景名下)。
+    /// 工具自己读 YAML、自己调用,中文一次都不出进程。
+    Run {
+        #[arg(long)]
+        level: String,
+        /// 每个场景跑几批
+        #[arg(long, default_value_t = 2)]
+        batches: u32,
+        /// 每批向模型要几句
+        #[arg(long, default_value_t = 20)]
+        count: u32,
+        /// 只跑这个类别
+        #[arg(long)]
+        category: Option<String>,
+        #[arg(long, default_value = "opencode")]
+        channel: String,
+        #[arg(long, default_value = "opencode/hy3-free")]
+        model: String,
+        #[arg(long, default_value = "content")]
+        content_dir: PathBuf,
+        #[arg(long, default_value = "content/build/content.db")]
+        db: PathBuf,
+        #[arg(long)]
+        api_key: Option<String>,
+        #[arg(long, default_value = "content/scenes.yaml")]
+        scenes: PathBuf,
+    },
     /// 生产前的场景词汇预扫:按 `content/scenes.yaml` 逐个场景试产一小批,
     /// 汇总每个场景缺哪些词。
     ///
@@ -207,6 +239,29 @@ fn main() -> Result<()> {
                 run_placement(&content_dir)?;
                 run_scenario_packs(&content_dir, None, 1).map(|_| ())
             }
+            FactoryCmd::Run {
+                level,
+                batches,
+                count,
+                category,
+                channel,
+                model,
+                content_dir,
+                db,
+                api_key,
+                scenes,
+            } => run_level(
+                &level,
+                batches,
+                count,
+                category.as_deref(),
+                &channel,
+                &model,
+                &content_dir,
+                &db,
+                api_key,
+                &scenes,
+            ),
             FactoryCmd::Scan {
                 scenes,
                 count,
@@ -1437,6 +1492,76 @@ fn report_yield(st: &YieldStats) {
     };
     dump("词表外", &st.unknown_words);
     dump("越带", &st.over_words);
+}
+
+/// `sf factory run` —— 见 [`FactoryCmd::Run`] 的说明。
+#[allow(clippy::too_many_arguments)]
+fn run_level(
+    level: &str,
+    batches: u32,
+    count: u32,
+    category: Option<&str>,
+    channel: &str,
+    model: &str,
+    content_dir: &Path,
+    db: &Path,
+    api_key: Option<String>,
+    scenes_path: &Path,
+) -> Result<()> {
+    let book: SceneBook = serde_yaml::from_str(
+        &std::fs::read_to_string(scenes_path)
+            .with_context(|| format!("reading {}", scenes_path.display()))?,
+    )
+    .with_context(|| format!("parsing {}", scenes_path.display()))?;
+
+    let todo: Vec<&SceneEntry> = book
+        .scenes
+        .iter()
+        .filter(|s| s.levels.iter().any(|l| l == level))
+        .filter(|s| category.is_none_or(|c| s.category == c))
+        .collect();
+    if todo.is_empty() {
+        bail!("{scenes_path:?} 里没有 {level} 的场景");
+    }
+    let target = book.targets.get(level).copied();
+    println!(
+        "=== {level}:{} 个场景 × {batches} 批 × {count} 句{} ===",
+        todo.len(),
+        target
+            .map(|t| format!(" · 目标 {t} 句"))
+            .unwrap_or_default()
+    );
+
+    let mut failed = 0usize;
+    for (i, sc) in todo.iter().enumerate() {
+        for b in 1..=batches {
+            println!("--- [{}/{}] {} 批{b} ---", i + 1, todo.len(), sc.name);
+            if let Err(e) = gen_cmd(
+                &sc.name,
+                level,
+                count,
+                channel,
+                model,
+                content_dir,
+                db,
+                api_key.clone(),
+            ) {
+                // 单批失败不该断掉整级 —— 限速、网络抖动都属常态
+                println!("  ! 本批失败,继续:{e}");
+                failed += 1;
+            }
+        }
+    }
+    println!("=== {level} 完成(失败批次 {failed})===");
+
+    let store = ContentStore::open_rw(db).map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    println!(
+        "  库内句数:{}",
+        store
+            .sentence_count()
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?
+    );
+    Ok(())
 }
 
 /// `content/scenes.yaml` 的一条场景。
