@@ -131,6 +131,14 @@ enum FactoryCmd {
         /// 只扫这个类别(如 医疗);缺省扫全部
         #[arg(long)]
         category: Option<String>,
+        /// 在这一级上扫(缺省:每个场景各自最低的目标等级)。
+        ///
+        /// 缺省行为只能暴露低等级的缺词 —— 像「自我介绍」跨 L1–L4,
+        /// 缺省就只扫 L1,L4 特有的词(rental / mileage / coverage 这类)
+        /// 永远扫不到,等到正式跑批才发现,一批掉一半。产 L4 之前先
+        /// `--level L4` 扫一遍。
+        #[arg(long)]
+        level: Option<String>,
         /// 只扫前 N 个场景(先小样试跑用)
         #[arg(long)]
         limit: Option<usize>,
@@ -285,6 +293,7 @@ fn main() -> Result<()> {
                 scenes,
                 count,
                 category,
+                level,
                 limit,
                 channel,
                 model,
@@ -295,6 +304,7 @@ fn main() -> Result<()> {
                 &scenes,
                 count,
                 category.as_deref(),
+                level.as_deref(),
                 limit,
                 &channel,
                 &model,
@@ -1773,6 +1783,7 @@ fn scan_cmd(
     scenes_path: &Path,
     count: u32,
     category: Option<&str>,
+    at_level: Option<&str>,
     limit: Option<usize>,
     channel: &str,
     model: &str,
@@ -1795,6 +1806,8 @@ fn scan_cmd(
         .scenes
         .iter()
         .filter(|s| category.is_none_or(|c| s.category == c))
+        // 指定了 --level 就只扫在该级产内容的场景
+        .filter(|s| at_level.is_none_or(|l| s.levels.iter().any(|x| x == l)))
         .collect();
     if let Some(n) = limit {
         todo.truncate(n);
@@ -1823,13 +1836,18 @@ fn scan_cmd(
 
     let mut results: Vec<SceneScan> = Vec::new();
     for (i, sc) in todo.iter().enumerate() {
-        // 在该场景**最低**的目标等级上扫:词表带最紧,最容易暴露缺词。
-        let level: LevelId = sc
-            .levels
-            .iter()
-            .filter_map(|l| l.parse::<LevelId>().ok())
-            .min()
-            .with_context(|| format!("场景 {} 没有合法的 levels", sc.id))?;
+        // 缺省在该场景**最低**的目标等级上扫(词表带最紧,最容易暴露缺词);
+        // `--level` 指定时用指定的那一级 —— 高等级场景的专有词只有在
+        // 那一级上写才会冒出来。
+        let level: LevelId = match at_level {
+            Some(l) => l.parse().map_err(|e: String| anyhow::anyhow!(e))?,
+            None => sc
+                .levels
+                .iter()
+                .filter_map(|l| l.parse::<LevelId>().ok())
+                .min()
+                .with_context(|| format!("场景 {} 没有合法的 levels", sc.id))?,
+        };
         let (spec, _) = specs.get(&level).context("no spec for level")?;
         let parts = sf_pipeline::prompt::build_prompt(spec, &sc.name, count, &[], &[]);
         eprint!("[{}/{}] {} ({level}) ... ", i + 1, todo.len(), sc.name);
