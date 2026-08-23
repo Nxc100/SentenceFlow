@@ -37,3 +37,48 @@ fries	1600	fraɪz	fraɪz	薯条
 vegetarian	1850	ˌvedʒɪˈteəriən	ˌvedʒɪˈteriən	素食者
 hobby	1300	ˈhɒbi	ˈhɑbi	爱好
 snack	1400	snæk	snæk	零食
+
+# ---- 2026-08-23 场景预扫补入(sf factory scan,68 个场景)----
+# band 取「本级可用」值:场景要用自己领域的词,收进来却让它在本级
+# 判越级等于白收(句子照样被推到上一级)。英美拼写差异一并收。
+fever	1500	ˈfiːvə	ˈfiːvər	发烧
+headache	1500	ˈhedeɪk	ˈhedeɪk	头痛
+sore	1500	sɔː	sɔr	疼的
+pharmacy	1500	ˈfɑːməsi	ˈfɑrməsi	药房
+drugstore	1500	ˈdrʌɡstɔː	ˈdrʌɡstɔr	药店
+pill	1500	pɪl	pɪl	药片
+clinic	1500	ˈklɪnɪk	ˈklɪnɪk	诊所
+spicy	2000	ˈspaɪsi	ˈspaɪsi	辣的
+salty	2000	ˈsɔːlti	ˈsɔlti	咸的
+nut	2000	nʌt	nʌt	坚果
+delicious	2800	dɪˈlɪʃəs	dɪˈlɪʃəs	好吃的
+suitcase	1500	ˈsuːtkeɪs	ˈsuːtkeɪs	行李箱
+fasten	1500	ˈfɑːsən	ˈfæsən	系紧
+toilet	1500	ˈtɔɪlət	ˈtɔɪlət	洗手间
+bathroom	2000	ˈbɑːθruːm	ˈbæθruːm	卫生间
+metro	1000	ˈmetrəʊ	ˈmetroʊ	地铁
+licence	1640	ˈlaɪsəns	ˈlaɪsəns	执照(英式拼写)
+cashier	1000	kæˈʃɪə	kæˈʃɪr	收银员
+trousers	1000	ˈtraʊzəz	ˈtraʊzərz	裤子(英式)
+pants	1000	pænts	pænts	裤子(美式)
+parcel	1500	ˈpɑːsəl	ˈpɑrsəl	包裹
+haircut	1500	ˈheəkʌt	ˈherkʌt	理发
+scissors	1500	ˈsɪzəz	ˈsɪzərz	剪刀
+wallet	2000	ˈwɒlɪt	ˈwɑlət	钱包
+umbrella	2000	ʌmˈbrelə	ʌmˈbrelə	雨伞
+savings	2000	ˈseɪvɪŋz	ˈseɪvɪŋz	存款
+homework	1500	ˈhəʊmwɜːk	ˈhoʊmwɜrk	作业
+math	1500	mæθ	mæθ	数学(美式)
+maths	1500	mæθs	mæθs	数学(英式)
+physics	2800	ˈfɪzɪks	ˈfɪzɪks	物理
+semester	2800	sɪˈmestə	sɪˈmestər	学期
+tutor	2800	ˈtjuːtə	ˈtuːtər	导师
+client	2000	ˈklaɪənt	ˈklaɪənt	客户
+sunny	500	ˈsʌni	ˈsʌni	晴朗的
+rainy	500	ˈreɪni	ˈreɪni	下雨的
+windy	500	ˈwɪndi	ˈwɪndi	有风的
+ladder	1500	ˈlædə	ˈlædər	梯子
+neighbour	1327	ˈneɪbə	ˈneɪbər	邻居(英式拼写)
+cinema	1000	ˈsɪnəmə	ˈsɪnəmə	电影院
+internet	2000	ˈɪntənet	ˈɪntərnet	互联网
+cloudy	500	ˈklaʊdi	ˈklaʊdi	多云的

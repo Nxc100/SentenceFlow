@@ -56,6 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_sentence_scene ON sentence(level, scene);
 -- 尚不存在,放这里会让整个 batch 失败。
 CREATE TABLE IF NOT EXISTS lemma (
     lemma    TEXT PRIMARY KEY,
+    -- NGSL 词频 rank(定级测试按它分层估词汇量)
     band     INTEGER NOT NULL,
     ipa_gb   TEXT NOT NULL DEFAULT '',
     ipa_us   TEXT NOT NULL DEFAULT '',
@@ -79,6 +80,7 @@ impl ContentStore {
         conn.execute_batch(SCHEMA)?;
         let store = Self { conn };
         store.migrate_pack_column()?;
+        store.migrate_teach_band_column()?;
         store.set_meta("origin", origin)?;
         store.set_meta("rev", &rev.to_string())?;
         Ok(store)
@@ -116,7 +118,24 @@ impl ContentStore {
         conn.execute_batch(SCHEMA)?;
         let store = Self { conn };
         store.migrate_pack_column()?;
+        store.migrate_teach_band_column()?;
         Ok(store)
+    }
+
+    /// 老库的 `lemma` 表没有 `teach_band` 列(教学定级与 NGSL 词频拆开之前
+    /// 建的)。补列并回填成 `band` —— 缺省相等,行为与从前一致。
+    fn migrate_teach_band_column(&self) -> Result<()> {
+        let has: bool = self
+            .conn
+            .prepare("SELECT 1 FROM pragma_table_info('lemma') WHERE name = 'teach_band'")?
+            .exists([])?;
+        if !has {
+            self.conn.execute_batch(
+                "ALTER TABLE lemma ADD COLUMN teach_band INTEGER NOT NULL DEFAULT 0;\n\
+                 UPDATE lemma SET teach_band = band WHERE teach_band = 0;",
+            )?;
+        }
+        Ok(())
     }
 
     /// 表是否已有 `pack` 列(旧库/旧内容包可能没有)。
@@ -215,21 +234,25 @@ impl ContentStore {
         Ok(self.conn.last_insert_rowid())
     }
 
+    /// 写一条词条。`teach_band` = 教学定级(越级判定用);`band` = NGSL 词频
+    /// (定级测试估词汇量用)。没有教学覆盖时两者相等。
     pub fn insert_lemma(
         &self,
         lemma: &str,
         band: u32,
+        teach_band: u32,
         ipa_gb: &str,
         ipa_us: &str,
         zh_gloss: &str,
     ) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO lemma(lemma, band, ipa_gb, ipa_us, zh_gloss)
-             VALUES (?1, ?2, ?3, ?4, ?5)
+            "INSERT INTO lemma(lemma, band, teach_band, ipa_gb, ipa_us, zh_gloss)
+             VALUES (?1, ?2, ?6, ?3, ?4, ?5)
              ON CONFLICT(lemma) DO UPDATE SET
-               band = excluded.band, ipa_gb = excluded.ipa_gb,
+               band = excluded.band, teach_band = excluded.teach_band,
+               ipa_gb = excluded.ipa_gb,
                ipa_us = excluded.ipa_us, zh_gloss = excluded.zh_gloss",
-            params![lemma, band, ipa_gb, ipa_us, zh_gloss],
+            params![lemma, band, ipa_gb, ipa_us, zh_gloss, teach_band],
         )?;
         Ok(())
     }
@@ -395,15 +418,18 @@ impl ContentStore {
     pub fn lemma_tsv(&self) -> Result<String> {
         let mut stmt = self
             .conn
-            .prepare("SELECT lemma, band, ipa_gb, ipa_us, zh_gloss FROM lemma")?;
+            .prepare("SELECT lemma, band, ipa_gb, ipa_us, zh_gloss, teach_band FROM lemma")?;
         let rows = stmt.query_map([], |r| {
+            // 第 6 列 = 教学定级;Lexicon::from_tsv 认这一列。桌面端只读
+            // 这张表,不带出来的话应用侧会退回用 NGSL 词频判越级。
             Ok(format!(
-                "{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}\t{}\t{}\t{}",
                 r.get::<_, String>(0)?,
                 r.get::<_, i64>(1)?,
                 r.get::<_, String>(2)?,
                 r.get::<_, String>(3)?,
-                r.get::<_, String>(4)?
+                r.get::<_, String>(4)?,
+                r.get::<_, i64>(5)?
             ))
         })?;
         let mut out = String::new();
@@ -680,11 +706,15 @@ mod tests {
     fn lemma_tsv_roundtrips_into_lexicon() {
         let path = temp_db("lemma");
         let store = ContentStore::create(&path, "factory", 1).unwrap();
-        store.insert_lemma("be", 1, "bi", "bi", "是").unwrap();
-        store.insert_lemma("go", 40, "ɡəʊ", "ɡoʊ", "去").unwrap();
+        store.insert_lemma("be", 1, 1, "bi", "bi", "是").unwrap();
+        // 教学定级与词频不同的词:两个数都要能原样往返
+        store
+            .insert_lemma("go", 40, 25, "ɡəʊ", "ɡoʊ", "去")
+            .unwrap();
         let tsv = store.lemma_tsv().unwrap();
         let lex = crate::lexicon::Lexicon::from_tsv(&tsv).unwrap();
-        assert_eq!(lex.band_of("went"), Some(40));
+        assert_eq!(lex.band_of("went"), Some(25), "越级判定看教学定级");
+        assert_eq!(lex.ngsl_band_of("went"), Some(40), "定级测试看 NGSL 词频");
         let _ = std::fs::remove_file(&path);
     }
 

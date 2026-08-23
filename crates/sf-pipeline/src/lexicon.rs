@@ -17,8 +17,20 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LexEntry {
     pub lemma: String,
-    /// 1-based frequency rank band (e.g. 500 means "within the first 500").
+    /// NGSL 词频 rank(500 = "位于最常用的前 500 词")。
+    ///
+    /// **定级测试**按它分层抽样估计词汇量,所以它必须一直是"这个词在通用
+    /// 语料里有多常见"。内容侧的越级判定不看它 —— 看 [`Self::teach_band`]。
     pub band: u32,
+    /// 教学定级:这个词从哪一级起可以出现在练习句里。缺省等于 [`Self::band`]。
+    ///
+    /// 为什么要跟 band 分开:词频 ≠ 学习难度。`hello` 在新闻/学术语料里罕见,
+    /// NGSL rank 2811,于是"你好"在 L1–L5 全算越级;`milk` 950、`red` 700、
+    /// `bag` 600 —— 初学者最先学的词在 L1 一个都用不了(实测 L1「超市购物」
+    /// 场景 10 句里 6 句被改级推走)。但把 band 直接改小会让定级测试把
+    /// "认识 milk"记成只值 200 词,低估考生、误路由到更低等级。
+    /// 所以两个数各管各的,由 `overrides.tsv` 只调 teach_band。
+    pub teach_band: u32,
     pub ipa_gb: String,
     pub ipa_us: String,
     pub zh_gloss: String,
@@ -52,11 +64,19 @@ impl Lexicon {
                 .trim()
                 .parse()
                 .map_err(|_| format!("lexicon line {}: bad band '{}'", ln + 1, cols[1]))?;
+            // 第 6 列可选:教学定级。content.db 的 lemma 表会带上它;
+            // 手写的 base/supplement 只有 5 列,缺省等于 band。
+            let teach_band = cols
+                .get(5)
+                .and_then(|c| c.trim().parse::<u32>().ok())
+                .filter(|b| *b > 0)
+                .unwrap_or(band);
             entries.insert(
                 lemma.clone(),
                 LexEntry {
                     lemma,
                     band,
+                    teach_band,
                     ipa_gb: cols.get(2).unwrap_or(&"").trim().to_string(),
                     ipa_us: cols.get(3).unwrap_or(&"").trim().to_string(),
                     zh_gloss: cols.get(4).unwrap_or(&"").trim().to_string(),
@@ -67,6 +87,60 @@ impl Lexicon {
             entries,
             irregular: irregular_forms(),
         })
+    }
+
+    /// 应用**教学定级覆盖**:只改 `teach_band`,`band`(NGSL 词频)与
+    /// IPA、释义一概不动。
+    ///
+    /// 为什么要单独一条路径而不是再拼一份 TSV:拼接会让后来的条目整条替换
+    /// 前面的,只写 lemma+band 的话 IPA 和释义会被清空 —— 而词典对账正靠
+    /// 那个 IPA 覆写模型输出。而且 `band` 必须留给定级测试,不能被覆盖。
+    ///
+    /// 为什么需要这一层:band 取自 NGSL 的**通用语料词频 rank**,不是学习
+    /// 难度。`hello` 在新闻/学术语料里罕见,rank 2811,于是"你好"在 L1–L5
+    /// 全部算越级;`milk`/`apple` 950、`red` 700、`bag` 600 —— 初学者最先学的
+    /// 词在 L1 一个都用不了。实测 L1 的「超市购物」场景 10 句里 6 句被改级
+    /// 推到上一级。这一层就是把"我们不同意 NGSL 的地方"显式写下来。
+    ///
+    /// 格式:`lemma \t band \t 理由`(理由列必填,便于复审)。
+    /// 词必须**已经在表里** —— 不在的话它属于 `supplement.tsv`,
+    /// 这里返回 Err 而不是悄悄新增,免得两张表职责糊掉。
+    ///
+    /// 返回实际被改动的词数(band 与原值相同的不计)。
+    pub fn apply_band_overrides(&mut self, tsv: &str) -> Result<usize, String> {
+        let mut changed = 0usize;
+        for (ln, line) in tsv.lines().enumerate() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            let cols: Vec<&str> = line.split('\t').collect();
+            if cols.len() < 3 {
+                return Err(format!(
+                    "overrides line {}: 需要三列 lemma/band/理由",
+                    ln + 1
+                ));
+            }
+            let lemma = cols[0].trim().to_lowercase();
+            let band: u32 = cols[1]
+                .trim()
+                .parse()
+                .map_err(|_| format!("overrides line {}: bad band '{}'", ln + 1, cols[1]))?;
+            if cols[2].trim().is_empty() {
+                return Err(format!("overrides line {}: `{lemma}` 缺理由", ln + 1));
+            }
+            let Some(entry) = self.entries.get_mut(&lemma) else {
+                return Err(format!(
+                    "overrides line {}: `{lemma}` 不在词表里 —— 新词请加进 supplement.tsv",
+                    ln + 1
+                ));
+            };
+            if entry.teach_band != band {
+                entry.teach_band = band;
+                changed += 1;
+            }
+        }
+        Ok(changed)
     }
 
     pub fn len(&self) -> usize {
@@ -166,8 +240,13 @@ impl Lexicon {
         hardest
     }
 
-    /// Frequency band of a surface form, if known.
+    /// 某个词形的**教学定级**(越级判定用)。没有覆盖时就等于 NGSL band。
     pub fn band_of(&self, word: &str) -> Option<u32> {
+        self.lookup(word).map(|e| e.teach_band)
+    }
+
+    /// 某个词形的 **NGSL 词频 rank**(定级测试估词汇量用)。
+    pub fn ngsl_band_of(&self, word: &str) -> Option<u32> {
         self.lookup(word).map(|e| e.band)
     }
 }
@@ -446,6 +525,39 @@ mod tests {
         assert_eq!(lex.band_of("bigger"), Some(180));
         assert_eq!(lex.band_of("biggest"), Some(180));
         assert_eq!(lex.band_of("hotter"), Some(400));
+    }
+
+    /// 覆盖层只动 band,IPA 与释义必须原样留着 —— 词典对账正靠那个 IPA。
+    #[test]
+    fn band_overrides_keep_ipa_and_gloss() {
+        let mut lex = super::Lexicon::from_tsv("hello\t2811\thəˈləʊ\thəˈloʊ\t你好\n").unwrap();
+        let n = lex
+            .apply_band_overrides("hello\t30\t初学第一个词;NGSL 2811 反映的是书面语稀有度\n")
+            .unwrap();
+        assert_eq!(n, 1);
+        let e = lex.exact("hello").unwrap();
+        assert_eq!(e.teach_band, 30, "教学定级被覆盖");
+        assert_eq!(e.band, 2811, "NGSL 词频不能动 —— 定级测试按它估词汇量");
+        assert_eq!(lex.band_of("hello"), Some(30));
+        assert_eq!(lex.ngsl_band_of("hello"), Some(2811));
+        assert_eq!(e.ipa_gb, "həˈləʊ", "IPA 不能被清空");
+        assert_eq!(e.zh_gloss, "你好");
+    }
+
+    /// 覆盖一个不存在的词是配置错误:它属于 supplement,不该在这儿悄悄新增。
+    #[test]
+    fn band_override_of_unknown_word_is_an_error() {
+        let mut lex = super::Lexicon::from_tsv("hello\t2811\t\t\t\n").unwrap();
+        let err = lex.apply_band_overrides("zzzz\t100\t理由\n").unwrap_err();
+        assert!(err.contains("supplement.tsv"), "err = {err}");
+    }
+
+    /// 理由列必填 —— 半年后没人记得当初为什么把某个词提到 L1。
+    #[test]
+    fn band_override_requires_a_reason() {
+        let mut lex = super::Lexicon::from_tsv("hello\t2811\t\t\t\n").unwrap();
+        assert!(lex.apply_band_overrides("hello\t30\t\n").is_err());
+        assert!(lex.apply_band_overrides("hello\t30\n").is_err());
     }
 
     /// 回归:缩写要走完整还原链。`doesn't` 剥掉 n't 是 `does`,而 does 只在

@@ -336,8 +336,21 @@ fn lexicon_tsv(content_dir: &Path) -> Result<String> {
     Ok(tsv)
 }
 
+/// 教学定级覆盖表(可缺):`lemma \t band \t 理由`,只改 band。
+const LEXICON_OVERRIDES: &str = "overrides.tsv";
+
 fn load_lexicon(content_dir: &Path) -> Result<Lexicon> {
-    Lexicon::from_tsv(&lexicon_tsv(content_dir)?).map_err(|e| anyhow::anyhow!(e))
+    let mut lex = Lexicon::from_tsv(&lexicon_tsv(content_dir)?).map_err(|e| anyhow::anyhow!(e))?;
+    let path = content_dir.join("lexicon").join(LEXICON_OVERRIDES);
+    match std::fs::read_to_string(&path) {
+        Ok(text) => {
+            lex.apply_band_overrides(&text)
+                .map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(e).with_context(|| format!("reading {}", path.display())),
+    }
+    Ok(lex)
 }
 
 fn seed_files(content_dir: &Path) -> Result<Vec<PathBuf>> {
@@ -862,21 +875,20 @@ fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
     // 否则 CLI 校验通过的句子到了应用里会因"词表外"被拒。
     //
     // 词表与句子一起包进一个事务:逐行自动提交时整个 build 要近 6 分钟。
-    let lemma_tsv = lexicon_tsv(content_dir)?;
+    // 从**解析好的** Lexicon 出,而不是重新读 TSV —— 教学定级覆盖
+    // (overrides.tsv)是在 Lexicon 上应用的,照抄原始 TSV 会把覆盖丢掉,
+    // 于是 CLI 校验和桌面端校验用的是两套 band。
+    let lexicon = load_lexicon(content_dir)?;
     store
         .in_transaction(|store| {
-            for line in lemma_tsv.lines() {
-                let line = line.trim();
-                if line.is_empty() || line.starts_with('#') {
-                    continue;
-                }
-                let cols: Vec<&str> = line.split('\t').collect();
+            for e in lexicon.entries() {
                 store.insert_lemma(
-                    cols[0],
-                    cols[1].parse().unwrap_or(0),
-                    cols.get(2).unwrap_or(&""),
-                    cols.get(3).unwrap_or(&""),
-                    cols.get(4).unwrap_or(&""),
+                    &e.lemma,
+                    e.band,
+                    e.teach_band,
+                    &e.ipa_gb,
+                    &e.ipa_us,
+                    &e.zh_gloss,
                 )?;
             }
             for s in &run.accepted {
@@ -940,6 +952,7 @@ fn check_lexicon_layers(content_dir: &Path) -> Result<()> {
             .lines()
             .map(str::trim)
             .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            // overrides.tsv 是三列(多一列理由),前两列取法相同
             .filter_map(|l| {
                 let mut it = l.split('\t');
                 let w = it.next()?.trim().to_lowercase();
@@ -956,7 +969,15 @@ fn check_lexicon_layers(content_dir: &Path) -> Result<()> {
         }
     }
     if clashes.is_empty() {
-        println!("lexicon layers: ok ({} base 词条)", base.len());
+        // 覆盖层规模:报出来,免得它悄悄长成一张没人复审的表
+        let overrides = read(LEXICON_OVERRIDES)?.len();
+        let sup = read("supplement.tsv")?.len();
+        println!(
+            "lexicon layers: ok(base {} · supplement {} · 教学定级覆盖 {})",
+            base.len(),
+            sup,
+            overrides
+        );
         Ok(())
     } else {
         for c in &clashes {
@@ -1790,6 +1811,7 @@ fn yield_cmd(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn gen_cmd(
     scene: &str,
     level: &str,
