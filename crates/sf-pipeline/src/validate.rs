@@ -244,7 +244,7 @@ impl<'a> Validator<'a> {
         let mut words: Vec<Word> = Vec::with_capacity(draft.words.len());
         for (i, dw) in draft.words.iter().enumerate() {
             let pos: Option<PosTag> =
-                serde_json::from_value(serde_json::Value::String(dw.pos.clone())).ok();
+                serde_json::from_value(serde_json::Value::String(normalize_pos(&dw.pos))).ok();
             match pos {
                 Some(pos) => {
                     let mut ipa = dw.ipa.trim().trim_matches('/').to_string();
@@ -288,7 +288,7 @@ impl<'a> Validator<'a> {
         let mut covered = vec![false; draft.words.len()];
         for (ci, dc) in draft.chunks.iter().enumerate() {
             let role: Option<RoleTag> =
-                serde_json::from_value(serde_json::Value::String(dc.r.clone())).ok();
+                serde_json::from_value(serde_json::Value::String(normalize_role(&dc.r))).ok();
             let Some(role) = role else {
                 issues.push(ValidationIssue::UnknownRoleTag {
                     chunk_index: ci,
@@ -410,6 +410,56 @@ impl<'a> Validator<'a> {
             simhash: hash,
         }
     }
+}
+
+/// 把模型给的词性标签归一到闭集里的写法。
+///
+/// schema 写死了 14 个标签,但模型常写同义的别名 —— 实测最常见的是给感叹词
+/// 标 `int`(闭集里叫 `part`),一次就丢掉一整句。这些别名没有歧义,
+/// 认下来不会削弱闭集的意义:标签最终还是那 14 个之一,界面照常渲染。
+///
+/// 认不出的仍旧报 [`ValidationIssue::UnknownPosTag`] —— 这不是放水。
+fn normalize_pos(tag: &str) -> String {
+    let t = tag.trim().to_lowercase();
+    let canonical = match t.as_str() {
+        // 感叹词/否定词/不定式记号 —— 闭集里统归 part
+        "int" | "intj" | "interj" | "interjection" | "excl" | "exclamation" | "neg"
+        | "negation" | "inf" | "particle" => "part",
+        // 限定词
+        "det" | "determiner" | "article" => "art",
+        // 全称写法
+        "noun" => "n",
+        "verb" => "v",
+        "adjective" => "adj",
+        "adverb" => "adv",
+        "preposition" => "prep",
+        "conjunction" | "conjunc" => "conj",
+        "pronoun" => "pron",
+        "auxiliary" | "auxverb" | "aux_verb" => "aux",
+        "modalverb" | "modal_verb" => "modal",
+        "numeral" | "number" | "numeric" => "num",
+        "proper" | "propernoun" | "proper_noun" | "propernoun_" => "propn",
+        // 疑问词
+        "wh_word" | "whword" | "interrogative" => "wh",
+        other => other,
+    };
+    canonical.to_string()
+}
+
+/// 成分标签的同义归一(同 [`normalize_pos`] 的理由)。
+fn normalize_role(tag: &str) -> String {
+    let t = tag.trim().to_lowercase();
+    match t.as_str() {
+        "subject" => "subj",
+        "predicate" | "verb" => "pred",
+        "object" => "obj",
+        "complement" => "comp",
+        "adverbial" | "adv" | "adjunct" => "advl",
+        "objectcomplement" | "object_complement" | "oc" => "objc",
+        "linking" | "copula" => "link",
+        other => other,
+    }
+    .to_string()
 }
 
 /// 免词表判定的 token —— 这些不属于"该等级该不该认识的单词"。
@@ -634,6 +684,22 @@ practice:
         let r = run(&d);
         assert_eq!(r.verdict, VerdictKind::NeedsRepair);
         assert!(r.sentence.is_some());
+    }
+
+    /// 模型常给感叹词标 `int`(闭集里叫 part)、给限定词标 `det` —— 这些
+    /// 别名没有歧义,认下来免得一次丢一整句。认不出的仍旧报错,不是放水。
+    #[test]
+    fn pos_and_role_aliases_normalize() {
+        assert_eq!(normalize_pos("int"), "part");
+        assert_eq!(normalize_pos("Interjection"), "part");
+        assert_eq!(normalize_pos("det"), "art");
+        assert_eq!(normalize_pos("noun"), "n");
+        assert_eq!(normalize_pos(" VERB "), "v");
+        assert_eq!(normalize_pos("n"), "n", "已经是闭集写法就原样");
+        assert_eq!(normalize_pos("zzz"), "zzz", "认不出的原样返回,交给闭集报错");
+        assert_eq!(normalize_role("subject"), "subj");
+        assert_eq!(normalize_role("adverbial"), "advl");
+        assert_eq!(normalize_role("advl"), "advl");
     }
 
     #[test]
