@@ -1,0 +1,46 @@
+# AI 生成的出厂句(L6,2 句)
+# 由 `sf factory harvest` 从 generated.db 收上来。
+# 手改这个文件是可以的(人工抽审改错句就直接改这里);
+# 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
+level: L6
+sentences:
+  - en: "My aunt has two children and a dog."
+    zh: "我姑姑有两个孩子和一只狗。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+谓+宾+并列宾"
+    note: "has 表示拥有，并列宾语用 and 连接。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "aunt", ipa: "ɑːnt", pos: "n" }
+      - { w: "has", ipa: "hæz", pos: "v" }
+      - { w: "two", ipa: "tuː", pos: "num" }
+      - { w: "children", ipa: "ˈtʃɪldrən", pos: "n" }
+      - { w: "and", ipa: "ænd", pos: "conj" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "dog", ipa: "dɒg", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "marker", i: [5] }
+      - { r: "obj", i: [6, 7] }
+  - en: "We are visiting my aunt this weekend."
+    zh: "这个周末我们要去看我姑姑。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+现在进行时+宾+状语"
+    note: "are visiting 表示近期安排。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "are", ipa: "ɑː", pos: "aux" }
+      - { w: "visiting", ipa: "ˈvɪzɪtɪŋ", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "aunt", ipa: "ɑːnt", pos: "n" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "weekend", ipa: "ˌwiːkˈend", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6] }

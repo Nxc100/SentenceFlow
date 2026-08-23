@@ -23,7 +23,7 @@
 //! 修补就能改对的小错,而句子本身的内容是好的。修不好才丢。
 
 use serde::{Deserialize, Serialize};
-use sf_core::{Chunk, RoleTag, Word};
+use sf_core::{Chunk, PosTag, RoleTag, Word};
 
 /// 一条语法问题。`index` 是词序号(0 起)。
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -131,7 +131,7 @@ pub fn check(
     // 句号完全正确。判据看成分标注:从句做主语时 wh 词落在一个**多词的
     // subj 成分**里;真疑问句里它是单独的 marker(或单词 subj,如
     // `What happened?`)。这条是定级题库实跑抓出来的误伤。
-    if words[0].pos == sf_core::PosTag::Interrogative
+    if words[0].pos == PosTag::Interrogative
         && !punct.contains('?')
         && !punct.contains('!')
         && !leads_nominal_clause(chunks)
@@ -177,7 +177,7 @@ pub fn check(
     }
 
     // ---- 三单一致 ----
-    if let Some(problem) = third_person_check(words, chunks, is_base_form) {
+    if let Some(problem) = third_person_check(en, words, chunks, is_base_form) {
         out.push(problem);
     }
 
@@ -191,11 +191,43 @@ fn leads_nominal_clause(chunks: &[Chunk]) -> bool {
         .any(|c| c.r == RoleTag::Subject && c.i.len() > 1 && c.i.contains(&0))
 }
 
+/// 三单一致只在**能确定的最小场景**里查:单分句、无助动词/情态动词的陈述句。
+///
+/// 两次误伤换来的边界:
+/// * `Does he cook dinner?` / `Can she iron my shirt?` / `He can ride a bike.`
+///   —— 助动词与情态动词已经承担了人称与时态,后面的动词**本来就该是原形**。
+///   句中出现任何 aux/modal 就不查。
+/// * `Thank you for the meal, it is good.` —— 两个分句,第一句的谓语
+///   `Thank` 和第二句的主语 `it` 被硬凑成一对。多于一个谓语/系动词成分,
+///   或英文里带逗号(分句信号),都不查。
+///
+/// 收紧之后覆盖面变窄,但 `He go to school.` 这个典型错误照样抓得到 ——
+/// 宁可漏,不可误伤:误杀一句好句子的代价,比漏掉一句错句子大得多
+/// (错句子还有 5% 人工抽审兜底)。
 fn third_person_check(
+    en: &str,
     words: &[Word],
     chunks: &[Chunk],
     is_base_form: &dyn Fn(&str) -> bool,
 ) -> Option<GrammarProblem> {
+    // 句中有助动词/情态动词 → 后面的动词本就该用原形,不查
+    if words
+        .iter()
+        .any(|w| matches!(w.pos, PosTag::Auxiliary | PosTag::Modal))
+    {
+        return None;
+    }
+    // 多分句 → 主语与谓语可能不属于同一句,配不准,不查
+    if en.contains(',') {
+        return None;
+    }
+    let verbish = chunks
+        .iter()
+        .filter(|c| matches!(c.r, RoleTag::Predicate | RoleTag::Linking))
+        .count();
+    if verbish > 1 {
+        return None;
+    }
     // 主语必须是单独一个明确的三单代词
     let subj = chunks.iter().find(|c| c.r == RoleTag::Subject)?;
     let [si] = subj.i[..] else { return None };
@@ -207,7 +239,7 @@ fn third_person_check(
     let pred = chunks.iter().find(|c| c.r == RoleTag::Predicate)?;
     let vi = *pred.i.first()?;
     let verb_word = words.get(vi)?;
-    if verb_word.pos != sf_core::PosTag::Verb {
+    if verb_word.pos != PosTag::Verb {
         return None;
     }
     let verb = verb_word.w.to_lowercase();
@@ -227,7 +259,6 @@ fn third_person_check(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sf_core::PosTag;
 
     fn w(word: &str, ipa: &str, pos: PosTag) -> Word {
         Word {
@@ -413,6 +444,65 @@ mod tests {
         let p = check("Where are you.", &q, &qc, ".", &base);
         assert!(
             matches!(p[0], GrammarProblem::WhQuestionPunct { .. }),
+            "{p:?}"
+        );
+    }
+
+    /// 回归:出厂生产实跑抓到的 4 个假阳性,全是"动词本就该用原形"的情况。
+    #[test]
+    fn third_person_check_skips_aux_modal_and_multi_clause() {
+        // Does he cook…? —— Does 已承担三单
+        let ws = vec![
+            w("Does", "dʌz", PosTag::Auxiliary),
+            w("he", "hiː", PosTag::Pronoun),
+            w("cook", "kʊk", PosTag::Verb),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Marker, &[0]),
+            chunk(RoleTag::Subject, &[1]),
+            chunk(RoleTag::Predicate, &[2]),
+        ];
+        assert!(check("Does he cook?", &ws, &cs, "?", &base).is_empty());
+
+        // He can ride… —— 情态动词后用原形
+        let ws = vec![
+            w("He", "hiː", PosTag::Pronoun),
+            w("can", "kæn", PosTag::Modal),
+            w("go", "ɡəʊ", PosTag::Verb),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Subject, &[0]),
+            chunk(RoleTag::Predicate, &[2]),
+        ];
+        assert!(check("He can go.", &ws, &cs, ".", &base).is_empty());
+
+        // 两个分句 —— 主语与谓语不属于同一句
+        let ws = vec![
+            w("Thank", "θæŋk", PosTag::Verb),
+            w("you", "juː", PosTag::Pronoun),
+            w("it", "ɪt", PosTag::Pronoun),
+            w("is", "ɪz", PosTag::Auxiliary),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Predicate, &[0]),
+            chunk(RoleTag::Object, &[1]),
+            chunk(RoleTag::Subject, &[2]),
+            chunk(RoleTag::Linking, &[3]),
+        ];
+        assert!(check("Thank you, it is good.", &ws, &cs, ".", &base).is_empty());
+
+        // 收紧之后,典型错误照样抓
+        let ws = vec![
+            w("He", "hiː", PosTag::Pronoun),
+            w("go", "ɡəʊ", PosTag::Verb),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Subject, &[0]),
+            chunk(RoleTag::Predicate, &[1]),
+        ];
+        let p = check("He go.", &ws, &cs, ".", &base);
+        assert!(
+            matches!(p[0], GrammarProblem::ThirdPersonSingular { .. }),
             "{p:?}"
         );
     }
