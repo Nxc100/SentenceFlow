@@ -11,6 +11,7 @@
 //! reaches a database without passing [`validate`].
 
 pub mod dedupe;
+pub mod grammar;
 pub mod lexicon;
 pub mod parse;
 pub mod prompt;

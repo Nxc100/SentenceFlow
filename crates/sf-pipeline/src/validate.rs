@@ -66,6 +66,11 @@ pub enum ValidationIssue {
     MissingIpa {
         word_index: usize,
     },
+    /// 确定性语法检查抓到的错(见 [`crate::grammar`])。归为可修补而非丢弃:
+    /// 这几类都是模型一次修补就能改对的小错,句子内容本身是好的。
+    Grammar {
+        problem: crate::grammar::GrammarProblem,
+    },
     // ---- level: sentence is fine, just not for this level ----
     OverLevel {
         word: String,
@@ -105,7 +110,7 @@ impl ValidationIssue {
             | ChunkIndexOutOfRange { .. }
             | ChunkOverlap { .. }
             | ChunkGap { .. } => Severity::Fatal,
-            BadIpaChars { .. } | MissingIpa { .. } => Severity::Repairable,
+            BadIpaChars { .. } | MissingIpa { .. } | Grammar { .. } => Severity::Repairable,
             OverLevel { .. } | UnknownWord { .. } | TooLong { .. } => Severity::Level,
             NearDuplicate { .. } => Severity::Duplicate,
             IpaReconciled { .. } => Severity::AutoFixed,
@@ -127,6 +132,7 @@ impl ValidationIssue {
             ChunkGap { .. } => "成分划分未覆盖全句".into(),
             BadIpaChars { ipa, .. } => format!("音标含非法字符「{ipa}」"),
             MissingIpa { .. } => "缺少音标".into(),
+            Grammar { problem } => problem.zh_reason(),
             OverLevel { word, .. } => format!("「{word}」超出当前等级的常用词范围"),
             UnknownWord { word } => format!("「{word}」不在常用词表内"),
             TooLong { len, max } => format!("句长 {len} 超出上限 {max}"),
@@ -315,6 +321,19 @@ impl<'a> Validator<'a> {
             .collect();
         if !draft.words.is_empty() && !gaps.is_empty() {
             issues.push(ValidationIssue::ChunkGap { word_indices: gaps });
+        }
+
+        // ---- grammar ----
+        // 只在结构本身没问题时查:成分没覆盖全、词性非法的句子已经要丢了,
+        // 再报一串语法问题只会让丢弃原因变得难读。
+        let structurally_sound = !issues.iter().any(|i| i.severity() == Severity::Fatal)
+            && words.len() == draft.words.len();
+        if structurally_sound {
+            let is_base_form = |v: &str| self.lexicon.exact(v).is_some();
+            for problem in crate::grammar::check(&draft.en, &words, &chunks, &punct, &is_base_form)
+            {
+                issues.push(ValidationIssue::Grammar { problem });
+            }
         }
 
         // ---- level ----

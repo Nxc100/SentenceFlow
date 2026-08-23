@@ -1313,6 +1313,7 @@ fn issue_kind(i: &sf_pipeline::validate::ValidationIssue) -> &'static str {
         ChunkGap { .. } => "成分未覆盖全句",
         BadIpaChars { .. } => "音标含非法字符",
         MissingIpa { .. } => "缺音标",
+        Grammar { .. } => "语法错",
         OverLevel { .. } => "越级(词偏难)",
         UnknownWord { .. } => "词表外",
         TooLong { .. } => "句子过长",
