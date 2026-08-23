@@ -185,6 +185,42 @@ pub fn check(
 }
 
 /// 首词是否领起一个**名词性从句**(而非疑问句):它落在一个多词的主语成分里。
+/// 句首倒装的助动词/情态动词 —— 出现在第 0 位、后面跟主语,就是疑问句。
+///
+/// 用词形而不只是词性:同一个 `Am` 模型有时标 `aux`、有时标 `v`,
+/// 标点推断不能因为词性标注抖动就把问号丢了。
+const FRONTED_AUX: &[&str] = &[
+    "am", "is", "are", "was", "were", "do", "does", "did", "have", "has", "had", "can", "could",
+    "will", "would", "shall", "should", "may", "might", "must",
+];
+
+/// 推断句末标点。模型偶尔整批不给标点(实测:`澄清与确认` 一批 18 句全无),
+/// 而这件事**是确定可推的** —— 不该为此丢句,也不该花一次模型调用去修。
+///
+/// 只分疑问句和陈述句两种:
+/// * wh 词开头,且不是名词性从句做主语(见 [`leads_nominal_clause`])→ `?`
+/// * 助动词/情态动词提到句首、后面跟主语(主谓倒装)→ `?`
+/// * 其余一律 `.` —— 包括祈使句 `Don't be so hard on yourself`(有 `Don't`
+///   但没主语)和 `Let me make sure I understand`。
+///
+/// 感叹句不推:`.` 对陈述句永远不算错,而误加 `!` 会改变语气。
+pub fn infer_terminal_punct(words: &[Word], chunks: &[Chunk]) -> &'static str {
+    let Some(first) = words.first() else {
+        return ".";
+    };
+    if first.pos == PosTag::Interrogative && !leads_nominal_clause(chunks) {
+        return "?";
+    }
+    // 主谓倒装:句首助动词 + 主语在它后面。祈使句没有主语成分,落到 `.`。
+    let subject_follows = chunks
+        .iter()
+        .any(|c| c.r == RoleTag::Subject && c.i.first().is_some_and(|&i| i > 0));
+    if subject_follows && FRONTED_AUX.contains(&first.w.to_lowercase().trim_end_matches("n't")) {
+        return "?";
+    }
+    "."
+}
+
 fn leads_nominal_clause(chunks: &[Chunk]) -> bool {
     chunks
         .iter()
@@ -258,6 +294,7 @@ fn third_person_check(
 
 #[cfg(test)]
 mod tests {
+    use super::infer_terminal_punct;
     use super::*;
 
     fn w(word: &str, ipa: &str, pos: PosTag) -> Word {
@@ -505,6 +542,58 @@ mod tests {
             matches!(p[0], GrammarProblem::ThirdPersonSingular { .. }),
             "{p:?}"
         );
+    }
+
+    /// 回归:模型整批不给句末标点时的推断(实测 `澄清与确认` 18 句全无标点)。
+    #[test]
+    fn terminal_punct_inferred_from_inversion_not_just_leading_aux() {
+        // 情态动词倒装 + 主语 → 疑问句
+        let ws = vec![
+            w("Could", "kʊd", PosTag::Modal),
+            w("you", "juː", PosTag::Pronoun),
+            w("repeat", "rɪˈpiːt", PosTag::Verb),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Marker, &[0]),
+            chunk(RoleTag::Subject, &[1]),
+            chunk(RoleTag::Predicate, &[2]),
+        ];
+        assert_eq!(infer_terminal_punct(&ws, &cs), "?");
+
+        // 祈使句:句首有 Don't 但没有主语成分 → 陈述句句号
+        let ws = vec![
+            w("Don't", "dəʊnt", PosTag::Auxiliary),
+            w("worry", "ˈwʌri", PosTag::Verb),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Marker, &[0]),
+            chunk(RoleTag::Predicate, &[1]),
+        ];
+        assert_eq!(infer_terminal_punct(&ws, &cs), ".");
+
+        // wh 名词性从句做主语 → 不是疑问句
+        let ws = vec![
+            w("What", "wɒt", PosTag::Interrogative),
+            w("she", "ʃiː", PosTag::Pronoun),
+            w("said", "sed", PosTag::Verb),
+            w("helped", "helpt", PosTag::Verb),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Subject, &[0, 1, 2]),
+            chunk(RoleTag::Predicate, &[3]),
+        ];
+        assert_eq!(infer_terminal_punct(&ws, &cs), ".");
+
+        // wh 真疑问句
+        let ws = vec![
+            w("What", "wɒt", PosTag::Interrogative),
+            w("happened", "ˈhæpənd", PosTag::Verb),
+        ];
+        let cs = vec![
+            chunk(RoleTag::Subject, &[0]),
+            chunk(RoleTag::Predicate, &[1]),
+        ];
+        assert_eq!(infer_terminal_punct(&ws, &cs), "?");
     }
 
     #[test]

@@ -458,6 +458,45 @@ fn irregular_forms() -> HashMap<&'static str, &'static str> {
         ("sought", "seek"),
         ("dealt", "deal"),
         ("led", "lead"),
+        // 2026-08-24 补齐:下面这些的**词元都在词表里**,但屈折形式查不到,
+        // 于是 `He broke the cup.` 这种句子会因为 break 的过去式"不认识"
+        // 被判词表外拒掉 —— 拒的不是难词,是还原漏了。
+        // light@376 / break@411 / draw@517 都是 L1-L2 词,各级都在白白丢句。
+        ("lit", "light"),
+        ("broke", "break"),
+        ("drew", "draw"),
+        ("drawn", "draw"),
+        ("fought", "fight"),
+        ("struck", "strike"),
+        ("stuck", "stick"),
+        ("beaten", "beat"),
+        ("hung", "hang"),
+        ("rode", "ride"),
+        ("ridden", "ride"),
+        ("laid", "lay"),
+        ("shook", "shake"),
+        ("shaken", "shake"),
+        ("fed", "feed"),
+        ("hid", "hide"),
+        ("hidden", "hide"),
+        ("blew", "blow"),
+        ("blown", "blow"),
+        ("tore", "tear"),
+        ("torn", "tear"),
+        ("stole", "steal"),
+        ("stolen", "steal"),
+        ("slid", "slide"),
+        ("froze", "freeze"),
+        ("frozen", "freeze"),
+        ("sank", "sink"),
+        ("sunk", "sink"),
+        ("bent", "bend"),
+        ("swept", "sweep"),
+        ("withdrew", "withdraw"),
+        ("dug", "dig"),
+        ("lent", "lend"),
+        ("shone", "shine"),
+        ("bitten", "bite"),
         // irregular plurals
         ("children", "child"),
         ("men", "man"),
@@ -507,6 +546,25 @@ mod tests {
         assert_eq!(lex.band_of("check-in"), Some(400));
         // 有一段不认识就整体不认识,不能放水
         assert_eq!(lex.band_of("hard-zzzz"), None);
+    }
+
+    /// 回归:补齐前 `broke` / `drew` / `lit` 这些常用不规则形式在表里查不到,
+    /// 词元明明是 L1-L2 词却被判"词表外"。一次实扫暴露 35 个同类缺口。
+    #[test]
+    fn common_irregular_forms_resolve_to_their_lemma() {
+        let lex = super::Lexicon::from_tsv(
+            "break	411			
+light	376			
+draw	517			
+steal	1809			
+",
+        )
+        .unwrap();
+        assert_eq!(lex.band_of("broke"), Some(411));
+        assert_eq!(lex.band_of("lit"), Some(376));
+        assert_eq!(lex.band_of("drew"), Some(517));
+        assert_eq!(lex.band_of("drawn"), Some(517));
+        assert_eq!(lex.band_of("stolen"), Some(1809));
     }
 
     /// 回归:不规则表命中、但它的词根不在词表里时,必须继续走后缀还原。

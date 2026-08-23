@@ -131,3 +131,26 @@ scenes:
   - { id: sightseeing,       name: "旅游景点",         category: 娱乐, levels: [L3, L4, L5, L6] }
   - { id: concert-show,      name: "演出与门票",       category: 娱乐, levels: [L3, L4] }
   - { id: describe-experience, name: "讲一次经历",     category: 娱乐, levels: [L5, L6] }
+
+  # ---------------- 表达 ----------------
+  #
+  # 这一类和上面九类不是一个维度:上面按**场合**分(在餐厅、在医院),
+  # 这一类按**要做的事**分(比较、假设、转述)。高等级需要这个维度 ——
+  # B1+ 之后卡人的不再是"点菜怎么说",而是"想让步、想举例、想把话说软
+  # 一点"时张不开口。这些说法不属于某个地点,在哪儿都用得上。
+  #
+  # 只挂 L5/L6:低等级硬塞这些功能会写成语法练习句,不是真会说的话。
+  - { id: plan-intention,    name: "谈计划与打算",     category: 表达, levels: [L4, L5, L6] }
+  - { id: hypothetical,      name: "假设与设想",       category: 表达, levels: [L5, L6] }
+  - { id: reported-speech,   name: "转述别人的话",     category: 表达, levels: [L5, L6] }
+  - { id: compare-choose,    name: "比较与取舍",       category: 表达, levels: [L5, L6] }
+  - { id: cause-effect,      name: "说明原因与结果",   category: 表达, levels: [L5, L6] }
+  - { id: change-trend,      name: "说明变化",         category: 表达, levels: [L5, L6] }
+  - { id: opinion-reason,    name: "表明立场与理由",   category: 表达, levels: [L5, L6] }
+  - { id: hedging,           name: "委婉与缓和语气",   category: 表达, levels: [L5, L6] }
+  - { id: clarify,           name: "澄清与确认",       category: 表达, levels: [L4, L5, L6] }
+  - { id: interrupt-turn,    name: "插话与接话",       category: 表达, levels: [L5, L6] }
+  - { id: explain-process,   name: "讲清一个步骤",     category: 表达, levels: [L4, L5] }
+  - { id: regret,            name: "遗憾与后悔",       category: 表达, levels: [L5, L6] }
+  - { id: uncertainty,       name: "谈不确定的事",     category: 表达, levels: [L5, L6] }
+  - { id: summarize,         name: "总结与收尾",       category: 表达, levels: [L5, L6] }

@@ -4,8 +4,8 @@
 # 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
 level: L6
 sentences:
-  - en: "I usually get a fade every month"
-    zh: "我通常每个月都做渐变"
+  - en: "I usually get a fade every month."
+    zh: "我通常每个月都做渐变。"
     scene: "理发"
     func: ""
     pattern: "频率副词 + 固定搭配"

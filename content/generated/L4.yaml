@@ -2695,8 +2695,8 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2] }
       - { r: "advl", i: [3, 4, 5] }
-  - en: "Don't be so hard on yourself"
-    zh: "别太苛责自己了"
+  - en: "Don't be so hard on yourself."
+    zh: "别太苛责自己了。"
     scene: "安慰与建议"
     func: ""
     pattern: "祈使句 + be + 形容词短语"
@@ -2745,8 +2745,8 @@ sentences:
       - { r: "subj", i: [2] }
       - { r: "pred", i: [3, 4] }
       - { r: "comp", i: [5] }
-  - en: "Everything happens for a reason"
-    zh: "凡事皆有原因"
+  - en: "Everything happens for a reason."
+    zh: "凡事皆有原因。"
     scene: "安慰与建议"
     func: ""
     pattern: "主语 + 动词 + 介词短语"
@@ -2780,8 +2780,8 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "advl", i: [3, 4] }
       - { r: "obj", i: [5, 6] }
-  - en: "Have you tried talking to your friend"
-    zh: "你试过跟你朋友谈谈吗"
+  - en: "Have you tried talking to your friend?"
+    zh: "你试过跟你朋友谈谈吗？"
     scene: "安慰与建议"
     func: ""
     pattern: "现在完成时 + 尝试做某事"
@@ -2818,8 +2818,8 @@ sentences:
       - { r: "subj", i: [2] }
       - { r: "pred", i: [3, 4, 5] }
       - { r: "advl", i: [6] }
-  - en: "I understand how you feel right now"
-    zh: "我明白你现在的感受"
+  - en: "I understand how you feel right now."
+    zh: "我明白你现在的感受。"
     scene: "安慰与建议"
     func: ""
     pattern: "主语 + 动词 + 宾语从句"
@@ -2836,8 +2836,8 @@ sentences:
       - { r: "subj", i: [0] }
       - { r: "pred", i: [1] }
       - { r: "obj", i: [2, 3, 4, 5, 6] }
-  - en: "It happens to everyone sometimes"
-    zh: "这种事谁都会遇到"
+  - en: "It happens to everyone sometimes."
+    zh: "这种事谁都会遇到。"
     scene: "安慰与建议"
     func: ""
     pattern: "It happens to + 人 + 频率副词"
@@ -2891,8 +2891,8 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3] }
       - { r: "advl", i: [4, 5] }
-  - en: "Let's go for a walk to clear your mind"
-    zh: "我们去散散步清醒一下"
+  - en: "Let's go for a walk to clear your mind."
+    zh: "我们去散散步清醒一下。"
     scene: "安慰与建议"
     func: ""
     pattern: "Let's + go for + 目的状语"
@@ -2929,8 +2929,8 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5] }
-  - en: "Maybe you should see a doctor about it"
-    zh: "也许你应该去看医生"
+  - en: "Maybe you should see a doctor about it."
+    zh: "也许你应该去看医生。"
     scene: "安慰与建议"
     func: ""
     pattern: "Maybe + should 建议 + see about"
@@ -2967,8 +2967,8 @@ sentences:
       - { r: "pred", i: [0, 1, 2, 3] }
       - { r: "marker", i: [4] }
       - { r: "pred", i: [5] }
-  - en: "Things always look better in the morning"
-    zh: "早晨一切看起来都会好些"
+  - en: "Things always look better in the morning."
+    zh: "早晨一切看起来都会好些。"
     scene: "安慰与建议"
     func: ""
     pattern: "主语 + 频率副词 + 系动词 + 比较级 + 介词短语"
@@ -3002,8 +3002,8 @@ sentences:
       - { r: "subj", i: [0] }
       - { r: "pred", i: [1, 2, 3] }
       - { r: "advl", i: [4] }
-  - en: "This too shall pass believe me"
-    zh: "这也会过去的 信我"
+  - en: "This too shall pass believe me."
+    zh: "这也会过去的 信我。"
     scene: "安慰与建议"
     func: ""
     pattern: "主语 + 情态动词 + 动词原形 + 祈使句"
@@ -3096,8 +3096,8 @@ sentences:
       - { r: "subj", i: [2] }
       - { r: "advl", i: [4] }
       - { r: "advl", i: [5] }
-  - en: "You can always call me if you need help"
-    zh: "需要帮助随时给我打电话"
+  - en: "You can always call me if you need help."
+    zh: "需要帮助随时给我打电话。"
     scene: "安慰与建议"
     func: ""
     pattern: "can + 频率副词 + 条件状语从句"
@@ -3138,8 +3138,8 @@ sentences:
       - { r: "subj", i: [4] }
       - { r: "pred", i: [5] }
       - { r: "obj", i: [6] }
-  - en: "You did the best you could do"
-    zh: "你已经尽力了"
+  - en: "You did the best you could do."
+    zh: "你已经尽力了。"
     scene: "安慰与建议"
     func: ""
     pattern: "过去时 + 宾语 + 定语从句省略"
@@ -8539,8 +8539,8 @@ sentences:
       - { r: "advl", i: [3] }
       - { r: "marker", i: [4] }
       - { r: "obj", i: [5, 6, 7] }
-  - en: "Can you cut it shorter on the sides"
-    zh: "两边能剪短一点吗"
+  - en: "Can you cut it shorter on the sides?"
+    zh: "两边能剪短一点吗？"
     scene: "理发"
     func: ""
     pattern: "can 疑问句 + 比较级"
@@ -8561,8 +8561,8 @@ sentences:
       - { r: "obj", i: [3] }
       - { r: "comp", i: [4] }
       - { r: "advl", i: [5, 6, 7] }
-  - en: "Can you show me a picture first"
-    zh: "能先给我看张图吗"
+  - en: "Can you show me a picture first?"
+    zh: "能先给我看张图吗？"
     scene: "理发"
     func: ""
     pattern: "can 请求 + 双宾语"
@@ -8623,8 +8623,8 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2, 3, 4] }
       - { r: "obj", i: [5, 6] }
-  - en: "Could you thin out the top a little"
-    zh: "能把顶部打薄一点吗"
+  - en: "Could you thin out the top a little?"
+    zh: "能把顶部打薄一点吗？"
     scene: "理发"
     func: ""
     pattern: "礼貌请求 + 动词短语"
@@ -8686,8 +8686,8 @@ sentences:
       - { r: "marker", i: [4] }
       - { r: "pred", i: [5] }
       - { r: "obj", i: [6, 7] }
-  - en: "Do you think this length suits me"
-    zh: "你觉得这个长度适合我吗"
+  - en: "Do you think this length suits me?"
+    zh: "你觉得这个长度适合我吗？"
     scene: "理发"
     func: ""
     pattern: "do 疑问句 + 宾语从句"
@@ -8781,8 +8781,8 @@ sentences:
       - { r: "obj", i: [4, 5] }
       - { r: "obj", i: [6] }
       - { r: "advl", i: [7] }
-  - en: "I am growing my hair out"
-    zh: "我正在留长头发"
+  - en: "I am growing my hair out."
+    zh: "我正在留长头发。"
     scene: "理发"
     func: ""
     pattern: "现在进行时"
@@ -8819,8 +8819,8 @@ sentences:
       - { r: "obj", i: [2] }
       - { r: "comp", i: [3] }
       - { r: "advl", i: [4, 5, 6] }
-  - en: "I like it when the front is longer"
-    zh: "我喜欢前面留长一点"
+  - en: "I like it when the front is longer."
+    zh: "我喜欢前面留长一点。"
     scene: "理发"
     func: ""
     pattern: "like + 宾语从句"
@@ -8861,8 +8861,8 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "obj", i: [2, 3] }
       - { r: "advl", i: [4, 5, 6] }
-  - en: "I need to look professional for work"
-    zh: "我需要看起来职业一点为了工作"
+  - en: "I need to look professional for work."
+    zh: "我需要看起来职业一点为了工作。"
     scene: "理发"
     func: ""
     pattern: "need to + 动词原形"
@@ -8880,8 +8880,8 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "objc", i: [2, 3, 4] }
       - { r: "advl", i: [5, 6] }
-  - en: "I think a side part looks better"
-    zh: "我觉得侧分更好看"
+  - en: "I think a side part looks better."
+    zh: "我觉得侧分更好看。"
     scene: "理发"
     func: ""
     pattern: "主观判断 + 比较级"
@@ -8921,8 +8921,8 @@ sentences:
       - { r: "objc", i: [2, 3] }
       - { r: "obj", i: [4, 5] }
       - { r: "advl", i: [6, 7] }
-  - en: "I want to try a new style today"
-    zh: "我想今天试个新发型"
+  - en: "I want to try a new style today."
+    zh: "我想今天试个新发型。"
     scene: "理发"
     func: ""
     pattern: "want to + 动词原形"
@@ -8942,8 +8942,8 @@ sentences:
       - { r: "objc", i: [2, 3] }
       - { r: "obj", i: [4, 5, 6] }
       - { r: "advl", i: [7] }
-  - en: "I will come back next month again"
-    zh: "我下个月还会再来"
+  - en: "I will come back next month again."
+    zh: "我下个月还会再来。"
     scene: "理发"
     func: ""
     pattern: "will 将来时 + 时间状语"
@@ -8962,8 +8962,8 @@ sentences:
       - { r: "advl", i: [3] }
       - { r: "advl", i: [4, 5] }
       - { r: "advl", i: [6] }
-  - en: "I would like a trim please"
-    zh: "我想修剪一下"
+  - en: "I would like a trim please."
+    zh: "我想修剪一下。"
     scene: "理发"
     func: ""
     pattern: "would like + 名词"
@@ -8980,8 +8980,8 @@ sentences:
       - { r: "pred", i: [1, 2] }
       - { r: "obj", i: [3, 4] }
       - { r: "marker", i: [5] }
-  - en: "Please do not cut too much off"
-    zh: "请别剪太多"
+  - en: "Please do not cut too much off."
+    zh: "请别剪太多。"
     scene: "理发"
     func: ""
     pattern: "否定祈使句"
@@ -9000,8 +9000,8 @@ sentences:
       - { r: "pred", i: [3] }
       - { r: "obj", i: [4, 5] }
       - { r: "advl", i: [6] }
-  - en: "Please leave the top a bit longer"
-    zh: "请把顶部留长一点"
+  - en: "Please leave the top a bit longer."
+    zh: "请把顶部留长一点。"
     scene: "理发"
     func: ""
     pattern: "祈使句 + 宾补"
@@ -9036,8 +9036,8 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "comp", i: [2] }
       - { r: "advl", i: [3, 4] }
-  - en: "The last haircut was too short for me"
-    zh: "上次剪太短了不适合我"
+  - en: "The last haircut was too short for me."
+    zh: "上次剪太短了不适合我。"
     scene: "理发"
     func: ""
     pattern: "过去式 be + too 形容词"
@@ -9075,8 +9075,8 @@ sentences:
       - { r: "pred", i: [1, 2, 3] }
       - { r: "advl", i: [4] }
       - { r: "obj", i: [5, 6] }
-  - en: "Can I change my reservation to eight"
-    zh: "能改成八点吗"
+  - en: "Can I change my reservation to eight?"
+    zh: "能改成八点吗？"
     scene: "电话订位"
     func: ""
     pattern: "情态动词请求"
@@ -9116,8 +9116,8 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6, 7] }
-  - en: "Can I reserve a table for tonight"
-    zh: "我能订今晚的桌子吗"
+  - en: "Can I reserve a table for tonight?"
+    zh: "我能订今晚的桌子吗？"
     scene: "电话订位"
     func: ""
     pattern: "情态动词疑问句"
@@ -9156,8 +9156,8 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5] }
       - { r: "marker", i: [6] }
-  - en: "Can we sit near the kitchen"
-    zh: "我们能坐在厨房附近吗"
+  - en: "Can we sit near the kitchen?"
+    zh: "我们能坐在厨房附近吗？"
     scene: "电话订位"
     func: ""
     pattern: "情态动词请求"
@@ -9174,8 +9174,8 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2] }
       - { r: "advl", i: [3, 4, 5] }
-  - en: "Can you hold a table for thirty minutes"
-    zh: "能帮留个桌子三十分钟吗"
+  - en: "Can you hold a table for thirty minutes?"
+    zh: "能帮留个桌子三十分钟吗？"
     scene: "电话订位"
     func: ""
     pattern: "情态动词请求"
@@ -9305,8 +9305,8 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5] }
       - { r: "advl", i: [6, 7] }
-  - en: "Do you need a credit card to hold it"
-    zh: "需要信用卡担保吗"
+  - en: "Do you need a credit card to hold it?"
+    zh: "需要信用卡担保吗？"
     scene: "电话订位"
     func: ""
     pattern: "一般疑问句 + 不定式目的"
@@ -9388,8 +9388,8 @@ sentences:
       - { r: "obj", i: [5, 6] }
       - { r: "advl", i: [7, 8] }
       - { r: "advl", i: [9] }
-  - en: "I'd like to book a table for two"
-    zh: "我想订两个人的桌子"
+  - en: "I'd like to book a table for two."
+    zh: "我想订两个人的桌子。"
     scene: "电话订位"
     func: ""
     pattern: "would like to + 动词原形"
@@ -9408,8 +9408,8 @@ sentences:
       - { r: "pred", i: [1, 2, 3] }
       - { r: "obj", i: [4, 5] }
       - { r: "advl", i: [6, 7] }
-  - en: "I'd like to confirm my reservation for tomorrow"
-    zh: "我想确认明天的预订"
+  - en: "I'd like to confirm my reservation for tomorrow."
+    zh: "我想确认明天的预订。"
     scene: "电话订位"
     func: ""
     pattern: "would like to + 动词"
@@ -9428,8 +9428,8 @@ sentences:
       - { r: "pred", i: [1, 2, 3] }
       - { r: "obj", i: [4, 5] }
       - { r: "advl", i: [6, 7] }
-  - en: "I'll be there in twenty minutes"
-    zh: "二十分钟后我到"
+  - en: "I'll be there in twenty minutes."
+    zh: "二十分钟后我到。"
     scene: "电话订位"
     func: ""
     pattern: "将来时表计划"
@@ -9446,8 +9446,8 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "advl", i: [2] }
       - { r: "advl", i: [3, 4, 5] }
-  - en: "I'm calling to make a dinner reservation"
-    zh: "我打电话预订晚餐"
+  - en: "I'm calling to make a dinner reservation."
+    zh: "我打电话预订晚餐。"
     scene: "电话订位"
     func: ""
     pattern: "现在进行时表目的"
@@ -9464,8 +9464,8 @@ sentences:
       - { r: "subj", i: [0] }
       - { r: "pred", i: [1] }
       - { r: "objc", i: [2, 3, 4, 5, 6] }
-  - en: "I'm running a few minutes late"
-    zh: "我晚几分钟到"
+  - en: "I'm running a few minutes late."
+    zh: "我晚几分钟到。"
     scene: "电话订位"
     func: ""
     pattern: "现在进行时表即将发生"
@@ -9522,8 +9522,8 @@ sentences:
       - { r: "marker", i: [1] }
       - { r: "subj", i: [2, 3, 4] }
       - { r: "advl", i: [5, 6, 7] }
-  - en: "Is there a wait time tonight"
-    zh: "今晚需要排队吗"
+  - en: "Is there a wait time tonight?"
+    zh: "今晚需要排队吗？"
     scene: "电话订位"
     func: ""
     pattern: "there be 疑问句"
@@ -9562,8 +9562,8 @@ sentences:
       - { r: "pred", i: [3, 4] }
       - { r: "obj", i: [5] }
       - { r: "advl", i: [6, 7] }
-  - en: "Thanks for holding the table for us"
-    zh: "谢谢帮我们留座"
+  - en: "Thanks for holding the table for us."
+    zh: "谢谢帮我们留座。"
     scene: "电话订位"
     func: ""
     pattern: "Thanks for + 动名词"
@@ -9620,8 +9620,8 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "obj", i: [2, 3] }
       - { r: "advl", i: [4, 5, 6, 7] }
-  - en: "We have a party of four coming"
-    zh: "我们四个人一起来"
+  - en: "We have a party of four coming."
+    zh: "我们四个人一起来。"
     scene: "电话订位"
     func: ""
     pattern: "have + 宾语 + 分词"
@@ -9697,8 +9697,8 @@ sentences:
       - { r: "pred", i: [1, 2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6, 7] }
-  - en: "We'd prefer a window seat please"
-    zh: "我们想要靠窗的位置"
+  - en: "We'd prefer a window seat please."
+    zh: "我们想要靠窗的位置。"
     scene: "电话订位"
     func: ""
     pattern: "would prefer + 名词"
@@ -9715,8 +9715,8 @@ sentences:
       - { r: "pred", i: [1] }
       - { r: "obj", i: [2, 3, 4] }
       - { r: "marker", i: [5] }
-  - en: "What's the latest time I can book"
-    zh: "最晚几点能订位"
+  - en: "What's the latest time I can book."
+    zh: "最晚几点能订位。"
     scene: "电话订位"
     func: ""
     pattern: "主语从句"

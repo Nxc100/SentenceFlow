@@ -1,0 +1,13 @@
+# `sf` 这个 bin 是 feature-gated 的(sf-pipeline/factory)。
+#
+# 不带 feature 时 `cargo build -p sf-pipeline` **只编库、静默跳过 bin** ——
+# 不报错、不警告,直接 "Finished"。于是 target/release/sf.exe 停在几小时前
+# 的版本,改的代码怎么跑都不生效。这个坑在本项目栽过两次(一次追了半天
+# opencode 的"代码没生效",一次是标点补全)。
+#
+# 用别名把 feature 焊死,别再手敲 cargo build:
+#   cargo sf-build     编 sf.exe
+#   cargo sf-test      跑含 factory 的全部测试
+[alias]
+sf-build = "build --release -p sf-pipeline --features factory --bin sf"
+sf-test = "test --workspace --all-features"

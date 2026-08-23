@@ -227,7 +227,7 @@ impl<'a> Validator<'a> {
             issues.push(ValidationIssue::NoWords);
         }
 
-        let (en_tokens, punct) = tokenize_en(&draft.en);
+        let (en_tokens, mut punct) = tokenize_en(&draft.en);
         let got_tokens: Vec<String> = draft.words.iter().map(|w| w.w.clone()).collect();
         if !draft.words.is_empty()
             && !en_tokens
@@ -323,6 +323,15 @@ impl<'a> Validator<'a> {
             issues.push(ValidationIssue::ChunkGap { word_indices: gaps });
         }
 
+        // ---- 句末标点补全 ----
+        // 模型偶尔整批不给句末标点(实测:`澄清与确认` 一批 18 句全无,
+        // `理发` / `电话订位` 各 14-15 句)。这不该丢句 —— 标点是确定可推的,
+        // 就地补上,和 `normalize_zh_punctuation` 一样属于机械归一,不报问题、
+        // 也不占一次模型修复调用。
+        if punct.is_empty() && !words.is_empty() && words.len() == draft.words.len() {
+            punct = crate::grammar::infer_terminal_punct(&words, &chunks).to_string();
+        }
+
         // ---- grammar ----
         // 只在结构本身没问题时查:成分没覆盖全、词性非法的句子已经要丢了,
         // 再报一串语法问题只会让丢弃原因变得难读。
@@ -394,8 +403,11 @@ impl<'a> Validator<'a> {
             scene: scene.to_string(),
             func: func.to_string(),
             pattern: draft.pattern.clone(),
-            zh: normalize_zh_punctuation(draft.zh.trim()),
-            en: draft.en.trim().to_string(),
+            zh: normalize_zh_punctuation(&append_punct(
+                draft.zh.trim(),
+                if punct.contains('?') { "？" } else { "。" },
+            )),
+            en: append_punct(draft.en.trim(), &punct),
             punct,
             words,
             chunks,
@@ -517,6 +529,36 @@ fn vocabulary_exempt(word: &str, pos: &str, index: usize) -> bool {
         return true;
     }
     index > 0 && word.chars().next().is_some_and(char::is_uppercase)
+}
+
+/// 给**已经成句**的 `Sentence` 补句末标点,补了返回 `true`。
+///
+/// 新产的句子在 [`Validator`] 里就补好了。这个函数是给历史数据用的:
+/// `generated.db` 里攒下的句子是直接合并进 `content.db` 的、不再过验证器,
+/// 修好验证器并不能追溯修好它们(实测残留 59 句)。合并与收成 YAML 两个
+/// 出口各调一次,逻辑只有这一份。
+pub fn repair_terminal_punct(s: &mut Sentence) -> bool {
+    if !s.punct.is_empty() {
+        return false;
+    }
+    s.punct = crate::grammar::infer_terminal_punct(&s.words, &s.chunks).to_string();
+    let zh_mark = if s.punct.contains('?') { "？" } else { "。" };
+    s.en = append_punct(s.en.trim(), &s.punct);
+    s.zh = append_punct(s.zh.trim(), zh_mark);
+    true
+}
+
+/// 末尾没有句读标点时补上 `mark`;已经有了就原样返回。
+///
+/// 只看**句读**标点:`Could you repeat that please` 要补,
+/// `请再说一遍好吗` 也要补,而 `他说:"好"` 这种收在引号里的不动。
+fn append_punct(s: &str, mark: &str) -> String {
+    const TERMINAL: &[char] = &['.', '!', '?', '。', '！', '？', '…'];
+    if s.ends_with(TERMINAL) || s.is_empty() {
+        s.to_string()
+    } else {
+        format!("{s}{mark}")
+    }
 }
 
 /// Split `en` into typable tokens + trailing punctuation (句末标点直显不输入).

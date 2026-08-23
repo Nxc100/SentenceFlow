@@ -1027,9 +1027,19 @@ fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
     if generated.exists() {
         let gen_store = ContentStore::open_rw(&generated)
             .map_err(|e| anyhow::anyhow!("opening {}: {e}", generated.display()))?;
-        let rows = gen_store
+        let mut rows = gen_store
             .all_sentences()
             .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        // 历史句子的句末标点补全(见 repair_terminal_punct)
+        let mut repunct = 0usize;
+        for s in rows.iter_mut() {
+            if sf_pipeline::validate::repair_terminal_punct(s) {
+                repunct += 1;
+            }
+        }
+        if repunct > 0 {
+            println!("generated: {repunct} 句补上句末标点");
+        }
         let mut merged = 0usize;
         store
             .in_transaction(|store| {
@@ -1591,9 +1601,19 @@ fn report_yield(st: &YieldStats) {
 fn harvest(db: &Path, out_dir: &Path, level: Option<&str>) -> Result<()> {
     let store =
         ContentStore::open_rw(db).map_err(|e| anyhow::anyhow!("opening {}: {e}", db.display()))?;
-    let all = store
+    let mut all = store
         .all_sentences()
         .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    // 收进 git 之前补句末标点 —— YAML 是被追踪的源文件,不能留没标点的句子
+    let mut repunct = 0usize;
+    for s in all.iter_mut() {
+        if sf_pipeline::validate::repair_terminal_punct(s) {
+            repunct += 1;
+        }
+    }
+    if repunct > 0 {
+        println!("补上句末标点:{repunct} 句");
+    }
     std::fs::create_dir_all(out_dir)?;
 
     let mut by_level: BTreeMap<LevelId, Vec<&Sentence>> = BTreeMap::new();
