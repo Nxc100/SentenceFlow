@@ -31,7 +31,7 @@ yep	1800	jep	jep	对(口语)
 nope	1800	nəʊp	noʊp	不(口语)
 yuan	1600	juːˈæn	juːˈɑn	元(人民币)
 euro	1600	ˈjʊərəʊ	ˈjʊroʊ	欧元
-dessert	1650	dɪˈzɜːt	dɪˈzɜrt	甜点
+dessert	1450	dɪˈzɜːt	dɪˈzɜrt	甜点
 pasta	1500	ˈpæstə	ˈpɑːstə	意面
 fries	1600	fraɪz	fraɪz	薯条
 vegetarian	1850	ˌvedʒɪˈteəriən	ˌvedʒɪˈteriən	素食者
@@ -82,3 +82,6 @@ neighbour	1327	ˈneɪbə	ˈneɪbər	邻居(英式拼写)
 cinema	1000	ˈsɪnəmə	ˈsɪnəmə	电影院
 internet	2000	ˈɪntənet	ˈɪntərnet	互联网
 cloudy	500	ˈklaʊdi	ˈklaʊdi	多云的
+# ---- 2026-08-23 跨等级摸底补入 ----
+banana	480	bəˈnɑːnə	bəˈnænə	香蕉
+basket	480	ˈbɑːskɪt	ˈbæskɪt	篮子
