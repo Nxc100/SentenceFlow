@@ -140,3 +140,17 @@ cinema	460	A1 场所名词(看电影场景亦用)
 church	640	A2 场所名词,问路地标
 museum	645	同上
 pool	900	A2;swimming pool 在运动场景出现
+
+# ---- 2026-08-23 L1「入门」类别实跑暴露(第四轮)----
+# cat 的 NGSL band 是 1763 —— 一只猫。同一类问题:通用语料频次 ≠ 学习难度。
+shirt	315	衣物,A1
+wear	318	穿着的核心动词,A1
+cat	205	A1 第一批具体名词;NGSL 1763 是通用语料频次
+bird	208	同上
+lunch	312	三餐词,A1
+wake	348	作息核心动词,A1
+wall	340	房间物品,A1
+floor	342	房间物品,A1
+picture	344	房间/教室物品,A1
+thirsty	354	同上
+warm	356	天气/感觉,A1

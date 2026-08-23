@@ -88,7 +88,9 @@ enum FactoryCmd {
         model: String,
         #[arg(long, default_value = "content")]
         content_dir: PathBuf,
-        #[arg(long, default_value = "content/build/content.db")]
+        /// AI 产出落在这里,跨多次跑批累积;`sf factory build` 再把它合进
+        /// content.db。**不要直接写 content.db** —— build 会删库重建。
+        #[arg(long, default_value = "content/build/generated.db")]
         db: PathBuf,
         #[arg(long)]
         api_key: Option<String>,
@@ -172,7 +174,8 @@ enum FactoryCmd {
         model: String,
         #[arg(long, default_value = "content")]
         content_dir: PathBuf,
-        #[arg(long, default_value = "content/build/content.db")]
+        /// 见 `run` 的同名参数:AI 产出落 generated.db,不直接写 content.db。
+        #[arg(long, default_value = "content/build/generated.db")]
         db: PathBuf,
         /// API key for deepseek/zen (or env SF_API_KEY).
         #[arg(long)]
@@ -952,6 +955,31 @@ fn build(content_dir: &Path, out: &Path, rev: u32) -> Result<()> {
             Ok(())
         })
         .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+
+    // 合并 AI 生成库(可缺)。build 会删库重建,所以生成内容必须另存 ——
+    // 否则每次改词表后重建,攒下来的句子就全没了。
+    let generated = out.with_file_name("generated.db");
+    if generated.exists() {
+        let gen_store = ContentStore::open_rw(&generated)
+            .map_err(|e| anyhow::anyhow!("opening {}: {e}", generated.display()))?;
+        let rows = gen_store
+            .all_sentences()
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        let mut merged = 0usize;
+        store
+            .in_transaction(|store| {
+                for s in &rows {
+                    // 种子优先:同文的以种子为准(种子是人工校对过的)
+                    if store.sentence_id_by_en(&s.en)?.is_none() {
+                        store.insert_sentence(s, "", rev)?;
+                        merged += 1;
+                    }
+                }
+                Ok(())
+            })
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        println!("merged generated.db: {merged}/{} sentences", rows.len());
+    }
 
     // 出厂场景包(《场景练习模块-实现方案》§3.3):句子按对话顺序入
     // sentence 表(带 pack),包元信息进 meta["scenario_packs"]。
@@ -1982,6 +2010,11 @@ fn gen_cmd(
             .all_sentences_en()
             .map_err(|e| anyhow::anyhow!(e.to_string()))?,
     );
+    // 种子句也要避开 —— 它们最终会和生成内容一起进 content.db。
+    // (generated.db 与 content.db 分开,所以这里得显式把种子加进来。)
+    for sentence in &run_seeds(content_dir)?.accepted {
+        dedupe.add(sentence.en.as_str());
+    }
 
     let adapter = build_adapter(channel, api_key)?;
 

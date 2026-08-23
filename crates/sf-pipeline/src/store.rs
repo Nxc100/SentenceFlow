@@ -389,6 +389,22 @@ impl ContentStore {
         Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
+    /// 全库句子(合并 generated.db 用)。
+    pub fn all_sentences(&self) -> Result<Vec<Sentence>> {
+        let ids: Vec<i64> = {
+            let mut stmt = self.conn.prepare("SELECT id FROM sentence ORDER BY id")?;
+            let rows = stmt.query_map([], |r| r.get::<_, i64>(0))?;
+            rows.collect::<rusqlite::Result<Vec<_>>>()?
+        };
+        let mut out = Vec::with_capacity(ids.len());
+        for id in ids {
+            if let Some(s) = self.sentence_by_id(id)? {
+                out.push(s);
+            }
+        }
+        Ok(out)
+    }
+
     /// 全库句子的英文原文 —— **出厂库**查重的比较范围。
     ///
     /// 出厂库是随包分发的成品,用户按等级浏览时一眼能看见整级的句子,
