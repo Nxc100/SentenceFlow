@@ -1,7 +1,8 @@
-# AI 生成的出厂句(L5,1747 句)
-# 由 `sf factory harvest` 从 generated.db 收上来。
+# AI 生成的出厂句(L5,1774 句)
+# 由 `sf factory harvest` 从 generated.db 收上来,并与文件里
+# 已有的句子合并(同文以这次收的为准,不是整体重写)。
 # 手改这个文件是可以的(人工抽审改错句就直接改这里);
-# 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
+# 但重新 harvest 会按 场景→英文 排序重排,别在这里加自己的注释。
 level: L5
 sentences:
   - en: "Can I scan your QR code?"
@@ -5878,6 +5879,59 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6, 7, 8] }
+  - en: "I brush my teeth every morning."
+    zh: "我每天早上刷牙。"
+    scene: "家务与日常安排"
+    func: ""
+    pattern: "主+谓+宾+频率状语"
+    note: "teeth 是 tooth 复数，every morning 固定说每天早上。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "brush", ipa: "brʌʃ", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "teeth", ipa: "tiːθ", pos: "n" }
+      - { w: "every", ipa: "ˈevri", pos: "adj" }
+      - { w: "morning", ipa: "ˈmɔːnɪŋ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+  - en: "I fold my clothes after washing."
+    zh: "洗完衣服我叠衣服。"
+    scene: "家务与日常安排"
+    func: ""
+    pattern: "主+谓+宾+时间状语"
+    note: "fold 叠（衣服），after washing 洗完之后，washing 作动名词。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "fold", ipa: "fəʊld", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "clothes", ipa: "kləʊðz", pos: "n" }
+      - { w: "after", ipa: "ˈɑːftə", pos: "prep" }
+      - { w: "washing", ipa: "ˈwɒʃɪŋ", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "advl", i: [4, 5] }
+  - en: "She sweeps the floor daily."
+    zh: "她每天扫地。"
+    scene: "家务与日常安排"
+    func: ""
+    pattern: "主+谓+宾+频率状语"
+    note: "sweeps 为三单，daily 位句尾修饰频率。"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "sweeps", ipa: "swiːps", pos: "v" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "floor", ipa: "flɔː", pos: "n" }
+      - { w: "daily", ipa: "ˈdeɪli", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+      - { r: "advl", i: [4] }
   - en: "There are three books on the white shelf."
     zh: "白色的架上有三本书。"
     scene: "家里的房间"
@@ -6563,6 +6617,22 @@ sentences:
       - { r: "link", i: [2] }
       - { r: "subj", i: [3, 4, 5] }
       - { r: "advl", i: [6, 7, 8] }
+  - en: "I do not want cheese."
+    zh: "我不想要芝士。"
+    scene: "快餐店点餐"
+    func: ""
+    pattern: "主+助动词+否定+动词+宾"
+    note: "do not want 表示明确拒绝某配料。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "do", ipa: "duː", pos: "aux" }
+      - { w: "not", ipa: "nɒt", pos: "adv" }
+      - { w: "want", ipa: "wɒnt", pos: "v" }
+      - { w: "cheese", ipa: "tʃiːz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2, 3] }
+      - { r: "obj", i: [4] }
   - en: "Before closing I want to confirm the action items."
     zh: "闭会 前 我 想 确认 待办 事项。"
     scene: "总结与收尾"
@@ -10322,6 +10392,21 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6] }
+  - en: "My grandmother is eighty."
+    zh: "我奶奶八十岁。"
+    scene: "数字与年龄"
+    func: ""
+    pattern: "主+系+表"
+    note: "eighty 等整十数直接作表语。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "grandmother", ipa: "ˈɡrændmʌðə", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "eighty", ipa: "ˈeɪti", pos: "num" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
   - en: "Are we allowed to take photos inside here?"
     zh: "这儿里面允许拍照吗？"
     scene: "旅游景点"
@@ -17365,6 +17450,22 @@ sentences:
       - { r: "objc", i: [4, 5] }
       - { r: "obj", i: [6] }
       - { r: "advl", i: [7, 8] }
+  - en: "My cousin is my age."
+    zh: "我表哥/表弟和我同龄。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+系+表"
+    note: "be my age 表示年龄相同。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "cousin", ipa: "ˈkʌzn", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "age", ipa: "eɪdʒ", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3, 4] }
   - en: "My cousin is playing in the garden."
     zh: "我的表弟正在花园里玩。"
     scene: "聊家人"
@@ -17403,6 +17504,36 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "pred", i: [2, 3] }
       - { r: "advl", i: [4, 5, 6, 7, 8] }
+  - en: "My cousin plays football."
+    zh: "我堂兄或表弟踢足球。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+谓+宾"
+    note: "play + 球类运动，ball 类不加冠词。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "cousin", ipa: "ˈkʌzn", pos: "n" }
+      - { w: "plays", ipa: "pleɪz", pos: "v" }
+      - { w: "football", ipa: "ˈfʊtbɔːl", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+  - en: "My grandmother cooks well."
+    zh: "我奶奶/外婆做饭好吃。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+谓+副词"
+    note: "well 修饰动词 cooks。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "grandmother", ipa: "ˈɡrænmʌðə", pos: "n" }
+      - { w: "cooks", ipa: "kʊks", pos: "v" }
+      - { w: "well", ipa: "wel", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3] }
   - en: "My grandmother's cakes are much sweeter than mine."
     zh: "我奶奶做的蛋糕比我的甜多了。"
     scene: "聊家人"
@@ -17461,6 +17592,21 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "pred", i: [2, 3] }
       - { r: "obj", i: [4, 5, 6, 7] }
+  - en: "My uncle lives nearby."
+    zh: "我叔叔或舅舅住在附近。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+谓+状"
+    note: "live 是不及物动词，nearby 作地点状语。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "uncle", ipa: "ˈʌŋkl", pos: "n" }
+      - { w: "lives", ipa: "laɪvz", pos: "v" }
+      - { w: "nearby", ipa: "ˌnɪəˈbaɪ", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3] }
   - en: "My uncle works in a shop near our house."
     zh: "我叔叔在我们家附近的一家店里工作。"
     scene: "聊家人"
@@ -18703,6 +18849,36 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5, 6] }
+  - en: "He buttons his shirt."
+    zh: "他扣衬衫扣子。"
+    scene: "衣服与穿着"
+    func: ""
+    pattern: "主+谓+宾"
+    note: "button 作动词用。"
+    words:
+      - { w: "He", ipa: "hiː", pos: "pron" }
+      - { w: "buttons", ipa: "ˈbʌtnz", pos: "v" }
+      - { w: "his", ipa: "hɪz", pos: "pron" }
+      - { w: "shirt", ipa: "ʃɜːt", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
+  - en: "Her skirt is long."
+    zh: "她的裙子很长。"
+    scene: "衣服与穿着"
+    func: ""
+    pattern: "主+系+表"
+    note: "形容词作表语。"
+    words:
+      - { w: "Her", ipa: "hɜː", pos: "pron" }
+      - { w: "skirt", ipa: "skɜːt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "long", ipa: "lɒŋ", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
   - en: "I like your new brown boots."
     zh: "我喜欢你的新棕色靴子。"
     scene: "衣服与穿着"
@@ -18720,6 +18896,22 @@ sentences:
       - { r: "subj", i: [0] }
       - { r: "pred", i: [1] }
       - { r: "obj", i: [2, 3, 4, 5] }
+  - en: "I take off my cap."
+    zh: "我脱下帽子。"
+    scene: "衣服与穿着"
+    func: ""
+    pattern: "主+谓+宾"
+    note: "take off 是脱下的动作。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "off", ipa: "ɒf", pos: "part" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "cap", ipa: "kæp", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
   - en: "Let me see that blue shirt on the shelf."
     zh: "让我看看架子上那件蓝衬衫。"
     scene: "衣服与穿着"
@@ -18742,6 +18934,21 @@ sentences:
       - { r: "objc", i: [2] }
       - { r: "obj", i: [3, 4, 5] }
       - { r: "advl", i: [6, 7, 8] }
+  - en: "My jacket is black."
+    zh: "我的夹克是黑色的。"
+    scene: "衣服与穿着"
+    func: ""
+    pattern: "主+系+表"
+    note: "颜色作表语。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "jacket", ipa: "ˈdʒækɪt", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "black", ipa: "blæk", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
   - en: "Please try on this green jacket in the shop."
     zh: "请在店里试穿这件绿夹克。"
     scene: "衣服与穿着"
@@ -18782,6 +18989,22 @@ sentences:
       - { r: "link", i: [1] }
       - { r: "pred", i: [2, 3] }
       - { r: "obj", i: [4, 5, 6] }
+  - en: "She takes off her cap."
+    zh: "她脱下她的帽子。"
+    scene: "衣服与穿着"
+    func: ""
+    pattern: "主+谓+宾"
+    note: "take off 是脱下的动作。"
+    words:
+      - { w: "She", ipa: "ʃiː", pos: "pron" }
+      - { w: "takes", ipa: "teɪks", pos: "v" }
+      - { w: "off", ipa: "ɒf", pos: "adv" }
+      - { w: "her", ipa: "hɜː", pos: "pron" }
+      - { w: "cap", ipa: "kæp", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1, 2] }
+      - { r: "obj", i: [3, 4] }
   - en: "Take off your wet shoes now."
     zh: "现在把你的湿鞋脱掉。"
     scene: "衣服与穿着"
@@ -18837,6 +19060,20 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "link", i: [2] }
       - { r: "comp", i: [3, 4, 5, 6] }
+  - en: "We wear uniforms."
+    zh: "我们穿制服。"
+    scene: "衣服与穿着"
+    func: ""
+    pattern: "主+谓+宾"
+    note: "复数名词作宾语。"
+    words:
+      - { w: "We", ipa: "wiː", pos: "pron" }
+      - { w: "wear", ipa: "weə", pos: "v" }
+      - { w: "uniforms", ipa: "ˈjuːnɪfɔːmz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
   - en: "Actually I found the staff very friendly and helpful."
     zh: "其实我发现员工很友善、乐于助人。"
     scene: "表明立场与理由"
@@ -27227,6 +27464,39 @@ sentences:
       - { r: "subj", i: [3, 4] }
       - { r: "pred", i: [5] }
       - { r: "advl", i: [6, 7] }
+  - en: "Do you sell cheese here?"
+    zh: "这儿卖奶酪吗？"
+    scene: "超市购物"
+    func: ""
+    pattern: "一般疑问句"
+    note: "Do you sell…? 询问是否销售某商品。"
+    words:
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "sell", ipa: "sel", pos: "v" }
+      - { w: "cheese", ipa: "tʃiːz", pos: "n" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "advl", i: [4] }
+  - en: "I like this cheese."
+    zh: "我喜欢这个奶酪。"
+    scene: "超市购物"
+    func: ""
+    pattern: "主+谓+宾"
+    note: "like 表达喜欢，后接名词作宾语。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "like", ipa: "laɪk", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "pron" }
+      - { w: "cheese", ipa: "tʃiːz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3] }
   - en: "Is there any orange juice on the shelf?"
     zh: "架子上还有橙汁吗？"
     scene: "超市购物"
@@ -27285,6 +27555,19 @@ sentences:
       - { r: "marker", i: [4] }
       - { r: "subj", i: [5] }
       - { r: "pred", i: [6] }
+  - en: "His tooth hurts."
+    zh: "他牙疼。"
+    scene: "身体与感觉"
+    func: ""
+    pattern: "主+谓"
+    note: "tooth 牙齿，单复数不规则。"
+    words:
+      - { w: "His", ipa: "hɪz", pos: "pron" }
+      - { w: "tooth", ipa: "tuːθ", pos: "n" }
+      - { w: "hurts", ipa: "hɜːts", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
   - en: "My knee is bad so I can not run."
     zh: "我膝盖不好，所以跑不了。"
     scene: "身体与感觉"
@@ -29916,6 +30199,18 @@ sentences:
       - { r: "subj", i: [0] }
       - { r: "pred", i: [1] }
       - { r: "advl", i: [2, 3, 4, 5] }
+  - en: "I apologize."
+    zh: "我道歉。"
+    scene: "道歉与致谢"
+    func: ""
+    pattern: "主+谓"
+    note: "apologize 比 sorry 更正式，L1 词表内的高频动词。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "apologize", ipa: "əˈpɒlədʒaɪz", pos: "v" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
   - en: "I regret not telling you sooner."
     zh: "我后悔没早点告诉你。"
     scene: "道歉与致谢"
@@ -34599,6 +34894,22 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2] }
       - { r: "advl", i: [3, 4, 5] }
+  - en: "It is freezing here."
+    zh: "这儿冷极了。"
+    scene: "闲聊天气"
+    func: ""
+    pattern: "主+系+表+地点状语"
+    note: "freezing 极冷的，口语比 very cold 更地道。"
+    words:
+      - { w: "It", ipa: "ɪt", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "freezing", ipa: "ˈfriːzɪŋ", pos: "adj" }
+      - { w: "here", ipa: "hɪə", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2] }
+      - { r: "advl", i: [3] }
   - en: "It is freezing outside, so wear your hat."
     zh: "外面冻死了，戴上你的帽子吧。"
     scene: "闲聊天气"
@@ -35406,6 +35717,21 @@ sentences:
       - { r: "objc", i: [3, 4] }
       - { r: "obj", i: [5, 6] }
       - { r: "advl", i: [7, 8] }
+  - en: "The toy is round."
+    zh: "玩具是圆的。"
+    scene: "颜色与形状"
+    func: ""
+    pattern: "主+系+表"
+    note: "round 描述形状，也可作介词/副词。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "toy", ipa: "tɔɪ", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "round", ipa: "raʊnd", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
   - en: "She is cooking fish and potatoes in the kitchen."
     zh: "她正在厨房里做鱼和土豆。"
     scene: "食物与饮料"
@@ -35427,6 +35753,37 @@ sentences:
       - { r: "pred", i: [1, 2] }
       - { r: "obj", i: [3, 4, 5] }
       - { r: "advl", i: [6, 7, 8] }
+  - en: "The ice cream is cold."
+    zh: "冰淇淋是凉的。"
+    scene: "食物与饮料"
+    func: ""
+    pattern: "主+系+表"
+    note: "ice cream 合成名词作整体主语，单数动词。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "ice", ipa: "aɪs", pos: "n" }
+      - { w: "cream", ipa: "kriːm", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "cold", ipa: "kəʊld", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1, 2] }
+      - { r: "link", i: [3] }
+      - { r: "comp", i: [4] }
+  - en: "The soup tastes delicious."
+    zh: "这汤真好喝。"
+    scene: "食物与饮料"
+    func: ""
+    pattern: "主+系+表"
+    note: "taste 作系动词用，后接形容词表味道"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "soup", ipa: "suːp", pos: "n" }
+      - { w: "tastes", ipa: "teɪsts", pos: "v" }
+      - { w: "delicious", ipa: "dɪˈlɪʃəs", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
   - en: "There is some bread and cheese on the table."
     zh: "桌上有些面包和奶酪。"
     scene: "食物与饮料"
@@ -35467,6 +35824,21 @@ sentences:
       - { r: "subj", i: [0, 1, 2] }
       - { r: "link", i: [3] }
       - { r: "comp", i: [4, 5, 6, 7] }
+  - en: "This juice is delicious."
+    zh: "这果汁真好喝。"
+    scene: "食物与饮料"
+    func: ""
+    pattern: "主+系+表"
+    note: "delicious 语义强度大于 good，口语常用于赞美食物。"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "juice", ipa: "dʒuːs", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "delicious", ipa: "dɪˈlɪʃəs", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
   - en: "We are eating some bread and cheese now."
     zh: "我们现在在吃面包和奶酪。"
     scene: "食物与饮料"
@@ -35568,6 +35940,24 @@ sentences:
       - { r: "subj", i: [1] }
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4, 5, 6, 7] }
+  - en: "The food is delicious thank you."
+    zh: "食物很好吃谢谢。"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "主+系+表+感谢语"
+    note: "delicious 表示很好吃。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "food", ipa: "fuːd", pos: "n" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "delicious", ipa: "dɪˈlɪʃəs", pos: "adj" }
+      - { w: "thank", ipa: "θæŋk", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "link", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "marker", i: [4, 5] }
   - en: "The food was delicious, thank you."
     zh: "饭菜很好吃，谢谢。"
     scene: "餐厅点餐"
@@ -35619,3 +36009,34 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "pred", i: [2] }
       - { r: "comp", i: [3] }
+  - en: "This is delicious thank you."
+    zh: "这很好吃谢谢。"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "主+系+表+礼貌语"
+    note: "thank you 固定感谢语"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "delicious", ipa: "dɪˈlɪʃəs", pos: "adj" }
+      - { w: "thank", ipa: "θæŋk", pos: "v" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2] }
+      - { r: "marker", i: [3, 4] }
+  - en: "This is delicious."
+    zh: "这个很好吃。"
+    scene: "餐厅点餐"
+    func: ""
+    pattern: "主+系+表"
+    note: "delicious 专门形容食物好吃。"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "is", ipa: "ɪz", pos: "aux" }
+      - { w: "delicious", ipa: "dɪˈlɪʃəs", pos: "adj" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "link", i: [1] }
+      - { r: "comp", i: [2] }

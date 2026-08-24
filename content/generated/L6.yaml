@@ -1,7 +1,8 @@
-# AI 生成的出厂句(L6,1035 句)
-# 由 `sf factory harvest` 从 generated.db 收上来。
+# AI 生成的出厂句(L6,1037 句)
+# 由 `sf factory harvest` 从 generated.db 收上来,并与文件里
+# 已有的句子合并(同文以这次收的为准,不是整体重写)。
 # 手改这个文件是可以的(人工抽审改错句就直接改这里);
-# 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
+# 但重新 harvest 会按 场景→英文 排序重排,别在这里加自己的注释。
 level: L6
 sentences:
   - en: "Although the timeline is tight, I believe we can deliver on schedule."
@@ -11031,6 +11032,22 @@ sentences:
       - { r: "subj", i: [0, 1] }
       - { r: "pred", i: [2] }
       - { r: "advl", i: [3, 4, 5, 6, 7, 8, 9] }
+  - en: "My aunt lives near us."
+    zh: "我姑姑/阿姨住在我们附近。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+谓+方位"
+    note: "live near 表示住在附近。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "aunt", ipa: "ɑːnt", pos: "n" }
+      - { w: "lives", ipa: "laɪvz", pos: "v" }
+      - { w: "near", ipa: "nɪə", pos: "prep" }
+      - { w: "us", ipa: "ʌs", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4] }
   - en: "My aunt often brings us fresh fruit from her garden."
     zh: "我姨妈常从她花园带新鲜水果给我们。"
     scene: "聊家人"
@@ -11054,6 +11071,22 @@ sentences:
       - { r: "pred", i: [3] }
       - { r: "obj", i: [4, 5, 6] }
       - { r: "advl", i: [7, 8, 9] }
+  - en: "My aunt visits on Sundays."
+    zh: "我姑姑或姨妈周日来看望。"
+    scene: "聊家人"
+    func: ""
+    pattern: "主+谓+状"
+    note: "on + 复数星期表示每周那天。"
+    words:
+      - { w: "My", ipa: "maɪ", pos: "pron" }
+      - { w: "aunt", ipa: "ɑːnt", pos: "n" }
+      - { w: "visits", ipa: "ˈvɪzɪts", pos: "v" }
+      - { w: "on", ipa: "ɒn", pos: "prep" }
+      - { w: "Sundays", ipa: "ˈsʌndeɪz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "advl", i: [3, 4] }
   - en: "We are visiting my aunt this weekend."
     zh: "这个周末我们要去看我姑姑。"
     scene: "聊家人"

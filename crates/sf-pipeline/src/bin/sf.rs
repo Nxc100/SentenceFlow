@@ -1626,21 +1626,46 @@ fn harvest(db: &Path, out_dir: &Path, level: Option<&str>) -> Result<()> {
         bail!("{} 里没有可收的句子", db.display());
     }
 
-    for (lv, mut rows) in by_level {
-        // 按 场景 → 英文 排序:输出稳定,diff 才有意义
-        rows.sort_by(|a, b| (&a.scene, &a.en).cmp(&(&b.scene, &b.en)));
+    for (lv, rows) in by_level {
         let path = out_dir.join(format!("{lv}.yaml"));
+
+        // 先并入这个文件里**已经有**的句子,再拿这次 generated.db 里的
+        // 覆盖同文的那一条 —— 不能直接拿 db 的内容整体重写文件。
+        //
+        // 踩过一次:generated.db 是当次生成用的工作库,不是全量历史;
+        // 某次 db 里 L1 只剩本轮新产的 411 句,文件里却已经收了更早一轮
+        // harvest 攒下、已经提交的 685 句。整体重写直接把那 685 句从
+        // git 追踪的源文件里抹掉,和新产的零交集 —— 当次 build/gold 通过
+        // 也看不出来,因为剩下的 411 句本身完全合法,只是丢了 685 句。
+        let mut merged: BTreeMap<String, sf_pipeline::seed::SeedSentence> = BTreeMap::new();
+        if let Ok(existing) = std::fs::read_to_string(&path)
+            && let Ok(prev) = SeedFile::from_yaml(&existing)
+        {
+            for s in prev.sentences {
+                merged.insert(s.en.clone(), s);
+            }
+        }
+        let carried = merged.len();
+        for s in &rows {
+            merged.insert(s.en.clone(), sentence_to_seed(s));
+        }
+        let fresh_or_updated = merged.len().saturating_sub(carried);
+        let mut out_rows: Vec<sf_pipeline::seed::SeedSentence> = merged.into_values().collect();
+        // 按 场景 → 英文 排序:输出稳定,diff 才有意义
+        out_rows.sort_by(|a, b| (&a.scene, &a.en).cmp(&(&b.scene, &b.en)));
+
         let mut out = String::new();
         // 别用 Rust 的字符串续行拼 YAML —— 续行会把缩进带进输出,
         // `level:` 一缩进就不是合法的顶层键了(踩过:harvest 出来的
         // 文件 YAML 解析直接失败)。逐行 push,眼睛看到什么就是什么。
-        out.push_str(&format!("# AI 生成的出厂句({lv},{} 句)\n", rows.len()));
-        out.push_str("# 由 `sf factory harvest` 从 generated.db 收上来。\n");
+        out.push_str(&format!("# AI 生成的出厂句({lv},{} 句)\n", out_rows.len()));
+        out.push_str("# 由 `sf factory harvest` 从 generated.db 收上来,并与文件里\n");
+        out.push_str("# 已有的句子合并(同文以这次收的为准,不是整体重写)。\n");
         out.push_str("# 手改这个文件是可以的(人工抽审改错句就直接改这里);\n");
-        out.push_str("# 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。\n");
+        out.push_str("# 但重新 harvest 会按 场景→英文 排序重排,别在这里加自己的注释。\n");
         out.push_str(&format!("level: {lv}\nsentences:\n"));
-        let n = rows.len();
-        for s in &rows {
+        let n = out_rows.len();
+        for s in &out_rows {
             out.push_str(&format!(
                 "  - en: {}\n    zh: {}\n    scene: {}\n    func: {}\n    pattern: {}\n    note: {}\n",
                 yaml_str(&s.en),
@@ -1656,7 +1681,7 @@ fn harvest(db: &Path, out_dir: &Path, level: Option<&str>) -> Result<()> {
                     "      - {{ w: {}, ipa: {}, pos: \"{}\" }}\n",
                     yaml_str(&w.w),
                     yaml_str(&w.ipa),
-                    serde_json::to_value(w.pos)?.as_str().unwrap_or("n"),
+                    w.pos,
                 ));
             }
             out.push_str("    chunks:\n");
@@ -1664,15 +1689,54 @@ fn harvest(db: &Path, out_dir: &Path, level: Option<&str>) -> Result<()> {
                 let idx: Vec<String> = c.i.iter().map(|i| i.to_string()).collect();
                 out.push_str(&format!(
                     "      - {{ r: \"{}\", i: [{}] }}\n",
-                    serde_json::to_value(c.r)?.as_str().unwrap_or("subj"),
+                    c.r,
                     idx.join(", ")
                 ));
             }
         }
         std::fs::write(&path, out)?;
-        println!("  {} ← {n} 句", path.display());
+        println!(
+            "  {} ← {n} 句(沿用已有 {carried} · 这次新收/更新 {fresh_or_updated})",
+            path.display()
+        );
     }
     Ok(())
+}
+
+/// db 里的 [`Sentence`] 转成 YAML 种子格式(供 harvest 与已有文件合并用)。
+fn sentence_to_seed(s: &Sentence) -> sf_pipeline::seed::SeedSentence {
+    sf_pipeline::seed::SeedSentence {
+        en: s.en.clone(),
+        zh: s.zh.clone(),
+        scene: s.scene.clone(),
+        func: s.func.clone(),
+        pattern: s.pattern.clone(),
+        note: s.note.clone(),
+        words: s
+            .words
+            .iter()
+            .map(|w| sf_pipeline::parse::DraftWord {
+                w: w.w.clone(),
+                ipa: w.ipa.clone(),
+                pos: serde_json::to_value(w.pos)
+                    .ok()
+                    .and_then(|v| v.as_str().map(str::to_string))
+                    .unwrap_or_else(|| "n".to_string()),
+            })
+            .collect(),
+        chunks: s
+            .chunks
+            .iter()
+            .map(|c| sf_pipeline::parse::DraftChunk {
+                r: serde_json::to_value(c.r)
+                    .ok()
+                    .and_then(|v| v.as_str().map(str::to_string))
+                    .unwrap_or_else(|| "subj".to_string()),
+                i: c.i.clone(),
+            })
+            .collect(),
+        speaker: String::new(),
+    }
 }
 
 /// YAML 双引号字符串(转义反斜杠与引号)。句子里出现引号是常事。
@@ -2280,7 +2344,11 @@ fn gen_cmd(
         }
         // ---- 修补循环:每句一次,仅传差异;修不好才算丢 ----
         for (broken, reasons) in pending_repairs {
-            match repair_one(&*adapter, model, &broken, &reasons, &validator, &dedupe).await {
+            match repair_one(
+                &*adapter, model, &broken, &reasons, &validator, &dedupe, &all_specs,
+            )
+            .await
+            {
                 Some(fixed) => match bank(&store, &mut dedupe, &fixed)? {
                     true => accepted += 1,
                     false => discarded += 1,
@@ -2332,6 +2400,7 @@ async fn repair_one(
     reasons: &[String],
     validator: &Validator<'_>,
     dedupe: &DedupeIndex,
+    all_specs: &[LevelSpec],
 ) -> Option<sf_core::Sentence> {
     use futures::StreamExt;
     use sf_llm::types::GenChunk;
@@ -2357,8 +2426,18 @@ async fn repair_one(
     }
     let draft = sf_pipeline::parse::parse_single_draft(&text).ok()?;
     let report = validator.validate(&draft, &broken.scene, &broken.func, dedupe);
-    match report.verdict {
-        sf_pipeline::validate::VerdictKind::Pass => report.sentence,
+    // 修补只按 Pass 收,漏掉了"修完干净但词偏难"这一种:改级本该跟修补
+    // 独立判断,不该因为凑巧同一句里还有个坏音标就把改级的机会也搭进去。
+    // 走一遍完整 triage,越级句该改级还是改级。
+    match sf_pipeline::triage::triage(report, sf_pipeline::triage::GenProfile::Factory, all_specs) {
+        sf_pipeline::triage::TriageOutcome::Accept { sentence } => Some(sentence),
+        sf_pipeline::triage::TriageOutcome::Relevel {
+            mut sentence,
+            new_level,
+        } => {
+            sentence.level = new_level;
+            Some(sentence)
+        }
         _ => None,
     }
 }

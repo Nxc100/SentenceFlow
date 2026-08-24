@@ -125,6 +125,7 @@ async fn run_repair(
     reasons: &[String],
     validator: &Validator<'_>,
     dedupe: &DedupeIndex,
+    all_specs: &[sf_core::spec::LevelSpec],
 ) -> Option<sf_core::Sentence> {
     let parts = sf_pipeline::prompt::build_repair_prompt(&broken.en, reasons);
     let req = GenRequest {
@@ -147,8 +148,17 @@ async fn run_repair(
     }
     let draft = sf_pipeline::parse::parse_single_draft(&text).ok()?;
     let report = validator.validate(&draft, &broken.scene, &broken.func, dedupe);
-    match report.verdict {
-        sf_pipeline::validate::VerdictKind::Pass => report.sentence,
+    // 同 sf.rs::repair_one:修补只认 Pass 会把"修完干净但词偏难"的句子也
+    // discard 掉——改级该独立于修补判断,走一遍完整 triage。
+    match triage(report, GenProfile::User, all_specs) {
+        TriageOutcome::Accept { sentence } => Some(sentence),
+        TriageOutcome::Relevel {
+            mut sentence,
+            new_level,
+        } => {
+            sentence.level = new_level;
+            Some(sentence)
+        }
         _ => None,
     }
 }
@@ -624,6 +634,7 @@ async fn run_job(app: AppHandle, state: Arc<AppState>, mut job: GenJob) -> CmdRe
                     &reasons,
                     &validator,
                     &dedupe,
+                    &all_specs,
                 )
                 .await
                 {

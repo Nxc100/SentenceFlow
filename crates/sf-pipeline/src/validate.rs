@@ -384,15 +384,21 @@ impl<'a> Validator<'a> {
         }
 
         // ---- verdict ----
+        // Repairable 必须排在 Level 前面查。原先 Level 在前:一句词偏难又
+        // 音标坏掉的句子,verdict 直接判 OverLevel,改级分支只看"词偏难"
+        // 这一件事,坏音标跟着原样入库 —— 出厂库里两句 morning 的音标
+        // 混进了非法字符「Ļ」,build 校验种子时才现形。改级不该是"跳过其余
+        // 检查的快速通道",该修的先修,修完还是越级再改级(见 [`repair_one`]
+        // 和 workshop::run_repair 现在都会再走一次 [`crate::triage::triage`])。
         let has = |s: Severity| issues.iter().any(|i| i.severity() == s);
         let verdict = if has(Severity::Fatal) {
             VerdictKind::Broken
         } else if has(Severity::Duplicate) {
             VerdictKind::Duplicate
-        } else if has(Severity::Level) {
-            VerdictKind::OverLevel
         } else if has(Severity::Repairable) {
             VerdictKind::NeedsRepair
+        } else if has(Severity::Level) {
+            VerdictKind::OverLevel
         } else {
             VerdictKind::Pass
         };
@@ -727,6 +733,32 @@ practice:
         assert!(
             r.sentence.is_some(),
             "over-level sentences must be recoverable"
+        );
+    }
+
+    /// 回归:实产抓到的真事故 —— 一句词偏难又音标坏的句子,verdict 曾经
+    /// 直接判 OverLevel(Level 排在 Repairable 前面查),改级分支只看"词
+    /// 偏难"这一件事,坏音标原样跟着入库。出厂库里两句 morning 的音标
+    /// 混进了非法字符「Ļ」,factory build 校验种子时才现形。
+    /// 现在 Repairable 排在 Level 前面:同时踩两条线,先进修补队列。
+    #[test]
+    fn over_level_and_bad_ipa_together_needs_repair_not_relevel() {
+        let mut d = good_draft();
+        d.en = "I am passport.".into();
+        // "am" 不在词表里(表里只有词元 "be"),不会被词表回填 —— 坏字符能
+        // 留到 verdict 判定;"passport" band 2200 > 500 触发 OverLevel。
+        d.words[1].ipa = "ˈĻm".into();
+        d.words[2] = DraftWord {
+            w: "passport".into(),
+            ipa: "ˈpɑːspɔːt".into(),
+            pos: "n".into(),
+        };
+        let r = run(&d);
+        assert_eq!(
+            r.verdict,
+            VerdictKind::NeedsRepair,
+            "两条线都占,该先进修补队列,不能抄近道直接改级把坏音标带进库:{:?}",
+            r.issues
         );
     }
 
