@@ -56,6 +56,10 @@ pub const SANDBOX_OPENCODE_JSON: &str = r#"{
 }
 "#;
 
+/// 沙箱里那个"只出 JSON、不碰工具"的 agent 名 —— 与 [`SANDBOX_OPENCODE_JSON`]
+/// 里的键一致,调用时必须用 `--agent` 显式选中才生效。
+pub const SANDBOX_AGENT: &str = "sf-gen";
+
 /// 安装引导用的内联命令 (§4.7 通道卡).
 pub const INSTALL_COMMAND: &str = "curl -fsSL https://opencode.ai/install | bash";
 pub const LOGIN_COMMAND: &str = "opencode auth login";
@@ -114,6 +118,15 @@ impl OpencodeChannel {
 
         let mut cmd = self.command(&bin);
         cmd.args(["run", "-m", model, "--format", "json"]);
+        // 必须显式选 agent:不选就跑默认 agent,`sf-gen` 里那套
+        // edit/bash/webfetch = deny 根本不生效。实测默认 agent 会把生成结果
+        // 当文件写出去 —— 仓库根目录攒了 7 个 *_L5.json,其中 2 个还被提交了。
+        cmd.args(["--agent", SANDBOX_AGENT]);
+        // opencode 是 client/server 结构,服务端不继承我们设的 current_dir,
+        // 得用 --dir 才能把它的文件解析也钉在沙箱里。
+        if let Some(dir) = self.cfg.sandbox_dir.to_str() {
+            cmd.args(["--dir", dir]);
+        }
         if let Some(id) = session {
             cmd.args(["-s", id]);
         }
@@ -789,7 +802,9 @@ opencode/paid-example
     #[test]
     fn sandbox_config_denies_all_tools() {
         let v: serde_json::Value = serde_json::from_str(SANDBOX_OPENCODE_JSON).unwrap();
-        let perm = v.pointer("/agent/sf-gen/permission").unwrap();
+        let perm = v
+            .pointer(&format!("/agent/{SANDBOX_AGENT}/permission"))
+            .expect("沙箱配置里必须有 SANDBOX_AGENT 这个 agent —— 名字对不上时 --agent 会选到不存在的 agent");
         for tool in ["edit", "bash", "webfetch"] {
             assert_eq!(perm.get(tool).and_then(|p| p.as_str()), Some("deny"));
         }

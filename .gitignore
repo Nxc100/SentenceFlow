@@ -54,3 +54,11 @@ Thumbs.db
 
 # 本地问题截图工作目录
 fix/
+
+# opencode 跑批时,默认 agent 会把生成结果当文件写进工作目录(*_L4.json /
+# uncertainty_sentences.json …)。根因已修(调用时 --agent sf-gen + --dir 沙箱,
+# 见 channels/opencode.rs),这里是兜底 —— 别再让它们混进提交。
+/*_L[1-6].json
+/*_l[1-6].json
+/*_sentences.json
+/nul

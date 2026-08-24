@@ -1,9 +1,89 @@
-# AI 生成的出厂句(L6,7 句)
+# AI 生成的出厂句(L6,18 句)
 # 由 `sf factory harvest` 从 generated.db 收上来。
 # 手改这个文件是可以的(人工抽审改错句就直接改这里);
 # 但重新 harvest 会按 场景→英文 排序覆盖,别在这里加自己的注释。
 level: L6
 sentences:
+  - en: "The physiotherapist gave me new exercises."
+    zh: "理疗师给我新动作。"
+    scene: "医嘱与康复"
+    func: ""
+    pattern: "past_simple"
+    note: "Past simple with ditransitive verb giving direct and indirect objects"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "physiotherapist", ipa: "ˌfɪziəʊˈθerəpɪst", pos: "n" }
+      - { w: "gave", ipa: "ɡeɪv", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "new", ipa: "njuː", pos: "adj" }
+      - { w: "exercises", ipa: "ˈeksəsaɪzɪz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "obj", i: [4, 5] }
+  - en: "The physiotherapist showed me some exercises for my knee."
+    zh: "物理治疗师教我一些膝盖锻炼动作。"
+    scene: "医嘱与康复"
+    func: ""
+    pattern: "show sb sth"
+    note: "show sb sth = show sth to sb，双宾语结构。"
+    words:
+      - { w: "The", ipa: "ðə", pos: "art" }
+      - { w: "physiotherapist", ipa: "ˌfɪziəʊˈθerəpɪst", pos: "n" }
+      - { w: "showed", ipa: "ʃəʊd", pos: "v" }
+      - { w: "me", ipa: "miː", pos: "pron" }
+      - { w: "some", ipa: "sʌm", pos: "adj" }
+      - { w: "exercises", ipa: "ˈeksəsaɪzɪz", pos: "n" }
+      - { w: "for", ipa: "fɔː", pos: "prep" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "knee", ipa: "niː", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "objc", i: [3] }
+      - { r: "obj", i: [4, 5] }
+      - { r: "advl", i: [6, 7, 8] }
+  - en: "I avoid gluten because it upsets my stomach."
+    zh: "我避开麸质，因为它让我胃不舒服。"
+    scene: "口味与忌口"
+    func: ""
+    pattern: "主语 + avoid + 宾语 + because 从句"
+    note: "avoid 后接名词/动名词；upset one's stomach 让胃不舒服。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "avoid", ipa: "əˈvɔɪd", pos: "v" }
+      - { w: "gluten", ipa: "ˈɡluːtn", pos: "n" }
+      - { w: "because", ipa: "bɪˈkɒz", pos: "conj" }
+      - { w: "it", ipa: "ɪt", pos: "pron" }
+      - { w: "upsets", ipa: "ʌpˈsets", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "stomach", ipa: "ˈstʌmək", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2] }
+      - { r: "advl", i: [3, 4, 5, 6, 7] }
+  - en: "I'm trying to avoid gluten these days."
+    zh: "最近我在尽量不吃麸质。"
+    scene: "口味与忌口"
+    func: ""
+    pattern: "present continuous + try to + 动名词"
+    note: "try to avoid 尝试避免；these days 最近。"
+    words:
+      - { w: "I'm", ipa: "aɪm", pos: "aux" }
+      - { w: "trying", ipa: "ˈtraɪɪŋ", pos: "v" }
+      - { w: "to", ipa: "tuː", pos: "part" }
+      - { w: "avoid", ipa: "əˈvɔɪd", pos: "v" }
+      - { w: "gluten", ipa: "ˈɡluːtn", pos: "n" }
+      - { w: "these", ipa: "ðiz", pos: "pron" }
+      - { w: "days", ipa: "deɪz", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "objc", i: [2, 3] }
+      - { r: "obj", i: [4] }
+      - { r: "advl", i: [5, 6] }
   - en: "I usually get a fade every month."
     zh: "我通常每个月都做渐变。"
     scene: "理发"
@@ -45,6 +125,40 @@ sentences:
       - { r: "pred", i: [2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6, 7] }
+  - en: "Does the price include utilities?"
+    zh: "这个价格包水电吗？"
+    scene: "租房看房"
+    func: ""
+    pattern: "助动词 Does + 主语 + 动词原形"
+    note: "utilities 指水电煤网等公用事业费，复数形式常用。"
+    words:
+      - { w: "Does", ipa: "dʌz", pos: "aux" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "price", ipa: "praɪs", pos: "n" }
+      - { w: "include", ipa: "ɪnˈkluːd", pos: "v" }
+      - { w: "utilities", ipa: "juːˈtɪlɪtiz", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4] }
+  - en: "Does the rent include utilities?"
+    zh: "房租包水电吗？"
+    scene: "租房看房"
+    func: ""
+    pattern: "一般现在时疑问句"
+    note: "utilities 指水电煤网等公用事业费。"
+    words:
+      - { w: "Does", ipa: "dʌz", pos: "aux" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "rent", ipa: "rent", pos: "n" }
+      - { w: "include", ipa: "ɪnˈkluːd", pos: "v" }
+      - { w: "utilities", ipa: "juːˈtɪlɪtiz", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1, 2] }
+      - { r: "pred", i: [3] }
+      - { r: "obj", i: [4] }
   - en: "My aunt has two children and a dog."
     zh: "我姑姑有两个孩子和一只狗。"
     scene: "聊家人"
@@ -129,6 +243,101 @@ sentences:
       - { r: "pred", i: [1, 2] }
       - { r: "obj", i: [3, 4] }
       - { r: "advl", i: [5, 6] }
+  - en: "Do you have anything gluten-free?"
+    zh: "有无麸质的菜吗？"
+    scene: "询问菜品与推荐"
+    func: ""
+    pattern: "do you have + anything + adj"
+    note: "询问过敏原/饮食限制常用。"
+    words:
+      - { w: "Do", ipa: "duː", pos: "aux" }
+      - { w: "you", ipa: "juː", pos: "pron" }
+      - { w: "have", ipa: "hæv", pos: "v" }
+      - { w: "anything", ipa: "ˈeniθɪŋ", pos: "pron" }
+      - { w: "gluten-free", ipa: "ˈɡluːtən friː", pos: "adj" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3] }
+      - { r: "comp", i: [4] }
+  - en: "Can I take this course without the prerequisite?"
+    zh: "没修先修课能选这门吗？"
+    scene: "选课与专业"
+    func: ""
+    pattern: "情态动词疑问句 + 介词短语"
+    note: "prerequisite 专业词汇指先修课，without 表条件缺失。"
+    words:
+      - { w: "Can", ipa: "kæn", pos: "modal" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "take", ipa: "teɪk", pos: "v" }
+      - { w: "this", ipa: "ðɪs", pos: "adj" }
+      - { w: "course", ipa: "kɔːs", pos: "n" }
+      - { w: "without", ipa: "wɪðˈaʊt", pos: "prep" }
+      - { w: "the", ipa: "ðə", pos: "art" }
+      - { w: "prerequisite", ipa: "ˌpriːˈrekwəzɪt", pos: "n" }
+    chunks:
+      - { r: "marker", i: [0] }
+      - { r: "subj", i: [1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5, 6, 7] }
+  - en: "I wish I had chosen a different elective."
+    zh: "真希望我当时选别的选修课。"
+    scene: "选课与专业"
+    func: ""
+    pattern: "wish + 过去完成时(虚拟)"
+    note: "wish 后用过去完成时表对过去的遗憾，chosen 过去分词。"
+    words:
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "wish", ipa: "wɪʃ", pos: "v" }
+      - { w: "I", ipa: "aɪ", pos: "pron" }
+      - { w: "had", ipa: "hæd", pos: "aux" }
+      - { w: "chosen", ipa: "ˈtʃəʊzn", pos: "v" }
+      - { w: "a", ipa: "ə", pos: "art" }
+      - { w: "different", ipa: "ˈdɪfrənt", pos: "adj" }
+      - { w: "elective", ipa: "ɪˈlektɪv", pos: "n" }
+    chunks:
+      - { r: "subj", i: [0] }
+      - { r: "pred", i: [1] }
+      - { r: "obj", i: [2, 3, 4, 5, 6, 7] }
+  - en: "This elective fits my schedule perfectly."
+    zh: "这门选修课完全符合我的课表。"
+    scene: "选课与专业"
+    func: ""
+    pattern: "主谓宾 + 副词"
+    note: "fit one's schedule = 与课表不冲突。"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "pron" }
+      - { w: "elective", ipa: "ɪˈlektɪv", pos: "n" }
+      - { w: "fits", ipa: "fɪts", pos: "v" }
+      - { w: "my", ipa: "maɪ", pos: "pron" }
+      - { w: "schedule", ipa: "ˈʃedjuːl", pos: "n" }
+      - { w: "perfectly", ipa: "ˈpɜːfɪktli", pos: "adv" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "obj", i: [3, 4] }
+      - { r: "advl", i: [5] }
+  - en: "This elective looks easier than that one."
+    zh: "这门选修课比那门简单。"
+    scene: "选课与专业"
+    func: ""
+    pattern: "比较级 + than"
+    note: "looks + 形容词比较级口语常用，easier than 对比选课难度。"
+    words:
+      - { w: "This", ipa: "ðɪs", pos: "adj" }
+      - { w: "elective", ipa: "ɪˈlektɪv", pos: "n" }
+      - { w: "looks", ipa: "lʊks", pos: "v" }
+      - { w: "easier", ipa: "ˈiːziə", pos: "adj" }
+      - { w: "than", ipa: "ðæn", pos: "conj" }
+      - { w: "that", ipa: "ðæt", pos: "adj" }
+      - { w: "one", ipa: "wʌn", pos: "pron" }
+    chunks:
+      - { r: "subj", i: [0, 1] }
+      - { r: "pred", i: [2] }
+      - { r: "comp", i: [3] }
+      - { r: "advl", i: [4, 5, 6] }
   - en: "I want to insure this parcel for five hundred pounds."
     zh: "我想给这个包裹保价五百镑。"
     scene: "邮寄快递"
