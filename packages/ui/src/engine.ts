@@ -42,6 +42,15 @@ export interface SpeakOptions {
   rate?: number;
   /** "gb" 英音 / "us" 美音 */
   voice?: "gb" | "us";
+  /**
+   * 这次朗读播完(或被更晚的一次 speak / stop 取代)时回调一次。
+   *
+   * 给"正在朗读"这类界面指示用:没有它就只能靠定时器猜播多久,
+   * 长句短句一律闪一下,指示的是"点到了"而不是"在播"。实现方要保证
+   * 同一次 speak 最多回调一次,且被后来的 speak/stop 取代后不再回调 ——
+   * 否则旧的回调会把新那句的高亮抹掉。
+   */
+  onEnd?: () => void;
 }
 
 export interface SpeechService {
@@ -51,6 +60,9 @@ export interface SpeechService {
 
 /** 静音实现 — 无 TTS 环境的兜底 */
 export const silentSpeech: SpeechService = {
-  speak() {},
+  // 立刻回调:这里永远不会有声音,不回调会让调用方的"正在朗读"一直亮着
+  speak(_text, options) {
+    options?.onEnd?.();
+  },
   stop() {},
 };

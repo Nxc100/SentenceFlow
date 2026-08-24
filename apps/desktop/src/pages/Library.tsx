@@ -3,9 +3,9 @@
  * 点句展开解析(无撒花);错题本/收藏一键重练。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, ParseView, levelOptionLabel, useToast } from "@sentenceflow/ui";
-import type { LevelId, Sentence } from "@sentenceflow/ui";
+import type { LevelId, Sentence, SpeakOptions, SpeechService } from "@sentenceflow/ui";
 import { useApp } from "../appState";
 import { ipc } from "../ipc";
 import { desktopSpeech } from "../speech";
@@ -19,7 +19,7 @@ const PAGE_SIZE = 20;
 type Tab = "factory" | "mine" | "wrongbook" | "favorites";
 
 export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) => void }) {
-  const { level, specs, setLevel, sentenceCountFor } = useApp();
+  const { level, specs, setLevel, sentenceCountFor, settings } = useApp();
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("factory");
   const [scenes, setScenes] = useState<string[]>([]);
@@ -30,6 +30,8 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
   const [importText, setImportText] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [page, setPage] = useState(1);
+  /** 正在朗读的那一句;null = 没在朗读 */
+  const [speakingId, setSpeakingId] = useState<number | null>(null);
 
   // 换页签/等级/场景后回到第 1 页(否则会停在越界页显示空列表)
   useEffect(() => {
@@ -39,6 +41,76 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
   const pageCount = Math.max(1, Math.ceil(sentences.length / PAGE_SIZE));
   const pageSafe = Math.min(page, pageCount);
   const pageItems = sentences.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
+
+  /**
+   * 带上用户设置的朗读服务。
+   *
+   * 此前这一页是把 `desktopSpeech` 原样传给 ParseView 的,而 ParseView 调
+   * `speech.speak(en)` 不带参数 —— 于是句库里的朗读一律按默认英音 1.0 倍速,
+   * 设置页调的口音和语速在这一页从来没生效过。练习页(Practice)是包了一层
+   * 传设置的,这里跟它对齐。
+   */
+  const speech = useMemo<SpeechService>(
+    () => ({
+      speak: (text: string, options?: SpeakOptions) =>
+        desktopSpeech.speak(text, {
+          rate: settings.sound.rate,
+          voice: settings.sound.accent,
+          ...options,
+        }),
+      stop: () => desktopSpeech.stop(),
+    }),
+    [settings.sound.rate, settings.sound.accent],
+  );
+
+  /**
+   * 传给 ParseView 的朗读服务。
+   *
+   * ParseView 一展开就会自动朗读整句,点单词也会读 —— 这些都会顶掉列表里
+   * 正在播的那句(朗读只有一条通道)。不在这里把指示熄掉的话,🔊 会一直亮在
+   * 一句早就不响了的句子上,而且因为那次播放已被作废、`onEnd` 不会再回调,
+   * 这盏灯就再也熄不掉了。
+   */
+  const parseSpeech = useMemo<SpeechService>(
+    () => ({
+      speak: (text: string, options?: SpeakOptions) => {
+        setSpeakingId(null);
+        speech.speak(text, options);
+      },
+      stop: () => {
+        setSpeakingId(null);
+        speech.stop();
+      },
+    }),
+    [speech],
+  );
+
+  /** 朗读一句;再点同一句则停止(播放中的按钮就是停止键) */
+  const toggleSpeak = useCallback(
+    (s: Sentence) => {
+      if (speakingId === s.id) {
+        speech.stop();
+        setSpeakingId(null);
+        return;
+      }
+      setSpeakingId(s.id);
+      speech.speak(s.en, {
+        // 只熄自己那盏灯:播完时若已切到别句,别把别句的高亮抹掉
+        onEnd: () => setSpeakingId((cur) => (cur === s.id ? null : cur)),
+      });
+    },
+    [speakingId, speech],
+  );
+
+  // 翻页/换页签/换等级/换场景时收声 —— 否则朗读会在句子已经从屏幕上
+  // 消失之后继续播,听起来像是串台了
+  useEffect(() => {
+    speech.stop();
+    setSpeakingId(null);
+  }, [tab, level, scene, pageSafe, speech]);
+
+  // 离开这一页(切到练习/设置等)时收声
+  useEffect(() => () => desktopSpeech.stop(), []);
 
   const refresh = useCallback(async () => {
     setExpanded(null);
@@ -208,6 +280,16 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
             <span className="library-item__ops">
               <button
                 type="button"
+                className={`library-speak${speakingId === s.id ? " library-speak--on" : ""}`}
+                title={speakingId === s.id ? "停止朗读" : "朗读这句"}
+                aria-label={speakingId === s.id ? `停止朗读:${s.en}` : `朗读:${s.en}`}
+                aria-pressed={speakingId === s.id}
+                onClick={() => toggleSpeak(s)}
+              >
+                {speakingId === s.id ? "◼" : "🔊"}
+              </button>
+              <button
+                type="button"
                 className="library-fav"
                 title={favorites.has(s.id) ? "取消收藏" : "收藏"}
                 onClick={async () => {
@@ -234,7 +316,7 @@ export function LibraryPage({ onPractice }: { onPractice: (l: PracticeLaunch) =>
             </span>
             {expanded === s.id && s.words.length > 0 && (
               <div className="library-item__parse">
-                <ParseView sentence={s} speech={desktopSpeech} celebrate={false} />
+                <ParseView sentence={s} speech={parseSpeech} celebrate={false} />
               </div>
             )}
           </li>
