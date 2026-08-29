@@ -1,0 +1,24 @@
+[package]
+name = "sf-pet"
+description = "AI 萌宠纯逻辑内核:抠图/切帧/骨骼烘焙/图集合成/校验/出生视频/咒语包(零 tauri 依赖)。"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["matting"]
+# 本地语义抠图(u2netp + tract)。关掉可显著缩短编译时间,复杂背景素材会退回泛洪抠图。
+matting = ["dep:tract-onnx"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+base64 = { workspace = true }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "bmp", "gif"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = { workspace = true }
+tract-onnx = { version = "0.21", optional = true }

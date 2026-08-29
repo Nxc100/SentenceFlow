@@ -5,6 +5,7 @@ members = [
     "crates/sf-pipeline",
     "crates/sf-llm",
     "crates/sf-license",
+    "crates/sf-pet",
     "crates/sf-wasm",
     "apps/desktop/src-tauri",
 ]
@@ -24,6 +25,7 @@ sf-core = { path = "crates/sf-core" }
 sf-pipeline = { path = "crates/sf-pipeline" }
 sf-llm = { path = "crates/sf-llm" }
 sf-license = { path = "crates/sf-license" }
+sf-pet = { path = "crates/sf-pet" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
