@@ -132,7 +132,6 @@ pub fn set_click_through(app: &AppHandle, enabled: bool) -> CmdResult<()> {
     if let Some(pet) = window(app) {
         pet.set_ignore_cursor_events(enabled).map_err(win_err)?;
     }
-    let _ = app.emit(super::EV_CLICK_THROUGH, enabled);
     Ok(())
 }
 

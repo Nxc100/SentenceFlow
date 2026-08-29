@@ -23,6 +23,7 @@ import { ScenarioPracticeScreen } from "./pages/ScenarioPractice";
 import type { ScenarioLaunch } from "./pages/ScenarioPractice";
 import { AiChatPage } from "./pages/AiChat";
 import type { AiChatPrefill } from "./pages/AiChat";
+import { AiPetPage } from "./pages/AiPet";
 
 export type NavKey =
   | "today"
@@ -30,6 +31,7 @@ export type NavKey =
   | "scenario"
   | "workshop"
   | "aichat"
+  | "aipet"
   | "report"
   | "mylevel"
   | "settings";
@@ -44,6 +46,7 @@ const NAV: Array<{ key: NavKey; label: string; icon: string; title: string }> = 
   { key: "scenario", label: "情景对话", icon: "💬", title: "按真实生活场景练整段对话,不分等级" },
   { key: "workshop", label: "AI 造句", icon: "✦", title: "用 AI 为任意场景生成练习句或整段对话" },
   { key: "aichat", label: "AI 聊天", icon: "🤖", title: "和 AI 用英文聊天、角色扮演;智能体帮你干活" },
+  { key: "aipet", label: "AI 萌宠", icon: "🐾", title: "把一张图变成活在桌面上的宠物,顺便管提醒与番茄钟" },
   { key: "report", label: "学习报告", icon: "▦", title: "练习统计、热力图与薄弱分析" },
   { key: "mylevel", label: "我的水平", icon: "◎", title: "当前等级、水平测试与手动切换等级" },
   { key: "settings", label: "设置", icon: "⚙", title: "练习、声音、外观、AI 接入、授权与数据" },
@@ -200,6 +203,7 @@ function Shell() {
             onConsumedPrefill={() => setAichatPrefill(null)}
           />
         )}
+        {nav === "aipet" && <AiPetPage />}
         {nav === "report" && (
           <ReportPage
             onDrill={(scene) => {

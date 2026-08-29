@@ -137,7 +137,7 @@ pub fn run() {
             commands::tts_speak,
             commands::diagnostics,
             commands::export_diagnostics,
-            // ---- AI 萌宠(52 个 pet_*;§6.1 命令总表)----
+            // ---- AI 萌宠(54 个 pet_*;§6.1 命令总表 + open_url/reveal_in_dir)----
             pet::commands::pet_bootstrap,
             pet::commands::pet_settings_get,
             pet::commands::pet_settings_set,
@@ -190,6 +190,8 @@ pub fn run() {
             pet::commands::pet_open_studio,
             pet::commands::pet_pick_file,
             pet::commands::pet_save_path,
+            pet::commands::pet_open_url,
+            pet::commands::pet_reveal_in_dir,
         ])
         .build(tauri::generate_context!())
         .expect("error while building SentenceFlow")

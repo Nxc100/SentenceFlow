@@ -3370,3 +3370,990 @@ input[type="checkbox"] {
   gap: 2px;
   padding-bottom: 6px;
 }
+
+/* ============================================================================
+   AI 萌宠 —— 主窗页内五页签(《AI 萌宠模块-整合执行方案》Phase 4)。
+   配色一律走语义令牌,四套主题自动跟随。
+   宠物窗自身的样式在 src/pet/window/pet.css(那是另一个入口页)。
+   ========================================================================== */
+
+.page--aipet {
+  max-width: var(--sf-page-max-narrow);
+}
+
+.aipet-master {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aipet-master__label {
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-2);
+}
+
+.aipet-loading,
+.aipet-empty {
+  color: var(--sf-text-3);
+  font-size: var(--sf-fs-caption);
+  margin: 0;
+}
+
+/* ---------------- 引导卡(总开关关闭时) ---------------- */
+
+.aipet-intro {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--sf-shadow-1);
+}
+
+.aipet-intro__egg {
+  font-size: 46px;
+  line-height: 1;
+  flex: none;
+}
+
+.aipet-intro__text h2 {
+  margin: 0 0 8px;
+  font-size: var(--sf-fs-h3);
+}
+
+.aipet-intro__text p {
+  margin: 0 0 10px;
+  font-size: var(--sf-fs-caption);
+  line-height: 1.7;
+  color: var(--sf-text-2);
+  max-width: var(--sf-read-max);
+}
+
+.aipet-intro__meta {
+  color: var(--sf-text-3);
+}
+
+/* ---------------- 页签 ---------------- */
+
+.aipet-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.aipet-tab {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: var(--sf-fs-body);
+  color: var(--sf-text-2);
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.aipet-tab--on {
+  color: var(--sf-primary);
+  font-weight: 600;
+  border-bottom-color: var(--sf-primary);
+}
+
+.aipet-body {
+  min-height: 200px;
+}
+
+/* ---------------- 面板 ---------------- */
+
+.aipet-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aipet-panel {
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aipet-panel--done {
+  border-color: var(--sf-success);
+}
+
+.aipet-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.aipet-head__ico {
+  font-size: 20px;
+  line-height: 1.4;
+  flex: none;
+}
+
+.aipet-head__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.aipet-head__text h3 {
+  margin: 0;
+  font-size: var(--sf-fs-h3);
+}
+
+.aipet-head__text p {
+  margin: 4px 0 0;
+  font-size: var(--sf-fs-caption);
+  line-height: 1.6;
+  color: var(--sf-text-3);
+}
+
+.aipet-head__right {
+  flex: none;
+}
+
+.aipet-badge {
+  font-size: var(--sf-fs-micro);
+  padding: 2px 8px;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-panel);
+  color: var(--sf-text-2);
+  white-space: nowrap;
+}
+
+.aipet-badge--primary {
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+  font-weight: 600;
+}
+
+.aipet-desc {
+  font-size: var(--sf-fs-caption);
+  line-height: 1.6;
+  color: var(--sf-text-3);
+  font-style: normal;
+  margin: 0;
+}
+
+.aipet-row--toggle .settings-row__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 70%;
+}
+
+.aipet-unit {
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-3);
+  margin-left: 6px;
+}
+
+.aipet-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aipet-actions--wrap {
+  flex-wrap: wrap;
+}
+
+.aipet-actions--center {
+  justify-content: center;
+}
+
+.aipet-actions--end {
+  justify-content: flex-end;
+}
+
+.aipet-link {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font: inherit;
+  color: var(--sf-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ---------------- 提示条 ---------------- */
+
+.aipet-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aipet-note {
+  font-size: var(--sf-fs-caption);
+  line-height: 1.6;
+  color: var(--sf-text-2);
+  padding: 8px 12px;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-panel);
+}
+
+.aipet-note--ok {
+  background: var(--sf-success-bg);
+  color: var(--sf-success);
+}
+
+.aipet-note--warn {
+  background: var(--sf-warning-bg);
+  color: var(--sf-warning);
+}
+
+.aipet-note--err {
+  background: var(--sf-error-bg);
+  color: var(--sf-error);
+}
+
+/* ---------------- 拖放落区 ---------------- */
+
+.aipet-drop {
+  border: 2px dashed var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--sf-panel);
+  transition:
+    border-color var(--sf-dur-fast) var(--sf-ease-standard),
+    background var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.aipet-drop:hover,
+.aipet-drop--over {
+  border-color: var(--sf-primary);
+  background: var(--sf-primary-soft);
+}
+
+.aipet-drop--sm {
+  padding: 16px 12px;
+}
+
+.aipet-drop--busy {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.aipet-drop__icon {
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.aipet-drop__title {
+  font-size: var(--sf-fs-body);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.aipet-drop__hint {
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-3);
+  margin-top: 4px;
+}
+
+/* 透明素材的棋盘底:看清抠图边缘 */
+.aipet-checker,
+.aipet-calib__canvas {
+  background-image:
+    linear-gradient(45deg, var(--sf-panel) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--sf-panel) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--sf-panel) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--sf-panel) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+/* ---------------- 首次孵化 ---------------- */
+
+.aipet-hero {
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+}
+
+.aipet-hero__egg {
+  font-size: 46px;
+  line-height: 1;
+}
+
+.aipet-hero h2 {
+  margin: 0 0 6px;
+  font-size: var(--sf-fs-h2);
+}
+
+.aipet-hero p {
+  margin: 0;
+  font-size: var(--sf-fs-caption);
+  line-height: 1.7;
+  color: var(--sf-text-2);
+  max-width: var(--sf-read-max);
+}
+
+.aipet-l0 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .aipet-l0 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.aipet-l0__left,
+.aipet-l0__right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.aipet-l0__preview {
+  min-height: 200px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.aipet-l0__preview img {
+  max-width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+}
+
+.aipet-input {
+  height: 36px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-sm);
+  padding: 0 12px;
+  background: var(--sf-card);
+  color: inherit;
+  font: inherit;
+  min-width: 0;
+}
+
+.aipet-textarea {
+  width: 100%;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-sm);
+  padding: 8px 12px;
+  background: var(--sf-card);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.aipet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aipet-form__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.aipet-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-3);
+}
+
+.aipet-details {
+  padding: 0;
+}
+
+.aipet-details > summary {
+  cursor: pointer;
+  padding: 14px 20px;
+  font-size: var(--sf-fs-body);
+  font-weight: 600;
+}
+
+.aipet-details[open] > summary {
+  border-bottom: 1px solid var(--sf-border);
+  margin-bottom: 12px;
+}
+
+.aipet-details > *:not(summary) {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+.aipet-details > *:last-child {
+  margin-bottom: 16px;
+}
+
+/* ---------------- 状态徽章 / 步骤 ---------------- */
+
+.aipet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aipet-chip {
+  font-size: var(--sf-fs-micro);
+  padding: 3px 10px;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-panel);
+  color: var(--sf-text-placeholder);
+  border: 1px solid transparent;
+}
+
+.aipet-chip--lit {
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+  border-color: var(--sf-primary-border);
+  font-weight: 600;
+}
+
+.aipet-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aipet-pill {
+  border: 1px solid var(--sf-border);
+  background: var(--sf-card);
+  border-radius: var(--sf-radius-full);
+  padding: 5px 14px;
+  font: inherit;
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-2);
+  cursor: pointer;
+}
+
+.aipet-pill--on {
+  background: var(--sf-primary-soft);
+  border-color: var(--sf-primary-border);
+  color: var(--sf-primary);
+  font-weight: 600;
+}
+
+.aipet-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.aipet-step__no {
+  font-size: var(--sf-fs-micro);
+  color: var(--sf-text-3);
+  background: var(--sf-panel);
+  border-radius: var(--sf-radius-full);
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.aipet-step__label {
+  font-size: var(--sf-fs-caption);
+  font-weight: 600;
+  min-width: 120px;
+}
+
+/* ---------------- 进度条 ---------------- */
+
+.aipet-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aipet-progress__track {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-panel);
+  overflow: hidden;
+}
+
+.aipet-progress__fill {
+  height: 100%;
+  background: var(--sf-primary);
+  transition: width var(--sf-dur-base) var(--sf-ease-standard);
+}
+
+.aipet-progress__label {
+  font-size: var(--sf-fs-micro);
+  color: var(--sf-text-3);
+  white-space: nowrap;
+}
+
+/* ---------------- 咒语卡 ---------------- */
+
+.aipet-spellcard {
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aipet-spellcard__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aipet-spellcard__title {
+  font-weight: 600;
+  font-size: var(--sf-fs-body);
+}
+
+.aipet-spellcard__meta {
+  font-size: var(--sf-fs-micro);
+  color: var(--sf-text-3);
+}
+
+.aipet-spell {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--sf-panel);
+  border-radius: var(--sf-radius-sm);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aipet-tips {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--sf-fs-caption);
+  line-height: 1.8;
+  color: var(--sf-text-2);
+}
+
+.aipet-intercept {
+  background: var(--sf-warning-bg);
+  border-radius: var(--sf-radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--sf-fs-caption);
+  line-height: 1.7;
+}
+
+.aipet-intercept p {
+  margin: 0;
+}
+
+.aipet-table-wrap {
+  overflow-x: auto;
+}
+
+.aipet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--sf-fs-caption);
+}
+
+.aipet-table th,
+.aipet-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sf-border);
+  vertical-align: top;
+}
+
+.aipet-table th {
+  color: var(--sf-text-3);
+  font-weight: 600;
+}
+
+/* ---------------- 视频脚本时间轴 ---------------- */
+
+.aipet-timeline {
+  display: flex;
+  gap: 3px;
+  height: 46px;
+}
+
+.aipet-timeline__seg {
+  background: var(--sf-primary-soft);
+  border-radius: var(--sf-radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 4px;
+}
+
+.aipet-timeline__state {
+  font-size: var(--sf-fs-micro);
+  font-weight: 600;
+  color: var(--sf-primary);
+  white-space: nowrap;
+}
+
+.aipet-timeline__time {
+  font-size: 10px;
+  color: var(--sf-text-3);
+}
+
+/* ---------------- 帧缩略 ---------------- */
+
+.aipet-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aipet-strip__title {
+  font-size: var(--sf-fs-caption);
+  font-weight: 600;
+}
+
+.aipet-thumbs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.aipet-thumb {
+  width: 60px;
+  height: 65px;
+  object-fit: contain;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-sm);
+  cursor: pointer;
+}
+
+/* ---------------- 专家工作台 ---------------- */
+
+.aipet-bench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+}
+
+@media (max-width: 1000px) {
+  .aipet-bench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.aipet-bench__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.aipet-bench__side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aipet-bench__side h4 {
+  margin: 0;
+  font-size: var(--sf-fs-body);
+}
+
+.aipet-state {
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aipet-state--filled {
+  border-color: var(--sf-primary-border);
+}
+
+.aipet-state__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aipet-state__name {
+  font-size: var(--sf-fs-caption);
+  font-weight: 600;
+}
+
+.aipet-state__name code {
+  font-size: var(--sf-fs-micro);
+  color: var(--sf-text-3);
+}
+
+/* ---------------- 我的宠物 ---------------- */
+
+.aipet-pets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.aipet-pet {
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aipet-pet--active {
+  border-color: var(--sf-primary-border);
+  background: var(--sf-primary-soft);
+}
+
+.aipet-pet__stage {
+  position: relative;
+  height: 150px;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.aipet-pet__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.aipet-pet__egg {
+  font-size: 44px;
+}
+
+.aipet-pet__tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: var(--sf-fs-micro);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-primary);
+  color: #fff;
+}
+
+.aipet-pet__plate {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aipet-pet__name {
+  font-size: var(--sf-fs-h3);
+  font-weight: 600;
+}
+
+.aipet-pet__tier {
+  font-size: var(--sf-fs-micro);
+  padding: 1px 8px;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-panel);
+  color: var(--sf-text-2);
+}
+
+.aipet-pet__meta {
+  font-size: var(--sf-fs-micro);
+  color: var(--sf-text-3);
+}
+
+.aipet-pet__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aipet-confirm,
+.aipet-busy {
+  font-size: var(--sf-fs-body);
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.aipet-path,
+.aipet-about {
+  font-size: var(--sf-fs-caption);
+  line-height: 1.7;
+  color: var(--sf-text-2);
+  margin: 0;
+  word-break: break-all;
+}
+
+.aipet-about--muted {
+  color: var(--sf-text-3);
+}
+
+/* ---------------- 提醒 · 番茄钟 ---------------- */
+
+.aipet-pomo {
+  position: relative;
+  width: 184px;
+  height: 184px;
+  margin: 0 auto;
+}
+
+.aipet-pomo__ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.aipet-pomo__track {
+  fill: none;
+  stroke: var(--sf-panel);
+  stroke-width: 10;
+}
+
+.aipet-pomo__prog {
+  fill: none;
+  stroke: var(--sf-primary);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--sf-dur-base) linear;
+}
+
+.aipet-pomo--on .aipet-pomo__prog {
+  stroke: var(--sf-success);
+}
+
+.aipet-pomo__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.aipet-pomo__time {
+  font-size: 34px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.aipet-pomo__phase {
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-2);
+}
+
+.aipet-pomo__round {
+  font-size: var(--sf-fs-micro);
+  color: var(--sf-text-3);
+}
+
+.aipet-pomo__cfg {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-2);
+}
+
+.aipet-pomo__cfg label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aipet-reminders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aipet-reminder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: 10px 14px;
+}
+
+.aipet-reminder--off {
+  opacity: 0.55;
+}
+
+.aipet-reminder__icon {
+  font-size: 20px;
+}
+
+.aipet-reminder__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.aipet-reminder__title {
+  font-size: var(--sf-fs-body);
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.aipet-reminder__desc {
+  font-size: var(--sf-fs-micro);
+  color: var(--sf-text-3);
+}
+
+/* ---------------- 认主校准 ---------------- */
+
+.aipet-calib__lead {
+  margin: 0 0 8px;
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-3);
+  text-align: center;
+}
+
+.aipet-calib__hint {
+  text-align: center;
+  font-size: var(--sf-fs-body);
+  font-weight: 600;
+  min-height: 24px;
+  margin-bottom: 8px;
+}
+
+.aipet-calib__stage {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.aipet-calib__canvas {
+  cursor: crosshair;
+  border-radius: var(--sf-radius-sm);
+}

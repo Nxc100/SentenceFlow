@@ -25,7 +25,9 @@
 //! | `pet://video-progress` | 视频抽帧/抠像进度 |
 //! | `pet://watcher-file` | 下载目录发现新素材 |
 //! | `pet://nav` | 主窗「AI 萌宠」页内切签 |
-//! | `pet://click-through` | 全局穿透开关变更 |
+//!
+//! (HatchDesk 的 `click-through-changed` 不迁移:全局穿透开关是 pet 设置的一个
+//! 字段,`pet://settings` 已携带全量快照,再来一条只会制造第二个事实源。)
 
 pub mod commands;
 mod paths;
@@ -55,7 +57,6 @@ pub const EV_EXPORT_PROGRESS: &str = "pet://export-progress";
 pub const EV_VIDEO_PROGRESS: &str = "pet://video-progress";
 pub const EV_WATCHER_FILE: &str = "pet://watcher-file";
 pub const EV_NAV: &str = "pet://nav";
-pub const EV_CLICK_THROUGH: &str = "pet://click-through";
 
 // ---------------------------------------------------------------- 错误转译
 
@@ -215,7 +216,6 @@ mod tests {
             EV_VIDEO_PROGRESS,
             EV_WATCHER_FILE,
             EV_NAV,
-            EV_CLICK_THROUGH,
         ] {
             assert!(ev.starts_with("pet://"), "{ev} 缺少命名空间");
         }

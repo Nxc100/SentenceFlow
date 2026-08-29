@@ -1,4 +1,4 @@
-//! AI 萌宠命令面(52 个 `pet_*`)。
+//! AI 萌宠命令面(54 个 `pet_*`)。
 //!
 //! 每个命令都很薄:取参 → 调 [`sf_pet`] → 落盘 → 广播事件。判断、算法、
 //! 文件布局一律在内核里,这里只处理「与窗口/设置/事件打交道」的部分。
@@ -895,6 +895,33 @@ pub async fn pet_pick_file(
         .pick_file()
         .await
         .map(|h| h.path().to_string_lossy().into_owned()))
+}
+
+// ---------------------------------------------------------------- 系统外壳
+// 走 opener 插件的 **Rust API**,不给前端开 `opener:*` 权限 ——
+// 句流 capabilities 的既定原则是「主窗只有 core:default,功能一律走显式命令」,
+// 白名单也因此留在代码里、与咒语包数据同源。
+
+/// 打开生成平台官网。只放行咒语包 `data.json` 里登记的那几个站点。
+#[tauri::command]
+pub fn pet_open_url(app: AppHandle, url: String) -> CmdResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let allowed = spellbook::bundle().platforms.iter().any(|p| p.url == url);
+    if !allowed {
+        return Err(CmdError::new("pet", "该链接不在咒语包的平台白名单内"));
+    }
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| CmdError::new("pet", format!("打不开浏览器: {e}")))
+}
+
+/// 在文件管理器里定位刚导出的文件(出生视频/参考图等)。
+#[tauri::command]
+pub fn pet_reveal_in_dir(app: AppHandle, path: String) -> CmdResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .reveal_item_in_dir(&path)
+        .map_err(|e| CmdError::new("pet", format!("打不开所在文件夹: {e}")))
 }
 
 #[tauri::command]

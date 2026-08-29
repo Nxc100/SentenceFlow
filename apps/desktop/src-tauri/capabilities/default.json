@@ -1,19 +1,9 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main window baseline capability — core events only; every feature goes through explicit commands. AI 萌宠的咒语包需要按域名白名单打开生成平台,并在导出后定位到文件。",
+  "description": "Main window baseline capability — core events only; every feature goes through explicit commands.",
   "windows": ["main"],
   "permissions": [
-    "core:default",
-    {
-      "identifier": "opener:allow-open-url",
-      "allow": [
-        { "url": "https://www.doubao.com/*" },
-        { "url": "https://jimeng.jianying.com/*" },
-        { "url": "https://chatgpt.com/*" },
-        { "url": "https://gemini.google.com/*" }
-      ]
-    },
-    "opener:allow-reveal-item-in-dir"
+    "core:default"
   ]
 }

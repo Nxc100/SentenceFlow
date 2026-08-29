@@ -1,23 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "pet",
-  "description": "宠物窗:窗口自管理(拖拽/落位/缩放/穿透/显示器查询)。其余能力一律走显式 pet_* 命令。",
+  "description": "宠物窗:最小权限。只额外放行前端确实要调的两个窗口写操作 —— 漫游/拖拽落位(set-position)与轮廓级点击穿透(set-ignore-cursor-events)。读位置/尺寸/显示器已含在 core:default 里;显隐、缩放、置顶等一律走显式 pet_* 命令,不给前端直通权限。",
   "windows": ["pet"],
   "permissions": [
     "core:default",
-    "core:window:allow-start-dragging",
     "core:window:allow-set-position",
-    "core:window:allow-set-size",
-    "core:window:allow-set-focus",
-    "core:window:allow-show",
-    "core:window:allow-hide",
-    "core:window:allow-set-always-on-top",
-    "core:window:allow-set-ignore-cursor-events",
-    "core:window:allow-current-monitor",
-    "core:window:allow-primary-monitor",
-    "core:window:allow-outer-position",
-    "core:window:allow-outer-size",
-    "core:window:allow-inner-size",
-    "core:window:allow-scale-factor"
+    "core:window:allow-set-ignore-cursor-events"
   ]
 }

@@ -1,0 +1,165 @@
+/* ============================================================================
+   宠物窗 —— 全透明画布 + 气泡 + 右键菜单。
+   配色全部走句流设计令牌(packages/ui/src/tokens.css),随主窗主题一起翻转;
+   HatchDesk 自己那套 localStorage 主题已整体废弃(会跨窗覆写主窗的 data-theme)。
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent; /* 透明桌宠窗,绝不设底色 */
+  font-family: var(--sf-font-ui);
+  /* 桌宠是装饰件,不是文档:整窗禁选,免得拖拽时选中气泡文字 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#pet-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* ============================ 气泡 ============================ */
+.bubble {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 92%;
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: 8px 12px;
+  box-shadow: var(--sf-shadow-2);
+  z-index: 10;
+  animation: bubble-pop var(--sf-dur-base) var(--sf-ease-spring);
+}
+
+.bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 9px solid var(--sf-card);
+  filter: drop-shadow(0 2px 2px rgba(20, 30, 60, 0.16));
+}
+
+@keyframes bubble-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.bubble-text {
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.bubble-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bubble-actions:empty {
+  display: none;
+}
+
+.bubble-btn {
+  flex: 1;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--sf-primary-border);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--sf-dur-fast) var(--sf-ease-standard),
+    border-color var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.bubble-btn:hover {
+  background: var(--sf-primary);
+  border-color: var(--sf-primary);
+  color: #fff;
+}
+
+/* ============================ 右键菜单 ============================ */
+.context-menu {
+  position: absolute;
+  z-index: 20;
+  min-width: 168px;
+  margin: 0;
+  list-style: none;
+  background: var(--sf-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  box-shadow: var(--sf-shadow-2);
+  padding: 4px;
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text);
+  animation: menu-in var(--sf-dur-fast) var(--sf-ease-out);
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.menu-item {
+  padding: 7px 12px;
+  border-radius: var(--sf-radius-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--sf-dur-fast) var(--sf-ease-standard),
+    color var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.menu-item:hover {
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+}
+
+.menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--sf-border);
+}
+
+.hidden {
+  display: none !important;
+}
