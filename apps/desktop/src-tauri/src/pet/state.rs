@@ -101,12 +101,7 @@ mod tests {
 
     #[test]
     fn seq_increments_for_same_second_hatches() {
-        let state = PetState::new(Path::new(
-            &std::env::temp_dir()
-                .join("sf-pet-state-seq")
-                .to_string_lossy()
-                .to_string(),
-        ));
+        let state = PetState::new(&std::env::temp_dir().join("sf-pet-state-seq"));
         let a = state.next_seq();
         let b = state.next_seq();
         assert_ne!(a, b, "同秒两次孵化必须拿到不同的序号");

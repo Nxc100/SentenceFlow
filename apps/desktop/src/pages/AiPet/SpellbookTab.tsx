@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, useToast } from "@sentenceflow/ui";
 import { petIpc } from "../../pet/ipc";
 import type { PlatformSpells, SpellbookBundle } from "../../pet/types";
-import { SectionHead } from "./common";
+import { SectionHead, copyText } from "./common";
 import type { PetTab } from "./index";
 import { errText } from "./usePetSettings";
 
@@ -355,12 +355,8 @@ function CopyButton({
 }) {
   const { show: toast } = useToast();
   const copy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast(done, "success");
-    } catch {
-      toast("复制失败:请手动全选咒语文本复制", "error");
-    }
+    if (await copyText(text)) toast(done, "success");
+    else toast("复制失败:请手动全选上面的咒语文本复制", "error");
   }, [text, done, toast]);
   return (
     <Button variant={primary ? "primary" : "ghost"} onClick={() => void copy()}>

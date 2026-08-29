@@ -30,7 +30,11 @@ jobs:
       - name: Format
         run: cargo fmt --check
       - name: Clippy (core crates)
-        run: cargo clippy -p sf-core -p sf-license -p sf-pipeline -p sf-llm --all-features -- -D warnings
+        run: cargo clippy -p sf-core -p sf-license -p sf-pipeline -p sf-llm -p sf-pet --all-targets --all-features -- -D warnings
+      # AI 萌宠的语义抠图是 feature 门控的:关掉这条路也必须编得过、测得过,
+      # 否则「需要小包时关掉 matting」这个兜底就是空头支票。
+      - name: sf-pet without semantic matting
+        run: cargo test -p sf-pet --no-default-features
       # content/build/ 是构建产物不入库,但 tauri-build 会在编译期校验
       # bundle.resources 里的 content.db 路径 —— 测试前先从种子库产出它。
       - name: Build bundled content.db (from seeds)

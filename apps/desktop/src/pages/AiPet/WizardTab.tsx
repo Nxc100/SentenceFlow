@@ -31,6 +31,7 @@ import {
   VIDEO_EXTS,
   Warnings,
   bgName,
+  copyText,
 } from "./common";
 import type { PetTab } from "./index";
 import { errText, usePetSettings } from "./usePetSettings";
@@ -388,10 +389,8 @@ function GridEvolveCard({
   }, [step, watch.start, watch.stop]);
 
   const copyAndOpen = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(pair.text);
-    } catch {
-      toast("复制失败:请手动复制下方咒语", "error");
+    if (!(await copyText(pair.text))) {
+      toast("复制失败:请到「咒语包」页手动复制", "error");
       return;
     }
     let note = "记得把宠物形象图作为参考图一并上传";
@@ -428,7 +427,7 @@ function GridEvolveCard({
           <Button
             variant="ghost"
             onClick={async () => {
-              await navigator.clipboard.writeText(pair.purified);
+              await copyText(pair.purified);
               toast("净化版已复制(平台乱加特效时用)", "success");
             }}
           >
@@ -621,10 +620,8 @@ function VideoEvolveCard({
             <span className="aipet-step__no">第 1 / 2 步</span>
             <Button
               onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(plan.text);
-                } catch {
-                  toast("复制失败", "error");
+                if (!(await copyText(plan.text))) {
+                  toast("复制失败:请到「咒语包」页手动复制", "error");
                   return;
                 }
                 let note2 = "记得把宠物形象图作为参考图一并上传";
@@ -713,7 +710,7 @@ function FullBodyCard({
           <Button
             variant="ghost"
             onClick={async () => {
-              await navigator.clipboard.writeText(pair.text);
+              await copyText(pair.text);
               try {
                 await petIpc.openUrl(platform.url);
               } catch {
@@ -1022,7 +1019,7 @@ function StateCard({
               <Button
                 variant="ghost"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(entry.rescue);
+                  await copyText(entry.rescue);
                   toast("救帧咒语已复制(附首帧参考图)", "success");
                 }}
               >
@@ -1061,7 +1058,7 @@ function StateCard({
           <Button
             variant="ghost"
             onClick={async () => {
-              await navigator.clipboard.writeText(entry.text);
+              await copyText(entry.text);
               toast("单行咒语已复制(附上参考图)", "success");
             }}
           >
@@ -1070,7 +1067,7 @@ function StateCard({
           <Button
             variant="ghost"
             onClick={async () => {
-              await navigator.clipboard.writeText(entry.purified);
+              await copyText(entry.purified);
               toast("净化版已复制", "success");
             }}
           >

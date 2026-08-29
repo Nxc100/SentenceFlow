@@ -16,6 +16,7 @@ body {
   overflow: hidden;
   background: transparent; /* 透明桌宠窗,绝不设底色 */
   font-family: var(--sf-font-ui);
+  color: var(--sf-text);
   /* 桌宠是装饰件,不是文档:整窗禁选,免得拖拽时选中气泡文字 */
   user-select: none;
   -webkit-user-select: none;

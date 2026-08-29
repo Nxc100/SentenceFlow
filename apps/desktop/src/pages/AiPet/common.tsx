@@ -127,3 +127,30 @@ export function bgName(bg: string): string {
 
 export const IMG_EXTS = ["png", "jpg", "jpeg", "webp", "bmp", "gif"];
 export const VIDEO_EXTS = ["mp4", "mov", "webm"];
+
+/**
+ * 复制文本到剪贴板,失败时用一次性 textarea 兜底。
+ *
+ * 「复制咒语」是这个模块最要紧的一个动作 —— WebView 的
+ * `navigator.clipboard` 在个别环境里会直接抛(权限/非安全上下文),
+ * 不能让用户卡在这里,得留一条老路。
+ */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+      document.body.append(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
