@@ -19,6 +19,7 @@ sf-core = { workspace = true }
 sf-pipeline = { workspace = true, features = ["store"] }
 sf-llm = { workspace = true }
 sf-license = { workspace = true }
+sf-pet = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -29,7 +30,11 @@ keyring = { workspace = true }
 secrecy = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-tauri = { version = "2", features = [] }
+# image-png:宠物窗透明位图;macos-private-api:透明窗在 macOS 上的硬要求
+tauri = { version = "2", features = ["image-png", "macos-private-api"] }
+# AI 萌宠:到点提醒走系统通知;咒语包的平台链接走系统浏览器
+tauri-plugin-notification = "2"
+tauri-plugin-opener = "2"
 # 智能体工作目录的系统文件夹选择器(显式 command,不经插件 — 见 capabilities)
 rfd = { version = "0.15", default-features = false, features = ["gtk3"] }
 # 删除智能体会话时把工作目录移入系统回收站(可找回,比直接抹掉安全)
@@ -39,3 +44,8 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 reqwest = { workspace = true }
 flate2 = { workspace = true }
 tar = { workspace = true }
+# AI 萌宠:图集编解码 / 提醒时间学 / 向导等素材时监听下载目录
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "bmp", "gif"] }
+chrono = { version = "0.4", features = ["serde"] }
+notify = "6"
+base64 = { workspace = true }

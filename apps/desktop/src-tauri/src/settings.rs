@@ -18,6 +18,9 @@ pub struct Settings {
     pub appearance: AppearanceSettings,
     pub accessibility: AccessibilitySettings,
     pub ai: AiSettings,
+    /// AI 萌宠。只由「AI 萌宠」页经 `pet_settings_set` 写入 —— 设置页的
+    /// `set_settings` 会原样保留后端现值,避免两处写同一分节(见 commands::set_settings)。
+    pub pet: PetSettings,
     /// 当前练习等级(首启定级结果).
     pub level: Option<LevelId>,
 }
@@ -191,6 +194,62 @@ impl Default for AiSettings {
     }
 }
 
+/// AI 萌宠设置(《AI 萌宠模块-整合执行方案》§3.4)。
+///
+/// 与 HatchDesk 的 `config.json` 的差异,均为整合决策:
+/// * 新增总开关 `enabled`,**默认关** —— 老用户升级后行为与基线完全一致,
+///   宠物窗与心跳线程都不会起来,要主动到「AI 萌宠」页开启;
+/// * `watcher_enabled` 默认改为 `false`(原 `true`):监听下载目录属隐私敏感面,
+///   句流语境下保守化,功能保留可手动开;
+/// * 丢弃 `pro`(句流免费,无付费判据)与 `analytics`(不做常驻埋点)。
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PetSettings {
+    /// 总开关:关闭时不建宠物窗、不起心跳线程。
+    pub enabled: bool,
+    /// 宠物显示倍率(钳位 0.75–2.0)。
+    pub scale: f32,
+    /// 随机漫游。
+    pub roam: bool,
+    /// 全局点击穿透(与轮廓级命中测试互斥:开启后整窗不拦鼠标)。
+    pub click_through: bool,
+    /// 夜间自动睡觉(22:00–7:00)。
+    pub night_sleep: bool,
+    /// 省电模式:低帧率、关粒子。
+    pub performance_mode: bool,
+    /// 无操作多少分钟后入睡。
+    pub sleep_after_min: u32,
+    /// 道具叠加引擎(吃/提醒/睡的道具动画)。
+    pub props_enabled: bool,
+    /// 向导等待素材时监听系统下载目录(隐私敏感,默认关)。
+    pub watcher_enabled: bool,
+    /// ffmpeg 手动路径(默认自动探测:同目录 sidecar → PATH)。
+    pub ffmpeg_path: Option<String>,
+    /// 当前出场的宠物 ID。
+    pub active_pet: Option<String>,
+    /// 是否已完成首次孵化(只影响引导文案,不控制窗口显示)。
+    pub first_hatch_done: bool,
+}
+
+impl Default for PetSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            scale: 1.0,
+            roam: true,
+            click_through: false,
+            night_sleep: true,
+            performance_mode: false,
+            sleep_after_min: 8,
+            props_enabled: true,
+            watcher_enabled: false,
+            ffmpeg_path: None,
+            active_pet: None,
+            first_hatch_done: false,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,5 +288,56 @@ mod tests {
         assert!(!s.practice.strict_typing);
         assert!(s.practice.auto_speak_answer); // default filled in
         assert_eq!(s.sound.rate, 1.0);
+    }
+
+    /// 「不影响既有功能」的最后一道闸门:老版本存下来的 settings 里没有
+    /// `pet` 分节,反序列化后必须是**总开关关闭**的默认值 —— 升级后
+    /// 既不会凭空冒出宠物窗,也不会起心跳线程。
+    #[test]
+    fn settings_without_pet_section_default_to_disabled() {
+        let s: Settings =
+            serde_json::from_str(r#"{"appearance":{"theme":"macaron"},"level":"L2"}"#).unwrap();
+        assert_eq!(s.appearance.theme, Theme::Macaron, "既有分节照常读入");
+        assert_eq!(s.level, Some(LevelId::L2));
+        assert_eq!(s.pet, PetSettings::default());
+        assert!(!s.pet.enabled, "老档升级后宠物必须是关的");
+        assert!(!s.pet.watcher_enabled, "下载目录监听默认关(隐私保守化)");
+        assert!(s.pet.roam && s.pet.night_sleep && s.pet.props_enabled);
+    }
+
+    /// pet 分节本身也要能增量演进:缺字段取默认,已有字段照读。
+    #[test]
+    fn pet_section_is_additively_migratable() {
+        let s: Settings = serde_json::from_str(r#"{"pet":{"enabled":true,"scale":1.5}}"#).unwrap();
+        assert!(s.pet.enabled);
+        assert_eq!(s.pet.scale, 1.5);
+        assert_eq!(s.pet.sleep_after_min, 8, "未出现的字段回落默认");
+        assert_eq!(s.pet.active_pet, None);
+    }
+
+    /// 线上字段名即前端读写的键名,改名等于宠物设置整体失效。
+    #[test]
+    fn pet_wire_names_are_snake_case() {
+        let json = serde_json::to_value(Settings::default()).unwrap();
+        let pet = &json["pet"];
+        for key in [
+            "enabled",
+            "scale",
+            "roam",
+            "click_through",
+            "night_sleep",
+            "performance_mode",
+            "sleep_after_min",
+            "props_enabled",
+            "watcher_enabled",
+            "ffmpeg_path",
+            "active_pet",
+            "first_hatch_done",
+        ] {
+            assert!(
+                !pet[key].is_null() || pet.get(key).is_some(),
+                "缺少字段 {key}"
+            );
+        }
     }
 }

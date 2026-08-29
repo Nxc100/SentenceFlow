@@ -3,6 +3,9 @@
 //! Locking order (always acquire in this order, never hold across await):
 //! `progress` → `content` → `settings`. The workshop runner owns its own
 //! state and talks to the DBs through short-lived locks.
+//!
+//! AI 萌宠的锁挂在 [`AppState::pet`] 下,排在这三把之后:pet 锁永远最后取,
+//! 也绝不在持 pet 锁时回头去取上面三把(见 `pet::state`)。
 
 use crate::error::{CmdError, CmdResult};
 use crate::paths::AppPaths;
@@ -34,6 +37,9 @@ pub struct AppState {
     /// 每个聊天会话各自的停止信号:多个会话可同时流式,[停止] 只掐当前这个
     /// (AI 聊天模块;切到别的会话不打断已在跑的回复)。
     pub chat_cancels: Mutex<std::collections::HashMap<i64, std::sync::Arc<tokio::sync::Notify>>>,
+    /// AI 萌宠模块的自持状态(向导会话、提醒、下载监听、心跳线程)。
+    /// 与练习路径完全无交集;`settings.pet.enabled` 默认关时全程闲置。
+    pub pet: crate::pet::PetState,
 }
 
 impl AppState {
@@ -90,6 +96,8 @@ impl AppState {
             })
             .unwrap_or_default();
 
+        let pet = crate::pet::PetState::new(&paths.root);
+
         Ok(Self {
             paths,
             progress: Mutex::new(progress),
@@ -102,6 +110,7 @@ impl AppState {
             gen_cancel: AtomicBool::new(false),
             placement: Mutex::new(None),
             chat_cancels: Mutex::new(std::collections::HashMap::new()),
+            pet,
         })
     }
 

@@ -72,9 +72,23 @@ pub fn get_settings(state: S<'_>) -> CmdResult<Settings> {
 }
 
 #[tauri::command]
-pub fn set_settings(state: S<'_>, settings: Settings) -> CmdResult<()> {
+pub fn set_settings(app: AppHandle, state: S<'_>, mut settings: Settings) -> CmdResult<()> {
+    // pet 分节的权威副本在后端:设置页手上是 bootstrap 时的旧快照,原样回写会把
+    // 用户之后在「AI 萌宠」页改过的宠物设置抹掉。写宠物设置只有 pet_settings_set 一条路。
+    let (pet, prev_appearance) = {
+        let cur = state.settings.lock().expect("settings lock");
+        (cur.pet.clone(), cur.appearance.clone())
+    };
+    settings.pet = pet;
+    // 落盘要取 progress 锁 —— 此处已释放 settings 锁,锁序 progress→settings 不被破坏。
     state.save_settings(&settings)?;
+    let theme_changed = settings.appearance != prev_appearance;
+    let theme = settings.appearance.theme;
     *state.settings.lock().expect("settings lock") = settings;
+    // 宠物窗跟随句流主题(纯新增事件,对既有前端无影响)。
+    if theme_changed {
+        crate::pet::emit_theme(&app, theme);
+    }
     Ok(())
 }
 
