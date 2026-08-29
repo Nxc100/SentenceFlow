@@ -528,4 +528,56 @@ R23 的页卸载重置定时器落地;全量回归清单(§7)首轮通过。
 
 ---
 
+## 11. 执行记录(2026-08-29 回写)
+
+方案已全量执行完毕。以下是与本方案不一致之处 —— 按文末约定「以代码为准」,
+在此逐条回写;完整叙述见《开发状态》2026-08-29 条目。
+
+### 11.1 三处执行偏差
+
+| # | 方案原文 | 实际落地 | 理由 |
+|---|---|---|---|
+| 1 | §3.2 宠物窗与「AI 萌宠」页各写一份类型化 IPC | 只写一份 `src/pet/{types,ipc}.ts`,两处共用 | 两份 IPC 是持续漂移面;同一后端契约没有分两份的理由 |
+| 2 | §6.2 保留 `click-through-changed` → `pet://click-through` | **废弃该事件**(事件数 10 → 9) | 全局穿透开关是 pet 设置的一个字段,`pet://settings` 已携带全量快照;再来一条只会制造第二个事实源 |
+| 3 | §3.6 主窗 `default.json` 追加 `opener:allow-open-url`(域名 scope)与 `opener:allow-reveal-item-in-dir`;pet 窗授予 14 项 `core:window:*` | 主窗 capability **原样不动**;改为 `pet_open_url` / `pet_reveal_in_dir` 两个 Rust 命令(命令数 52 → 54),白名单取自咒语包 `data.json`;`pet.json` 收敛到 **2 项**权限 | 句流 `default.json` 自己写着「主窗只有 core:default,功能一律走显式命令」,给前端开 opener 权限与该原则相悖;pet 窗前端实测只调 `setPosition` 与 `setIgnoreCursorEvents`,其余读操作已含在 `core:window:default`,显隐/缩放/置顶全走 Rust 命令 |
+
+### 11.2 与方案预估的偏差
+
+- **体积**:§1 预估「exe 约 +5 MB」。实测 **exe 17.0 → 41.9 MB(+24.9 MB)**,
+  NSIS 安装包 6.1 → 14.4 MB(+8.3 MB)。差距来自 `tract-onnx` 的完整依赖树
+  (tract-core/linalg/nnef/hir + ndarray + rustfft + liquid 模板引擎 + pest),
+  而不只是 4.4 MB 的模型本身。`sf-pet` 的 `matting` feature 可整条关掉作为兜底。
+- **既有测试数**:§5 写「句流 209 个既有单测」,执行时实测基线为 **253**
+  (v0.4.0 之后又长了)。整合后 workspace 共 **391**。
+- **既有命令数**:§6.1 写「句流现有 65 命令」—— 与代码一致;
+  但《功能全景文档》§12.1 的表只列了 63 个(漏 `pick_file`、`export_diagnostics`),
+  已一并补正。
+
+### 11.3 真机验收揪出的补充:同步命令跑在主线程上
+
+方案 §3.7 只点名了 `rig_bake` 一个「阻塞 IPC」的风险(R22)。真机跑下来,
+同一个坑覆盖面大得多:**Tauri 的同步命令跑在主线程**,于是
+
+- 在同步命令里建宠物窗会**直接死锁**(WebView2 控制器创建要靠主线程的消息循环
+  推进,而主线程正卡在这个命令里)—— 第一次点「开启 AI 萌宠」时整个 IPC 停摆;
+- 抠图 / 切帧 / 图集合成 / 每帧 PNG 预览编码 / `ffmpeg -version` 探测
+  都会把主窗与宠物窗一起冻住。
+
+处置:重活与碰窗口生命周期的命令一律 `async` + `spawn_blocking`(共 32 个),
+并补源码自检单测钉死清单。R22 的范围据此从「1 个命令」扩到「一类命令」。
+
+### 11.4 迁移时顺手修掉的原实现缺陷(9 项)
+
+`rig_bake` 阻塞 IPC(R22)、心跳线程不可停(R13)、下载监听 stop 后仍会弹提示、
+咒语包 `data()` 重复解析 25KB JSON(R21)、缩放 NaN 造出尺寸 NaN 的置顶窗、
+前端落区只注册不注销(R26)、`work_area_get` 窗口注入语义(R27)、
+进程级 `static SEQ`(R15)、`VideoSpell.full_setup` 漏写 `rename_all`
+导致前端读 `fullSetup` 恒为 `undefined`(HatchDesk 既有缺陷,咒语包的
+「脚本路线面板设置说明」从没显示出来过)。
+
+最后一项已补 `wire_key_shapes_are_stable` 单测钉死整包的 key 形状 ——
+这类错配既没有编译期报错也没有运行期报错,只会在界面上留一片 `undefined`。
+
+---
+
 *执行本方案时,若发现与两侧代码实况不符之处,以代码为准,并回写本文档与《开发状态》。*

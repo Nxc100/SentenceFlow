@@ -352,7 +352,6 @@ function GridEvolveCard({
   const [report, setReport] = useState<Report | null>(null);
   const [busy, setBusy] = useState(false);
   const { show: toast } = useToast();
-  const watch = useWatcher("image");
 
   const doImport = useCallback(
     async (path: string) => {
@@ -362,7 +361,7 @@ function GridEvolveCard({
         await petIpc.wizardAddSheet(path, pair.states, pair.cols);
         const result = await petIpc.wizardEvolve();
         if (result.ok) {
-          watch.stop();
+          void petIpc.watcherStop().catch(() => undefined);
           toast(`✨ ${result.unlocked.join("、")}已点亮!去桌面看看它`, "success");
           onEvolved();
         } else {
@@ -374,10 +373,19 @@ function GridEvolveCard({
         setBusy(false);
       }
     },
-    [pair, onEvolved, toast, watch],
+    [pair, onEvolved, toast],
   );
 
-  watch.useAutoImport(doImport);
+  const watch = useWatcher("image", doImport);
+
+  // 进到第 2 步 = 用户已经去平台生成了 → 开始盯下载目录(设置里关着则自动空转)。
+  // 后端监听器是单例,网格卡与视频卡按 kind 各取所需;离开这一步即停,
+  // 不让它在用户已经走开之后还盯着下载文件夹。
+  useEffect(() => {
+    if (step !== 2) return;
+    void watch.start();
+    return () => watch.stop();
+  }, [step, watch.start, watch.stop]);
 
   const copyAndOpen = useCallback(async () => {
     try {
@@ -489,7 +497,6 @@ function VideoEvolveCard({
   const [progress, setProgress] = useState<{ pct: number; label: string } | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const { show: toast } = useToast();
-  const watch = useWatcher("video");
 
   useEffect(() => {
     const un = petEvents.onVideoProgress((p) =>
@@ -526,13 +533,13 @@ function VideoEvolveCard({
     [plan, toast],
   );
 
-  watch.useAutoImport(doImport);
+  const watch = useWatcher("video", doImport);
 
   const apply = useCallback(async () => {
     try {
       const result = await petIpc.wizardEvolve();
       if (result.ok) {
-        watch.stop();
+        void petIpc.watcherStop().catch(() => undefined);
         setSession(null);
         toast(`✨ ${result.unlocked.join("、")}已升级为视频动画!`, "success");
         onEvolved();
@@ -542,7 +549,7 @@ function VideoEvolveCard({
     } catch (e) {
       toast(errText(e), "error");
     }
-  }, [onEvolved, toast, watch]);
+  }, [onEvolved, toast]);
 
   if (!vp || !plan) return null;
 
@@ -1080,13 +1087,20 @@ function StateCard({
 /**
  * 「去生成期间盯着下载目录」的小状态机。
  *
- * 只在用户真的去平台生成时才接管(避免网格卡与视频卡互相抢监听);
+ * 只在用户真的按了「复制咒语并打开平台」时才接管(避免网格卡与视频卡互相抢监听);
  * 组件卸载时一定停 —— 监听是隐私敏感面,不能因为切了页签就留在开着。
+ *
+ * `onFile` 存进 ref:导入回调每次渲染都是新函数,直接进依赖数组会让监听不停地
+ * 重挂,而它的语义是「一直是最新那个」。
  */
-function useWatcher(kind: "image" | "video") {
+function useWatcher(kind: "image" | "video", onFile: (path: string) => void) {
   const [active, setActive] = useState(false);
   const { settings } = usePetSettings();
-  const handlerRef = useRef<((path: string) => void) | null>(null);
+  const handlerRef = useRef(onFile);
+
+  useEffect(() => {
+    handlerRef.current = onFile;
+  }, [onFile]);
 
   const stop = useCallback(() => {
     setActive(false);
@@ -1103,19 +1117,16 @@ function useWatcher(kind: "image" | "video") {
     }
   }, [settings]);
 
+  // 卸载即停:切走页签后不该还在盯着用户的下载目录
   useEffect(() => () => void petIpc.watcherStop().catch(() => undefined), []);
 
   useEffect(() => {
     if (!active) return;
     const un = petEvents.onWatcherFile((f) => {
-      if (f.kind === kind) handlerRef.current?.(f.path);
+      if (f.kind === kind) handlerRef.current(f.path);
     });
     return () => void un.then((fn) => fn());
   }, [active, kind]);
-
-  const useAutoImport = (fn: (path: string) => void) => {
-    handlerRef.current = fn;
-  };
 
   const hint = settings?.watcher_enabled ? (
     <span className="aipet-desc">
@@ -1123,5 +1134,5 @@ function useWatcher(kind: "image" | "video") {
     </span>
   ) : null;
 
-  return { active, start, stop, useAutoImport, hint };
+  return { active, start, stop, hint };
 }

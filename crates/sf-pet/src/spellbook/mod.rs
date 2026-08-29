@@ -182,7 +182,11 @@ pub struct VideoPlan {
     pub text: String,
 }
 
+// camelCase 与内嵌的 `VideoPlan`/`VideoSegmentSpell` 对齐。原实现漏了这一行,
+// 于是 `full_setup` 上线成 snake_case,而前端读的是 `fullSetup` ——
+// 「脚本路线的面板设置说明」一直是 undefined,从没显示出来过。
 #[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct VideoSpell {
     pub label: String,
     pub setup: String,
@@ -400,6 +404,14 @@ pub fn watermark_rois() -> Vec<CornerRoi> {
     data().watermark_rois.clone()
 }
 
+/// 这个 URL 是否属于咒语包登记的生成平台。
+///
+/// 「用系统浏览器打开」的唯一白名单来源:与 data.json 同源,平台增删自动跟上,
+/// 不需要在别处再维护一份域名表。全等匹配 —— 只放行咒语包里那几个入口页。
+pub fn is_platform_url(url: &str) -> bool {
+    data().platforms.iter().any(|p| p.url == url)
+}
+
 /// 组装完整咒语包（前端直接展示）。
 pub fn bundle() -> SpellbookBundle {
     let d = data();
@@ -491,6 +503,73 @@ pub fn bundle() -> SpellbookBundle {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 线上字段名就是前端读的键名 —— 一处忘了 `rename_all` 就是界面上一片
+    /// `undefined`,而且不会有任何编译期或运行期报错。此测钉死整包的 key 形状。
+    #[test]
+    fn wire_key_shapes_are_stable() {
+        let json = serde_json::to_value(bundle()).unwrap();
+        for k in [
+            "version",
+            "default_platform",
+            "hard_rules",
+            "video_note",
+            "platforms",
+            "failure_checks",
+            "intercept_keywords",
+        ] {
+            assert!(json.get(k).is_some(), "顶层缺 {k}");
+        }
+        let p = &json["platforms"][0];
+        for k in ["id", "name", "role", "url", "tips", "grid", "singles"] {
+            assert!(p.get(k).is_some(), "platform 缺 {k}");
+        }
+        assert!(
+            p["grid"][0].get("state_names").is_some(),
+            "GridSpell 用 snake_case"
+        );
+        assert!(
+            p["singles"][0].get("state_name").is_some(),
+            "SpellEntry 用 snake_case"
+        );
+
+        // video 分支是 camelCase(与内嵌的 plan/segment 一致);
+        // `fullSetup` 曾因漏写 rename_all 上线成 full_setup,前端一直读到 undefined。
+        let video = bundle()
+            .platforms
+            .into_iter()
+            .find_map(|p| p.video)
+            .expect("至少一个平台带视频咒语");
+        let v = serde_json::to_value(video).unwrap();
+        assert!(
+            v.get("fullSetup").is_some(),
+            "VideoSpell.fullSetup 必须是 camelCase"
+        );
+        assert!(v.get("full_setup").is_none());
+        let seg = &v["plans"][0]["segments"][0];
+        assert!(
+            seg.get("stateName").is_some(),
+            "VideoSegmentSpell 用 camelCase"
+        );
+    }
+
+    /// 外链白名单只认咒语包登记的那几个入口页 —— 多一个字符都不放行。
+    #[test]
+    fn platform_url_whitelist_is_exact() {
+        let bundle = bundle();
+        assert!(!bundle.platforms.is_empty(), "至少要有一个平台");
+        for p in &bundle.platforms {
+            assert!(is_platform_url(&p.url), "登记的平台 {} 应放行", p.id);
+        }
+        assert!(!is_platform_url("https://evil.example.com/"));
+        assert!(!is_platform_url(""));
+        // 前缀/后缀拼接不得绕过
+        let first = &bundle.platforms[0].url;
+        assert!(!is_platform_url(&format!("{first}../../etc")));
+        assert!(!is_platform_url(&format!(
+            "https://evil.example.com/?u={first}"
+        )));
+    }
 
     /// 一次生成、多状态点亮：咒语里的时间轴必须与切段用的比例契约完全一致。
     #[test]

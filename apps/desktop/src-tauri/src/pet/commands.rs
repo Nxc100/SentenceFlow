@@ -5,6 +5,19 @@
 //!
 //! 命名:全部 `pet_` 前缀 —— 与句流既有 65 个命令零碰撞,且 `settings_get`、
 //! `work_area_get` 这类通用名不会在未来撞车。
+//!
+//! ## 为什么这么多命令是 `async`
+//!
+//! **Tauri 的同步命令跑在主线程上。** 两个后果:
+//!
+//! 1. 抠图、切帧、图集合成、PNG 预览编码这类要几百毫秒到几秒的活儿,
+//!    放在同步命令里会把主窗和宠物窗**一起冻住**;
+//! 2. 更硬的一条:在同步命令里建宠物窗会**直接把进程挂住** —— WebView2 的
+//!    控制器创建要靠主线程的消息循环推进,而主线程正卡在这个命令里
+//!    (真机实测:开总开关后整个 IPC 停摆,`pet_settings_get` 再不返回)。
+//!
+//! 所以规则是:**凡是重活、或会碰窗口生命周期(即调用 [`super::apply_settings`])
+//! 的命令,一律 `async`**;轻量的读写(设置读取、提醒 CRUD、光标坐标)才留同步。
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -28,6 +41,17 @@ use crate::settings::{PetSettings, Theme};
 use crate::state::AppState;
 
 type S<'a> = State<'a, Arc<AppState>>;
+
+/// 把一段重活挪到阻塞线程池,别占着主线程(见模块头)。
+async fn blocking<T, F>(f: F) -> CmdResult<T>
+where
+    F: FnOnce() -> CmdResult<T> + Send + 'static,
+    T: Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| CmdError::new("pet", format!("后台任务异常: {e}")))?
+}
 
 fn pets_root(state: &AppState) -> PathBuf {
     state.pet.paths.pets_dir()
@@ -68,12 +92,15 @@ pub struct PetBootstrap {
 }
 
 #[tauri::command]
-pub fn pet_bootstrap(state: S<'_>) -> CmdResult<PetBootstrap> {
+pub async fn pet_bootstrap(state: S<'_>) -> CmdResult<PetBootstrap> {
     let (settings, theme) = {
         let s = state.settings.lock().expect("settings lock");
         (s.pet.clone(), s.appearance.theme)
     };
-    let active = load_active_assets(&pets_root(&state), settings.active_pet.as_deref())?;
+    let root = pets_root(&state);
+    let active_id = settings.active_pet.clone();
+    // 图集是 1536×1664 的 WebP,解包 + base64 有几毫秒到几十毫秒,别占主线程
+    let active = blocking(move || load_active_assets(&root, active_id.as_deref())).await?;
     Ok(PetBootstrap {
         settings,
         theme,
@@ -86,8 +113,10 @@ pub fn pet_settings_get(state: S<'_>) -> PetSettings {
     pet_settings(&state)
 }
 
+/// 写 pet 设置。**必须 async**:总开关打开时这里会建宠物窗,
+/// 而在主线程上建 WebView2 会把进程挂住(见模块头)。
 #[tauri::command]
-pub fn pet_settings_set(
+pub async fn pet_settings_set(
     app: AppHandle,
     state: S<'_>,
     settings: PetSettings,
@@ -132,21 +161,26 @@ pub fn pet_list(state: S<'_>) -> CmdResult<Vec<store::PetMeta>> {
 }
 
 #[tauri::command]
-pub fn pet_thumb(state: S<'_>, pet_id: String) -> CmdResult<String> {
+pub async fn pet_thumb(state: S<'_>, pet_id: String) -> CmdResult<String> {
     let root = pets_root(&state);
-    let spec = store::load_spec(&root, &pet_id)?;
-    let sheet = store::load_sheet(&root, &pet_id)?;
-    let row = spec.clip(StateId::Idle).map(|c| c.row).unwrap_or(0);
-    Ok(to_png_data_url(&layout::cell_at(&sheet, row, 0))?)
+    blocking(move || {
+        let spec = store::load_spec(&root, &pet_id)?;
+        let sheet = store::load_sheet(&root, &pet_id)?;
+        let row = spec.clip(StateId::Idle).map(|c| c.row).unwrap_or(0);
+        Ok(to_png_data_url(&layout::cell_at(&sheet, row, 0))?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_active_assets(state: S<'_>) -> CmdResult<Option<ActivePetAssets>> {
-    load_active_assets(&pets_root(&state), active_pet(&state).as_deref())
+pub async fn pet_active_assets(state: S<'_>) -> CmdResult<Option<ActivePetAssets>> {
+    let root = pets_root(&state);
+    let id = active_pet(&state);
+    blocking(move || load_active_assets(&root, id.as_deref())).await
 }
 
 #[tauri::command]
-pub fn pet_set_active(app: AppHandle, state: S<'_>, pet_id: String) -> CmdResult<()> {
+pub async fn pet_set_active(app: AppHandle, state: S<'_>, pet_id: String) -> CmdResult<()> {
     store::load_spec(&pets_root(&state), &pet_id)?; // 校验存在
     let mut next = pet_settings(&state);
     next.active_pet = Some(pet_id.clone());
@@ -177,7 +211,7 @@ pub fn pet_set_anchors(
 }
 
 #[tauri::command]
-pub fn pet_delete(app: AppHandle, state: S<'_>, pet_id: String) -> CmdResult<()> {
+pub async fn pet_delete(app: AppHandle, state: S<'_>, pet_id: String) -> CmdResult<()> {
     store::delete_pet(&pets_root(&state), &pet_id)?;
     if active_pet(&state).as_deref() == Some(pet_id.as_str()) {
         let mut next = pet_settings(&state);
@@ -290,22 +324,21 @@ fn rig_joints(spec: &PetSpec, source: &RgbaImage) -> rig::Joints {
 // ---------------------------------------------------------------- .petkit 宠物包
 
 #[tauri::command]
-pub fn pet_kit_export(state: S<'_>, pet_id: String, dest: String) -> CmdResult<()> {
-    Ok(archive::export_petkit(
-        &pets_root(&state),
-        &pet_id,
-        Path::new(&dest),
-    )?)
+pub async fn pet_kit_export(state: S<'_>, pet_id: String, dest: String) -> CmdResult<()> {
+    let root = pets_root(&state);
+    blocking(move || Ok(archive::export_petkit(&root, &pet_id, Path::new(&dest))?)).await
 }
 
 #[tauri::command]
-pub fn pet_kit_validate(src: String) -> CmdResult<validator::Report> {
-    Ok(archive::validate_petkit_file(Path::new(&src))?)
+pub async fn pet_kit_validate(src: String) -> CmdResult<validator::Report> {
+    blocking(move || Ok(archive::validate_petkit_file(Path::new(&src))?)).await
 }
 
 #[tauri::command]
-pub fn pet_kit_import(app: AppHandle, state: S<'_>, src: String) -> CmdResult<String> {
-    let pet_id = archive::import_petkit(&pets_root(&state), state.pet.next_seq(), Path::new(&src))?;
+pub async fn pet_kit_import(app: AppHandle, state: S<'_>, src: String) -> CmdResult<String> {
+    let root = pets_root(&state);
+    let seq = state.pet.next_seq();
+    let pet_id = blocking(move || Ok(archive::import_petkit(&root, seq, Path::new(&src))?)).await?;
     activate_hatched(&app, &state, &pet_id)?;
     Ok(pet_id)
 }
@@ -334,15 +367,21 @@ pub fn pet_wizard_reset(state: S<'_>) {
         .clear();
 }
 
+/// 会话视图会为**每一帧**编一张 PNG data URL(8 状态 × 最多 8 帧),
+/// 是几百毫秒量级的活 —— 返回 `SessionView` 的命令一律 async。
 #[tauri::command]
-pub fn pet_wizard_session(state: S<'_>) -> CmdResult<wizard::SessionView> {
-    Ok(wizard::session_view(
-        &state.pet.wizard.0.lock().expect("pet wizard lock"),
-    )?)
+pub async fn pet_wizard_session(state: S<'_>) -> CmdResult<wizard::SessionView> {
+    let st = state.inner().clone();
+    blocking(move || {
+        Ok(wizard::session_view(
+            &st.pet.wizard.0.lock().expect("pet wizard lock"),
+        )?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_wizard_add_strip(
+pub async fn pet_wizard_add_strip(
     state: S<'_>,
     state_key: String,
     path: String,
@@ -350,25 +389,33 @@ pub fn pet_wizard_add_strip(
     forced_frames: Option<u32>,
 ) -> CmdResult<wizard::SessionView> {
     require_state_key(&state_key)?;
-    // 抠图+切帧在锁外做,临界区只覆盖一次插入
-    let data = wizard::process_image(&path, tolerance, forced_frames, false)?;
-    let mut session = state.pet.wizard.0.lock().expect("pet wizard lock");
-    session.strips.insert(state_key, data);
-    Ok(wizard::session_view(&session)?)
+    let st = state.inner().clone();
+    blocking(move || {
+        // 抠图 + 切帧在锁外做,临界区只覆盖一次插入
+        let data = wizard::process_image(&path, tolerance, forced_frames, false)?;
+        let mut session = st.pet.wizard.0.lock().expect("pet wizard lock");
+        session.strips.insert(state_key, data);
+        Ok(wizard::session_view(&session)?)
+    })
+    .await
 }
 
 /// 网格整图导入:一次拖入点亮多个状态。
 #[tauri::command]
-pub fn pet_wizard_add_sheet(
+pub async fn pet_wizard_add_sheet(
     state: S<'_>,
     path: String,
     states: Vec<String>,
     cols: Option<u32>,
 ) -> CmdResult<wizard::SessionView> {
-    let rois = spellbook::watermark_rois();
-    let mut session = state.pet.wizard.0.lock().expect("pet wizard lock");
-    wizard::add_sheet(&mut session, &path, &states, cols, &rois)?;
-    Ok(wizard::session_view(&session)?)
+    let st = state.inner().clone();
+    blocking(move || {
+        let rois = spellbook::watermark_rois();
+        let mut session = st.pet.wizard.0.lock().expect("pet wizard lock");
+        wizard::add_sheet(&mut session, &path, &states, cols, &rois)?;
+        Ok(wizard::session_view(&session)?)
+    })
+    .await
 }
 
 /// 视频处理进度(抠像是秒级操作,前端必须看得见)。
@@ -480,51 +527,72 @@ pub async fn pet_wizard_add_video_multi(
 
 /// 行序调换(网格行序颠倒时一键交换)。
 #[tauri::command]
-pub fn pet_wizard_swap_states(
+pub async fn pet_wizard_swap_states(
     state: S<'_>,
     a: String,
     b: String,
 ) -> CmdResult<wizard::SessionView> {
-    let mut session = state.pet.wizard.0.lock().expect("pet wizard lock");
-    wizard::swap_states(&mut session, &a, &b)?;
-    Ok(wizard::session_view(&session)?)
+    let st = state.inner().clone();
+    blocking(move || {
+        let mut session = st.pet.wizard.0.lock().expect("pet wizard lock");
+        wizard::swap_states(&mut session, &a, &b)?;
+        Ok(wizard::session_view(&session)?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_wizard_remove_strip(state: S<'_>, state_key: String) -> CmdResult<wizard::SessionView> {
-    let mut session = state.pet.wizard.0.lock().expect("pet wizard lock");
-    session.strips.remove(&state_key);
-    Ok(wizard::session_view(&session)?)
+pub async fn pet_wizard_remove_strip(
+    state: S<'_>,
+    state_key: String,
+) -> CmdResult<wizard::SessionView> {
+    let st = state.inner().clone();
+    blocking(move || {
+        let mut session = st.pet.wizard.0.lock().expect("pet wizard lock");
+        session.strips.remove(&state_key);
+        Ok(wizard::session_view(&session)?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_wizard_preview(state: S<'_>) -> CmdResult<wizard::ComposeView> {
-    Ok(wizard::preview(
-        &state.pet.wizard.0.lock().expect("pet wizard lock"),
-    )?)
+pub async fn pet_wizard_preview(state: S<'_>) -> CmdResult<wizard::ComposeView> {
+    let st = state.inner().clone();
+    blocking(move || {
+        Ok(wizard::preview(
+            &st.pet.wizard.0.lock().expect("pet wizard lock"),
+        )?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_wizard_hatch(
+pub async fn pet_wizard_hatch(
     app: AppHandle,
     state: S<'_>,
     name: String,
 ) -> CmdResult<wizard::HatchResult> {
     let root = pets_root(&state);
     let seq = state.pet.next_seq();
-    let result = {
-        let session = state.pet.wizard.0.lock().expect("pet wizard lock");
-        wizard::hatch(&root, seq, &session, &name)?
-    };
+    let st = state.inner().clone();
+    let result = blocking(move || {
+        let result = {
+            let session = st.pet.wizard.0.lock().expect("pet wizard lock");
+            wizard::hatch(&root, seq, &session, &name)?
+        };
+        if result.ok {
+            st.pet
+                .wizard
+                .0
+                .lock()
+                .expect("pet wizard lock")
+                .strips
+                .clear();
+        }
+        Ok(result)
+    })
+    .await?;
     if let (true, Some(pet_id)) = (result.ok, result.pet_id.as_deref()) {
-        state
-            .pet
-            .wizard
-            .0
-            .lock()
-            .expect("pet wizard lock")
-            .strips
-            .clear();
         activate_hatched(&app, &state, pet_id)?;
     }
     Ok(result)
@@ -532,86 +600,102 @@ pub fn pet_wizard_hatch(
 
 /// 进化:把会话素材增量合并进当前宠物。
 #[tauri::command]
-pub fn pet_wizard_evolve(app: AppHandle, state: S<'_>) -> CmdResult<wizard::EvolveResult> {
+pub async fn pet_wizard_evolve(app: AppHandle, state: S<'_>) -> CmdResult<wizard::EvolveResult> {
     let pet_id = active_pet(&state)
         .ok_or_else(|| CmdError::new("pet", "还没有宠物:先拖入一张图完成首次孵化"))?;
     let root = pets_root(&state);
-    let result = {
-        let session = state.pet.wizard.0.lock().expect("pet wizard lock");
-        wizard::evolve(&root, &pet_id, &session)?
-    };
+    let st = state.inner().clone();
+    let id = pet_id.clone();
+    let result = blocking(move || {
+        let result = {
+            let session = st.pet.wizard.0.lock().expect("pet wizard lock");
+            wizard::evolve(&root, &id, &session)?
+        };
+        if result.ok {
+            st.pet
+                .wizard
+                .0
+                .lock()
+                .expect("pet wizard lock")
+                .strips
+                .clear();
+        }
+        Ok(result)
+    })
+    .await?;
     if result.ok {
-        state
-            .pet
-            .wizard
-            .0
-            .lock()
-            .expect("pet wizard lock")
-            .strips
-            .clear();
         emit_changed(&app, Some(&pet_id), false, Some(result.unlocked.clone()));
     }
     Ok(result)
 }
 
 #[tauri::command]
-pub fn pet_wizard_reslice(
+pub async fn pet_wizard_reslice(
     state: S<'_>,
     state_key: String,
     forced_frames: u32,
 ) -> CmdResult<wizard::SessionView> {
-    let mut session = state.pet.wizard.0.lock().expect("pet wizard lock");
-    wizard::reslice(&mut session, &state_key, forced_frames)?;
-    Ok(wizard::session_view(&session)?)
+    let st = state.inner().clone();
+    blocking(move || {
+        let mut session = st.pet.wizard.0.lock().expect("pet wizard lock");
+        wizard::reslice(&mut session, &state_key, forced_frames)?;
+        Ok(wizard::session_view(&session)?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_wizard_replace_frame(
+pub async fn pet_wizard_replace_frame(
     state: S<'_>,
     state_key: String,
     frame_idx: usize,
     path: String,
     tolerance: Option<f32>,
 ) -> CmdResult<wizard::SessionView> {
-    let mut session = state.pet.wizard.0.lock().expect("pet wizard lock");
-    wizard::replace_frame(&mut session, &state_key, frame_idx, &path, tolerance)?;
-    Ok(wizard::session_view(&session)?)
+    let st = state.inner().clone();
+    blocking(move || {
+        let mut session = st.pet.wizard.0.lock().expect("pet wizard lock");
+        wizard::replace_frame(&mut session, &state_key, frame_idx, &path, tolerance)?;
+        Ok(wizard::session_view(&session)?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_wizard_export_frame(
+pub async fn pet_wizard_export_frame(
     state: S<'_>,
     state_key: String,
     frame_idx: usize,
     dest: String,
 ) -> CmdResult<()> {
-    let session = state.pet.wizard.0.lock().expect("pet wizard lock");
-    Ok(wizard::export_frame(
-        &session, &state_key, frame_idx, &dest,
-    )?)
+    let st = state.inner().clone();
+    blocking(move || {
+        let session = st.pet.wizard.0.lock().expect("pet wizard lock");
+        Ok(wizard::export_frame(
+            &session, &state_key, frame_idx, &dest,
+        )?)
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn pet_l0_preview(path: String, tolerance: Option<f32>) -> CmdResult<serde_json::Value> {
-    Ok(wizard::l0_preview(&path, tolerance)?)
+pub async fn pet_l0_preview(path: String, tolerance: Option<f32>) -> CmdResult<serde_json::Value> {
+    blocking(move || Ok(wizard::l0_preview(&path, tolerance)?)).await
 }
 
 /// L0 孵化:单图 → idle 单帧宠物(≤60s 上桌面的那条路)。
 #[tauri::command]
-pub fn pet_l0_hatch(
+pub async fn pet_l0_hatch(
     app: AppHandle,
     state: S<'_>,
     path: String,
     tolerance: Option<f32>,
     name: String,
 ) -> CmdResult<wizard::HatchResult> {
-    let result = wizard::l0_hatch(
-        &pets_root(&state),
-        state.pet.next_seq(),
-        &path,
-        tolerance,
-        &name,
-    )?;
+    let root = pets_root(&state);
+    let seq = state.pet.next_seq();
+    let result =
+        blocking(move || Ok(wizard::l0_hatch(&root, seq, &path, tolerance, &name)?)).await?;
     if let (true, Some(pet_id)) = (result.ok, result.pet_id.as_deref()) {
         activate_hatched(&app, &state, pet_id)?;
     }
@@ -680,10 +764,13 @@ pub fn pet_spellbook_get() -> spellbook::SpellbookBundle {
 }
 
 #[tauri::command]
-pub fn pet_guide_save(frames: u32, rows: Option<u32>, dest: String) -> CmdResult<()> {
-    let img = spellbook::guide::generate_grid_guide(rows.unwrap_or(1), frames);
-    std::fs::write(dest, sf_pet::imaging::encode_png(&img)?)?;
-    Ok(())
+pub async fn pet_guide_save(frames: u32, rows: Option<u32>, dest: String) -> CmdResult<()> {
+    blocking(move || {
+        let img = spellbook::guide::generate_grid_guide(rows.unwrap_or(1), frames);
+        std::fs::write(dest, sf_pet::imaging::encode_png(&img)?)?;
+        Ok(())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -748,19 +835,23 @@ pub struct ExporterStatus {
     pub path: Option<String>,
 }
 
+/// 探测会真的 spawn 一次 `ffmpeg -version`(几十毫秒起,PATH 长时更久),不占主线程。
 #[tauri::command]
-pub fn pet_exporter_status(state: S<'_>) -> ExporterStatus {
+pub async fn pet_exporter_status(state: S<'_>) -> CmdResult<ExporterStatus> {
     let override_path = pet_settings(&state).ffmpeg_path;
-    match ffmpeg::locate(override_path.as_deref()) {
-        Some(p) if ffmpeg::probe(&p) => ExporterStatus {
-            found: true,
-            path: Some(p.to_string_lossy().to_string()),
-        },
-        _ => ExporterStatus {
-            found: false,
-            path: None,
-        },
-    }
+    blocking(move || {
+        Ok(match ffmpeg::locate(override_path.as_deref()) {
+            Some(p) if ffmpeg::probe(&p) => ExporterStatus {
+                found: true,
+                path: Some(p.to_string_lossy().to_string()),
+            },
+            _ => ExporterStatus {
+                found: false,
+                path: None,
+            },
+        })
+    })
+    .await
 }
 
 fn decode_b64_image(data: Option<String>) -> CmdResult<Option<RgbaImage>> {
@@ -864,7 +955,7 @@ pub fn pet_visible_set(app: AppHandle, visible: bool) -> CmdResult<()> {
 }
 
 #[tauri::command]
-pub fn pet_click_through_set(app: AppHandle, state: S<'_>, enabled: bool) -> CmdResult<()> {
+pub async fn pet_click_through_set(app: AppHandle, state: S<'_>, enabled: bool) -> CmdResult<()> {
     let mut next = pet_settings(&state);
     next.click_through = enabled;
     super::apply_settings(&app, &state, next)?;
@@ -906,8 +997,7 @@ pub async fn pet_pick_file(
 #[tauri::command]
 pub fn pet_open_url(app: AppHandle, url: String) -> CmdResult<()> {
     use tauri_plugin_opener::OpenerExt;
-    let allowed = spellbook::bundle().platforms.iter().any(|p| p.url == url);
-    if !allowed {
+    if !spellbook::is_platform_url(&url) {
         return Err(CmdError::new("pet", "该链接不在咒语包的平台白名单内"));
     }
     app.opener()
@@ -971,6 +1061,62 @@ mod tests {
             (2, 2)
         );
         assert!(decode_b64_image(Some("不是图片".into())).is_err());
+    }
+
+    /// 「重活与碰窗口生命周期的命令必须 `async`」—— 见模块头。
+    ///
+    /// 这条规则 Rust 的类型系统管不到,而违反它的表现是**真机上整个 IPC 挂死**
+    /// (同步命令跑在主线程,在里面建 WebView2 会等一个永远来不了的回调),
+    /// 单测里也复现不出来。所以退一步:直接扫源码,把清单钉死。
+    #[test]
+    fn heavy_and_window_touching_commands_are_async() {
+        const SRC: &str = include_str!("commands.rs");
+        // 会走到 apply_settings(可能建/销宠物窗)
+        const WINDOW_LIFECYCLE: [&str; 6] = [
+            "pet_settings_set",
+            "pet_set_active",
+            "pet_delete",
+            "pet_click_through_set",
+            "pet_kit_import",
+            "pet_l0_hatch",
+        ];
+        // 抠图 / 切帧 / 合成 / PNG 编码 / 起子进程,几百毫秒到几秒
+        const HEAVY: [&str; 21] = [
+            "pet_bootstrap",
+            "pet_thumb",
+            "pet_active_assets",
+            "pet_rig_bake",
+            "pet_kit_export",
+            "pet_kit_validate",
+            "pet_wizard_session",
+            "pet_wizard_add_strip",
+            "pet_wizard_add_sheet",
+            "pet_wizard_add_video",
+            "pet_wizard_add_video_multi",
+            "pet_wizard_swap_states",
+            "pet_wizard_remove_strip",
+            "pet_wizard_reslice",
+            "pet_wizard_replace_frame",
+            "pet_wizard_export_frame",
+            "pet_l0_preview",
+            "pet_wizard_preview",
+            "pet_wizard_hatch",
+            "pet_wizard_evolve",
+            "pet_exporter_status",
+        ];
+        for name in WINDOW_LIFECYCLE.iter().chain(HEAVY.iter()) {
+            assert!(
+                SRC.contains(&format!("pub async fn {name}(")),
+                "`{name}` 必须声明为 `pub async fn` —— 同步命令跑在主线程上"
+            );
+        }
+        // 反向:轻量命令留同步是有意的,别被顺手改成 async 拖出无谓的调度开销
+        for name in ["pet_settings_get", "pet_list", "pet_cursor_position_get"] {
+            assert!(
+                SRC.contains(&format!("pub fn {name}(")),
+                "`{name}` 是轻量读取,保持同步"
+            );
+        }
     }
 
     /// 未知状态名必须在入口挡下,而不是让它带着走到图集合成里去。
