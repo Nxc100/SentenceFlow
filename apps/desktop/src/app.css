@@ -3816,8 +3816,22 @@ input[type="checkbox"] {
   color: var(--sf-text-3);
 }
 
+/* 折叠抽屉(原版 .advanced-box):虚线 + 次级底色,一眼读出「这是可选内容」。
+   此前套在 .aipet-panel 上是实心卡,与主内容平级,语气偏重了。 */
 .aipet-details {
-  padding: 0;
+  margin-top: 12px;
+  border: 1px dashed var(--sf-home-line);
+  border-radius: var(--sf-radius-md);
+  padding: 12px 16px;
+  background: var(--sf-panel);
+  box-shadow: none;
+}
+
+.aipet-details > summary {
+  font-size: 13px;
+  color: var(--sf-text-2);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .aipet-details > summary {
@@ -3828,8 +3842,8 @@ input[type="checkbox"] {
 }
 
 .aipet-details[open] > summary {
-  border-bottom: 1px solid var(--sf-border);
-  margin-bottom: 12px;
+  /* 原版虚线抽屉的 summary 不带分隔线 —— 虚线外框已经把「这是一块」说清楚了 */
+  margin-bottom: 10px;
 }
 
 .aipet-details > *:not(summary) {
@@ -3881,6 +3895,34 @@ input[type="checkbox"] {
   font-size: var(--sf-fs-caption);
   color: var(--sf-text-2);
   cursor: pointer;
+}
+
+/* 可选平台收纳(原版 .more-platforms):行内 details,不打断药丸行的排布 */
+.aipet-more-platforms {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--sf-text-2);
+}
+
+.aipet-more-platforms > summary {
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: var(--sf-radius-full);
+}
+
+.aipet-more-platforms > summary:hover {
+  color: var(--sf-text);
+  background: var(--sf-panel);
+}
+
+/* 展开后的可选药丸单独成行,不和主平台挤在一起 */
+.aipet-more-platforms[open] {
+  display: block;
+  width: 100%;
+}
+
+.aipet-more-platforms[open] > summary {
+  margin-bottom: 8px;
 }
 
 .aipet-pill--on {

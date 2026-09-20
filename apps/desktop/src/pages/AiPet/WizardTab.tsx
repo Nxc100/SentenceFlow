@@ -815,7 +815,7 @@ function ExpertBench({
   const hasStrips = (session?.strips.length ?? 0) > 0;
 
   return (
-    <details className="aipet-panel aipet-details" onToggle={(e) => setOpen(e.currentTarget.open)}>
+    <details className="aipet-details" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>🛠 专家模式:逐状态工作台(画师 / 发烧友)</summary>
       <p className="aipet-desc">
         逐状态导入单行动画条(颗粒度最细,支持救帧 / 单帧替换 / 指定帧数重切)。容差自动估计。

@@ -105,18 +105,35 @@ function PlatformTabs({
   current: string;
   onPick: (id: string) => void;
 }) {
+  // 原版把 role="optional" 的平台收进「可选平台」折叠里:
+  // 主推的两三个平台一眼可选,冷门的不占视线(spellbook.ts::platformTabs)。
+  const primary = book.platforms.filter((p) => p.role !== "optional");
+  const optional = book.platforms.filter((p) => p.role === "optional");
+
+  const pill = (p: (typeof book.platforms)[number]) => (
+    <button
+      key={p.id}
+      type="button"
+      className={`aipet-pill${p.id === current ? " aipet-pill--on" : ""}`}
+      onClick={() => onPick(p.id)}
+    >
+      {p.role === "default" ? `${p.name} ★` : p.name}
+    </button>
+  );
+
   return (
     <div className="aipet-pills">
-      {book.platforms.map((p) => (
-        <button
-          key={p.id}
-          type="button"
-          className={`aipet-pill${p.id === current ? " aipet-pill--on" : ""}`}
-          onClick={() => onPick(p.id)}
+      {primary.map(pill)}
+      {optional.length > 0 && (
+        // 当前选中的若是可选平台,折叠默认展开,否则用户会找不到自己选的那个
+        <details
+          className="aipet-more-platforms"
+          open={optional.some((p) => p.id === current)}
         >
-          {p.role === "default" ? `${p.name} ★` : p.name}
-        </button>
-      ))}
+          <summary>可选平台</summary>
+          {optional.map(pill)}
+        </details>
+      )}
     </div>
   );
 }
@@ -202,7 +219,7 @@ function VideoSection({ platform, note }: { platform: PlatformSpells; note: stri
 function SinglesSection({ platform }: { platform: PlatformSpells }) {
   const { show: toast } = useToast();
   return (
-    <details className="aipet-panel aipet-details">
+    <details className="aipet-details">
       <summary>单行咒语(逐状态 · 保底版式 / 专家模式用)</summary>
       {platform.singles.map((spell) => (
         <div key={spell.state} className="aipet-spellcard">
