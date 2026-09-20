@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Switch, useToast } from "@sentenceflow/ui";
 import { petEvents, petIpc } from "../../pet/ipc";
 import type { PomodoroStatus, Reminder } from "../../pet/types";
-import { SectionHead } from "./common";
+import { Orb, SectionHead } from "./common";
 import { errText } from "./usePetSettings";
 
 const RING_R = 82;
@@ -112,7 +112,18 @@ function PomodoroPanel({
   return (
     <section className="aipet-panel">
       <SectionHead icon="🍅" title="番茄钟" desc="专注结束时宠物会蹦过来叫你起来动一动。" />
-      <div className={`aipet-pomo${running ? " aipet-pomo--on" : ""}`}>
+      <div
+        className={`aipet-pomo${running ? " aipet-pomo--on" : ""}${
+          running && status?.phase !== "work" ? " aipet-pomo--break" : ""
+        }`}
+      >
+        {/* 夜空盘:表盘底是一片夜空,月亮咬边、六颗星错峰闪烁(原版 .pomo-sky) */}
+        <div className="aipet-pomo__sky" aria-hidden>
+          <span className="aipet-pomo__moon" />
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span key={i} className="aipet-pomo__star" />
+          ))}
+        </div>
         <svg viewBox="0 0 184 184" className="aipet-pomo__ring" aria-hidden>
           <circle className="aipet-pomo__track" cx="92" cy="92" r={RING_R} />
           <circle
@@ -284,9 +295,7 @@ function ReminderCard({
         <div className="aipet-reminder__desc">{desc}</div>
       </div>
       <Switch checked={r.enabled} onChange={onToggle} aria-label={`启用 ${r.title}`} />
-      <Button variant="ghost" onClick={onDelete} aria-label="删除">
-        🗑
-      </Button>
+      <Orb icon="🗑" label="删除" kind="danger" onClick={onDelete} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 /** 「AI 萌宠」页内共用的小部件:落区、校验报告、警告行、进度条。 */
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import type { Report } from "../../pet/types";
 import { useDropZone } from "./useDropZone";
@@ -153,4 +153,85 @@ export async function copyText(text: string): Promise<boolean> {
       return false;
     }
   }
+}
+
+/* ---------------------------------------------------------------- 通用部件
+ * 光珠与信息点来自孵宠 HatchDesk 的 `shared/dom.ts`,是原版全局的两件套:
+ * 动作用圆形光珠(悬浮浮起气泡标签)承载,说明收进可悬浮的「?」——
+ * 「游戏式少字 · 按需展开」,界面因此能保持清爽。 */
+
+/** 动作光珠:圆形图标按钮 + 悬浮时浮起的气泡标签(替代传统按钮)。 */
+export function Orb({
+  icon,
+  label,
+  kind = "",
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  kind?: "" | "primary" | "danger";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`aipet-orb${kind ? ` aipet-orb-${kind}` : ""}`}
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+    >
+      {icon}
+      <span className="aipet-orb-tip">{label}</span>
+    </button>
+  );
+}
+
+/** 信息点:把整段说明收成一个可悬浮的「?」(游戏式少字 · 按需展开)。 */
+export function HintDot({ text }: { text: string }) {
+  return (
+    <span className="aipet-hint-dot" tabIndex={0} role="note" aria-label={text}>
+      ?<span className="aipet-hint-pop">{text}</span>
+    </span>
+  );
+}
+
+/**
+ * 拟物拉绳开关(原版 `settings.ts::pullCord`):像灯的拉链 ——
+ * 开 = 拉下 + 珠子发光(灯亮了),关 = 收起 + 变暗。点一下珠子弹一下再归位。
+ *
+ * 回弹动画靠移除类 → 强制 reflow → 重新加类来重放(与原版同款做法);
+ * React 里用 key 递增更稳:每次切换换一个 key,动画自然从头播。
+ */
+export function PullCord({
+  checked,
+  disabled,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+  onChange: (v: boolean) => void;
+}) {
+  const [pullKey, setPullKey] = useState(0);
+  return (
+    <label
+      className={`aipet-cord ${checked ? "aipet-cord--on" : "aipet-cord--off"}${
+        pullKey > 0 ? " aipet-cord--pulling" : ""
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        aria-label={label}
+        onChange={(e) => {
+          setPullKey((k) => k + 1);
+          onChange(e.target.checked);
+        }}
+      />
+      <span className="aipet-cord__line" />
+      <span key={pullKey} className="aipet-cord__bead" />
+    </label>
+  );
 }

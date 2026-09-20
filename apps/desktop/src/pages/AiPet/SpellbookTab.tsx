@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, useToast } from "@sentenceflow/ui";
 import { petIpc } from "../../pet/ipc";
 import type { PlatformSpells, SpellbookBundle } from "../../pet/types";
-import { SectionHead, copyText } from "./common";
+import { Orb, SectionHead, copyText } from "./common";
 import type { PetTab } from "./index";
 import { errText } from "./usePetSettings";
 
@@ -142,12 +142,13 @@ function GridSection({ platform }: { platform: PlatformSpells }) {
             </span>
           </div>
           <pre className="aipet-spell">{g.text}</pre>
-          <div className="aipet-actions">
-            <CopyButton text={g.text} label="📋 复制网格咒语" done="网格咒语已复制(记得附角色参考图)" primary />
-            <CopyButton text={g.purified} label="✨ 复制净化版" done="净化版已复制" />
-            <Button
-              variant="ghost"
-              onClick={async () => {
+          <div className="aipet-actions aipet-actions--orbs">
+            <CopyButton text={g.text} icon="📋" label="复制网格咒语" done="网格咒语已复制(记得附角色参考图)" primary />
+            <CopyButton text={g.purified} icon="✨" label="复制净化版" done="净化版已复制" />
+            <Orb
+              icon="🖼"
+              label="存网格引导图"
+              onClick={() => void (async () => {
                 try {
                   const dest = await petIpc.savePath(
                     "保存网格引导图",
@@ -161,10 +162,8 @@ function GridSection({ platform }: { platform: PlatformSpells }) {
                 } catch (e) {
                   toast(errText(e), "error");
                 }
-              }}
-            >
-              🖼 存网格引导图
-            </Button>
+              })()}
+            />
             <OpenPlatformButton url={platform.url} name={platform.name} />
           </div>
         </div>
@@ -190,8 +189,8 @@ function VideoSection({ platform, note }: { platform: PlatformSpells; note: stri
             <span className="aipet-spellcard__title">{label}</span>
           </div>
           <pre className="aipet-spell">{text}</pre>
-          <div className="aipet-actions">
-            <CopyButton text={text} label="📋 复制视频咒语" done="视频咒语已复制" primary />
+          <div className="aipet-actions aipet-actions--orbs">
+            <CopyButton text={text} icon="📋" label="复制视频咒语" done="视频咒语已复制" primary />
           </div>
         </div>
       ))}
@@ -215,34 +214,35 @@ function SinglesSection({ platform }: { platform: PlatformSpells }) {
             <span className="aipet-spellcard__meta">{spell.note}</span>
           </div>
           <pre className="aipet-spell">{spell.text}</pre>
-          <div className="aipet-actions">
-            <CopyButton text={spell.text} label="📋 复制咒语" done="咒语已复制" primary />
-            <CopyButton text={spell.purified} label="✨ 净化版" done="净化版已复制" />
+          <div className="aipet-actions aipet-actions--orbs">
+            <CopyButton text={spell.text} icon="📋" label="复制咒语" done="咒语已复制" primary />
+            <CopyButton text={spell.purified} icon="✨" label="净化版" done="净化版已复制" />
             <CopyButton
               text={spell.rescue}
-              label="🩹 救帧版"
+              icon="🩹" label="救帧版"
               done="救帧咒语已复制(附首帧参考图使用)"
             />
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                try {
-                  const dest = await petIpc.savePath(
-                    "保存布局引导图",
-                    `布局引导图_${spell.state_name}_${spell.frames}帧.png`,
-                    "PNG",
-                    ["png"],
-                  );
-                  if (!dest) return;
-                  await petIpc.guideSave(spell.frames, 1, dest);
-                  toast("引导图已保存", "success");
-                } catch (e) {
-                  toast(errText(e), "error");
-                }
+            <Orb
+              icon="🖼"
+              label="存布局引导图"
+              onClick={() => {
+                void (async () => {
+                  try {
+                    const dest = await petIpc.savePath(
+                      "保存布局引导图",
+                      `布局引导图_${spell.state_name}_${spell.frames}帧.png`,
+                      "PNG",
+                      ["png"],
+                    );
+                    if (!dest) return;
+                    await petIpc.guideSave(spell.frames, 1, dest);
+                    toast("引导图已保存", "success");
+                  } catch (e) {
+                    toast(errText(e), "error");
+                  }
+                })();
               }}
-            >
-              🖼 引导图
-            </Button>
+            />
           </div>
         </div>
       ))}
@@ -328,7 +328,7 @@ function InterceptChecker({
             各平台在输出端过滤知名形象,换措辞也没用。好消息:本地路线完全不受影响 ——
             拖一张图就能在你的电脑上让它活起来(会呼吸、会走、会眨眼),全程不经过任何平台。
           </p>
-          <div className="aipet-actions">
+          <div className="aipet-actions aipet-actions--orbs">
             <Button onClick={() => onGoto("wizard")}>🐣 用这张图本地孵化</Button>
             <Button variant="secondary" onClick={() => onGoto("pets")}>
               🖐 已孵好?去认主校准
@@ -344,11 +344,13 @@ function InterceptChecker({
 
 function CopyButton({
   text,
+  icon,
   label,
   done,
   primary,
 }: {
   text: string;
+  icon: string;
   label: string;
   done: string;
   primary?: boolean;
@@ -359,9 +361,12 @@ function CopyButton({
     else toast("复制失败:请手动全选上面的咒语文本复制", "error");
   }, [text, done, toast]);
   return (
-    <Button variant={primary ? "primary" : "ghost"} onClick={() => void copy()}>
-      {label}
-    </Button>
+    <Orb
+      icon={icon}
+      label={label}
+      kind={primary ? "primary" : ""}
+      onClick={() => void copy()}
+    />
   );
 }
 

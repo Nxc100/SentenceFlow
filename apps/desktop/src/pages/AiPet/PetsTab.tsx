@@ -10,7 +10,9 @@ import { Button, Modal, useToast } from "@sentenceflow/ui";
 import { petEvents, petIpc } from "../../pet/ipc";
 import type { PetMeta } from "../../pet/types";
 import { CalibrateModal } from "./CalibrateModal";
-import { DropZone, Progress, ReportView, SectionHead } from "./common";
+import { Orb, Progress, ReportView, SectionHead } from "./common";
+import { AdoptSlot, HOME_TYPES, PetHome } from "./PetHome";
+import { useDropZone } from "./useDropZone";
 import type { PetTab } from "./index";
 import { errText, usePetSettings } from "./usePetSettings";
 import type { Report } from "../../pet/types";
@@ -91,150 +93,137 @@ export function PetsTab({ onGoto }: { onGoto: (t: PetTab) => void }) {
           desc="设为当前的那只会出现在桌面上;其余的在库里等着。"
         />
 
-        {pets.length === 0 && (
-          <p className="aipet-empty">
-            还没有宠物。去
-            <button type="button" className="aipet-link" onClick={() => onGoto("wizard")}>
-              孵化向导
-            </button>
-            拖一张图,或在下面导入 .petkit 宠物包。
-          </p>
-        )}
+        {/* 栖息地网格:每只宠物一间会动的 3D 房间,最后一格是领养位(与原版同构) */}
+        <div className="aipet-homes-grid">
+          {pets.length === 0 && (
+            <div className="aipet-home-empty">
+              <div className="aipet-empty-egg">🥚</div>
+              <div>
+                空荡荡的 ·{" "}
+                <button type="button" className="aipet-link" onClick={() => onGoto("wizard")}>
+                  去孵一只
+                </button>
+              </div>
+            </div>
+          )}
 
-        <div className="aipet-pets">
-          {pets.map((pet) => (
-            <article
+          {pets.map((pet, i) => (
+            <PetHome
               key={pet.id}
-              className={`aipet-pet${pet.id === activeId ? " aipet-pet--active" : ""}`}
-            >
-              <div className="aipet-pet__stage">
-                {thumbs[pet.id] ? (
-                  <img className="aipet-pet__img" src={thumbs[pet.id]} alt={pet.name} />
-                ) : (
-                  <span className="aipet-pet__egg" aria-hidden>
-                    🥚
-                  </span>
-                )}
-                {pet.id === activeId && <span className="aipet-pet__tag">当前</span>}
-              </div>
-              <div className="aipet-pet__plate">
-                <span className="aipet-pet__name">{pet.name}</span>
-                <span className="aipet-pet__tier">{pet.tier}</span>
-                <span className="aipet-pet__meta">
-                  {pet.states.length} 个状态
-                  {pet.created ? ` · ${pet.created.slice(0, 10)}` : ""}
-                </span>
-              </div>
-              <div className="aipet-pet__actions">
-                {pet.id !== activeId && (
-                  <Button
-                    variant="secondary"
-                    onClick={async () => {
-                      try {
-                        // pet_set_active 内部已写回设置分节并广播 pet://settings,
-                        // 这里再 patch 一次只会制造一次多余的往返与竞态。
-                        await petIpc.setActive(pet.id);
-                        toast(`${pet.name} 已上桌面`, "success");
-                      } catch (e) {
-                        toast(errText(e), "error");
-                      }
-                    }}
-                  >
-                    设为当前
-                  </Button>
-                )}
-                <Button variant="ghost" onClick={() => setCalibrating(pet.id)}>
-                  🖐 认主校准
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setConfirming({
-                      title: "本地零生成动画",
-                      body: `「${pet.name}」将在本地生成会走、会跳、会呼吸的骨骼动画(不经过任何平台,约几秒)。这会覆盖它现有的动画帧。`,
-                      confirmLabel: "开始烘焙",
-                      run: async () => {
-                        setBusy(`正在为 ${pet.name} 烘焙骨骼动画…`);
-                        try {
-                          await petIpc.rigBake(pet.id);
-                          toast("烘焙完成!它现在会走会跳啦 ✨", "success");
-                          void reload();
-                        } finally {
-                          setBusy(null);
-                        }
-                      },
-                    })
-                  }
-                >
-                  ✨ 本地动画
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => void exportVideo(pet, setBusy, setExportPct, toast)}
-                >
-                  🎬 出生视频
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={async () => {
-                    try {
-                      const dest = await petIpc.savePath(
-                        "导出宠物包",
-                        `${safeName(pet.name)}.petkit`,
-                        "宠物包",
-                        ["petkit"],
-                      );
-                      if (!dest) return;
-                      await petIpc.kitExport(pet.id, dest);
-                      toast("宠物包已导出,可以分享给朋友了", "success");
-                      void petIpc.revealInDir(dest).catch(() => undefined);
-                    } catch (e) {
-                      toast(errText(e), "error");
+              name={pet.name}
+              tier={pet.tier}
+              meta={`${pet.states.length} 个状态${pet.created ? ` · ${pet.created.slice(0, 10)}` : ""}`}
+              thumb={thumbs[pet.id] || undefined}
+              active={pet.id === activeId}
+              type={HOME_TYPES[i % HOME_TYPES.length] ?? "room"}
+              actions={
+                <>
+                  {pet.id !== activeId && (
+                    <Orb
+                      icon="🏠"
+                      label="设为当前"
+                      kind="primary"
+                      onClick={() => {
+                        void (async () => {
+                          try {
+                            // pet_set_active 内部已写回设置分节并广播 pet://settings,
+                            // 这里再 patch 一次只会制造一次多余的往返与竞态。
+                            await petIpc.setActive(pet.id);
+                            toast(`${pet.name} 已上桌面`, "success");
+                          } catch (e) {
+                            toast(errText(e), "error");
+                          }
+                        })();
+                      }}
+                    />
+                  )}
+                  <Orb icon="🖐" label="认主校准" onClick={() => setCalibrating(pet.id)} />
+                  <Orb
+                    icon="✨"
+                    label="本地动画"
+                    onClick={() =>
+                      setConfirming({
+                        title: "本地零生成动画",
+                        body: `「${pet.name}」将在本地生成会走、会跳、会呼吸的骨骼动画(不经过任何平台,约几秒)。这会覆盖它现有的动画帧。`,
+                        confirmLabel: "开始烘焙",
+                        run: async () => {
+                          setBusy(`正在为 ${pet.name} 烘焙骨骼动画…`);
+                          try {
+                            await petIpc.rigBake(pet.id);
+                            toast("烘焙完成!它现在会走会跳啦 ✨", "success");
+                            void reload();
+                          } finally {
+                            setBusy(null);
+                          }
+                        },
+                      })
                     }
-                  }}
-                >
-                  📤 导出宠物包
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    setConfirming({
-                      title: "删除宠物",
-                      body: `确定删除「${pet.name}」吗?它的图集与素材源帧会一并抹掉,不可恢复。`,
-                      confirmLabel: "删除",
-                      danger: true,
-                      run: async () => {
-                        await petIpc.remove(pet.id);
-                        toast("已删除", "success");
-                        void reload();
-                      },
-                    })
-                  }
-                >
-                  🗑 删除
-                </Button>
-              </div>
-            </article>
+                  />
+                  <Orb
+                    icon="🎬"
+                    label="出生视频"
+                    onClick={() => void exportVideo(pet, setBusy, setExportPct, toast)}
+                  />
+                  <Orb
+                    icon="📤"
+                    label="导出宠物包"
+                    onClick={() => {
+                      void (async () => {
+                        try {
+                          const dest = await petIpc.savePath(
+                            "导出宠物包",
+                            `${safeName(pet.name)}.petkit`,
+                            "宠物包",
+                            ["petkit"],
+                          );
+                          if (!dest) return;
+                          await petIpc.kitExport(pet.id, dest);
+                          toast("宠物包已导出,可以分享给朋友了", "success");
+                          void petIpc.revealInDir(dest).catch(() => undefined);
+                        } catch (e) {
+                          toast(errText(e), "error");
+                        }
+                      })();
+                    }}
+                  />
+                  <Orb
+                    icon="🗑"
+                    label="删除"
+                    kind="danger"
+                    onClick={() =>
+                      setConfirming({
+                        title: "删除宠物",
+                        body: `确定删除「${pet.name}」吗?它的图集与素材源帧会一并抹掉,不可恢复。`,
+                        confirmLabel: "删除",
+                        danger: true,
+                        run: async () => {
+                          await petIpc.remove(pet.id);
+                          toast("已删除", "success");
+                          void reload();
+                        },
+                      })
+                    }
+                  />
+                </>
+              }
+            />
           ))}
-        </div>
-      </section>
 
-      <section className="aipet-panel">
-        <SectionHead icon="📥" title="领养(导入 .petkit 宠物包)" desc="导入前会先做一次完整校验。" />
-        <DropZone
-          icon="🧧"
-          title="把 .petkit 宠物包拖进来"
-          hint="或点这里选择文件"
-          small
-          onFiles={(paths) => {
-            const first = paths[0];
-            if (first) void doImport(first);
-          }}
-          onPick={async () => {
-            const picked = await petIpc.pickFile("选择宠物包", "宠物包", ["petkit", "zip"]);
-            if (picked) void doImport(picked);
-          }}
-        />
+          <AdoptSlot
+            useDrop={useDropZone}
+            onFiles={(paths) => {
+              const first = paths[0];
+              if (first) void doImport(first);
+            }}
+            onPick={() => {
+              void (async () => {
+                const picked = await petIpc.pickFile("选择宠物包", "宠物包", ["petkit", "zip"]);
+                if (picked) void doImport(picked);
+              })();
+            }}
+          />
+        </div>
+
         <ReportView report={importReport} />
       </section>
 

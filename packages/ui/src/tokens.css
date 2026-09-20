@@ -165,6 +165,35 @@
 
   /* ---- 遮罩 ---- */
   --sf-overlay: rgba(16, 20, 30, 0.45);
+
+  /* ---- AI 萌宠 · 栖息地场景(宠物房间 / 牢笼 / 玻璃罩)----
+     源自孵宠 HatchDesk 的同名色板;只服务「我的宠物」的 3D 房间,
+     不参与界面语义色,故独立命名空间 --sf-home-*。 */
+  --sf-home-wall-1: #FFF6FB;
+  --sf-home-wall-2: #F3E3EE;
+  --sf-home-wall-line: rgba(150, 90, 130, 0.1);
+  --sf-home-floor: #EAD4E2;
+  --sf-home-rug: #F7DCEA;
+  --sf-home-sky-1: #3A2F5E;
+  --sf-home-sky-2: #6B4A76;
+  --sf-home-lamp: #FFE08C;
+  --sf-home-star: #FFF4C2;
+  --sf-home-metal: #CDB7C9;
+  --sf-home-vine: #7BA85F;
+  --sf-home-leaf: #8FC46E;
+  --sf-home-leaf-2: #6EA653;
+  --sf-home-firefly: #FFF0A0;
+  --sf-home-mush: #EF88A6;
+  --sf-home-mush-glow: #FFCFE0;
+  --sf-home-line: #E3D0DC;
+  --sf-home-shadow-accent: 0 6px 20px rgba(222, 98, 153, 0.26);
+  --sf-home-danger-weak: rgba(229, 106, 134, 0.14);
+
+  /* ---- AI 萌宠 · 咒语卷轴(羊皮纸 + 木轴)---- */
+  --sf-scroll-paper-1: #FFFBF3;
+  --sf-scroll-paper-2: #F6EAD6;
+  --sf-scroll-rod: #E0A95F;
+  --sf-scroll-rod-2: #BD7F3B;
 }
 
 /* ============ 深色模式共享值(§5.2 深色) ============ */
@@ -219,6 +248,35 @@
   --sf-role-advl-text: #F9D976;   --sf-role-advl-bg: rgba(249, 217, 118, 0.14);   --sf-role-advl-border: rgba(249, 217, 118, 0.24);
   --sf-role-objc-text: #F9AE76;   --sf-role-objc-bg: rgba(249, 174, 118, 0.14);   --sf-role-objc-border: rgba(249, 174, 118, 0.24);
   --sf-role-marker-text: #AAB5C5; --sf-role-marker-bg: rgba(170, 181, 197, 0.14); --sf-role-marker-border: rgba(170, 181, 197, 0.24);
+
+  /* ---- AI 萌宠 · 栖息地场景(宠物房间 / 牢笼 / 玻璃罩)----
+     源自孵宠 HatchDesk 的同名色板;只服务「我的宠物」的 3D 房间,
+     不参与界面语义色,故独立命名空间 --sf-home-*。 */
+  --sf-home-wall-1: #2C2230;
+  --sf-home-wall-2: #221A22;
+  --sf-home-wall-line: rgba(0, 0, 0, 0.25);
+  --sf-home-floor: #191016;
+  --sf-home-rug: #2E1F2B;
+  --sf-home-sky-1: #221A3A;
+  --sf-home-sky-2: #3D2A50;
+  --sf-home-lamp: #FFDF8A;
+  --sf-home-star: #FFF2B8;
+  --sf-home-metal: #9A8896;
+  --sf-home-vine: #6F9A56;
+  --sf-home-leaf: #7FB15E;
+  --sf-home-leaf-2: #5F8F49;
+  --sf-home-firefly: #FFEB9A;
+  --sf-home-mush: #E07FA0;
+  --sf-home-mush-glow: #FFB8D2;
+  --sf-home-line: #4B3B46;
+  --sf-home-shadow-accent: 0 6px 20px rgba(241, 135, 180, 0.3);
+  --sf-home-danger-weak: rgba(240, 137, 159, 0.18);
+
+  /* ---- AI 萌宠 · 咒语卷轴(羊皮纸 + 木轴)---- */
+  --sf-scroll-paper-1: #2C2420;
+  --sf-scroll-paper-2: #221B17;
+  --sf-scroll-rod: #BB8C50;
+  --sf-scroll-rod-2: #8C6336;
 }
 
 /* 护眼纸色 (§5.2) */
@@ -226,6 +284,35 @@
   --sf-bg: #F7F2E7;
   --sf-card: #FDFAF2;
   --sf-panel: #F2ECDD;
+
+  /* ---- AI 萌宠 · 栖息地场景(宠物房间 / 牢笼 / 玻璃罩)----
+     源自孵宠 HatchDesk 的同名色板;只服务「我的宠物」的 3D 房间,
+     不参与界面语义色,故独立命名空间 --sf-home-*。 */
+  --sf-home-wall-1: #FDFAF2;
+  --sf-home-wall-2: #EFE7D5;
+  --sf-home-wall-line: rgba(120, 100, 70, 0.12);
+  --sf-home-floor: #E5DAC2;
+  --sf-home-rug: #F2E6CE;
+  --sf-home-sky-1: #33304E;
+  --sf-home-sky-2: #5F5470;
+  --sf-home-lamp: #FFDF9E;
+  --sf-home-star: #FFF6D2;
+  --sf-home-metal: #C9BCA6;
+  --sf-home-vine: #7E9E5C;
+  --sf-home-leaf: #93BC6C;
+  --sf-home-leaf-2: #6F9450;
+  --sf-home-firefly: #FFF1AB;
+  --sf-home-mush: #E0929E;
+  --sf-home-mush-glow: #F7D6D2;
+  --sf-home-line: #DCD0B8;
+  --sf-home-shadow-accent: 0 6px 20px rgba(163, 116, 74, 0.24);
+  --sf-home-danger-weak: rgba(196, 96, 96, 0.14);
+
+  /* ---- AI 萌宠 · 咒语卷轴(羊皮纸 + 木轴)---- */
+  --sf-scroll-paper-1: #FEFBF3;
+  --sf-scroll-paper-2: #F3E8D2;
+  --sf-scroll-rod: #DDA65C;
+  --sf-scroll-rod-2: #B67C3A;
 }
 
 /* ============ 马卡龙少女(规范外新增主题) ============
@@ -273,6 +360,35 @@
   --sf-glass-edge: rgba(255, 255, 255, 0.75);   /* 玻璃边缘高光 */
   --sf-candy: linear-gradient(135deg, var(--sf-rose-500), var(--sf-taro-500));
   --sf-candy-hover: linear-gradient(135deg, var(--sf-rose-600), var(--sf-taro-600));
+
+  /* ---- AI 萌宠 · 栖息地场景(宠物房间 / 牢笼 / 玻璃罩)----
+     源自孵宠 HatchDesk 的同名色板;只服务「我的宠物」的 3D 房间,
+     不参与界面语义色,故独立命名空间 --sf-home-*。 */
+  --sf-home-wall-1: #FFF7FC;
+  --sf-home-wall-2: #F6E2EF;
+  --sf-home-wall-line: rgba(150, 90, 130, 0.12);
+  --sf-home-floor: #EDD2E4;
+  --sf-home-rug: #FBDCED;
+  --sf-home-sky-1: #3B2D62;
+  --sf-home-sky-2: #70487E;
+  --sf-home-lamp: #FFE29A;
+  --sf-home-star: #FFF6CE;
+  --sf-home-metal: #D3BCD0;
+  --sf-home-vine: #7BA85F;
+  --sf-home-leaf: #93C971;
+  --sf-home-leaf-2: #71AB55;
+  --sf-home-firefly: #FFF3AE;
+  --sf-home-mush: #F28BAD;
+  --sf-home-mush-glow: #FFD5E6;
+  --sf-home-line: #E8CFDF;
+  --sf-home-shadow-accent: 0 6px 20px rgba(122, 47, 184, 0.24);
+  --sf-home-danger-weak: rgba(216, 90, 118, 0.14);
+
+  /* ---- AI 萌宠 · 咒语卷轴(羊皮纸 + 木轴)---- */
+  --sf-scroll-paper-1: #FFFCF6;
+  --sf-scroll-paper-2: #F8EDDC;
+  --sf-scroll-rod: #E5AF68;
+  --sf-scroll-rod-2: #C28541;
 }
 
 /* ============ 无障碍:练习区字号三档 (§4.8 外观) ============

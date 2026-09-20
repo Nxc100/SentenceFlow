@@ -1,10 +1,10 @@
 /** 宠物设置:行为 / 性能与隐私 / 视频导出(ffmpeg)。 */
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, Switch, useToast } from "@sentenceflow/ui";
+import { Button, useToast } from "@sentenceflow/ui";
 import { petIpc } from "../../pet/ipc";
 import type { ExporterStatus } from "../../pet/types";
-import { SectionHead } from "./common";
+import { HintDot, PullCord, SectionHead } from "./common";
 import { errText, usePetSettings } from "./usePetSettings";
 
 const SCALES = [0.75, 1, 1.25, 1.5, 2];
@@ -29,7 +29,7 @@ export function PetSettingsTab() {
 
   return (
     <div className="aipet-panels">
-      <section className="aipet-panel">
+      <section className="aipet-panel aipet-panel--scene">
         <SectionHead icon="🐾" title="宠物行为" desc="关掉总开关时这些设置仍会保留,下次开启照旧生效。" />
 
         <Row label="显示大小">
@@ -96,7 +96,7 @@ export function PetSettingsTab() {
         </Row>
       </section>
 
-      <section className="aipet-panel">
+      <section className="aipet-panel aipet-panel--scene">
         <SectionHead icon="🔒" title="性能与隐私" desc="素材处理与宠物数据全部在本机完成,不联网、不上传。" />
         <ToggleRow
           label="省电模式"
@@ -112,7 +112,7 @@ export function PetSettingsTab() {
         />
       </section>
 
-      <section className="aipet-panel">
+      <section className="aipet-panel aipet-panel--scene">
         <SectionHead icon="🎬" title="视频导出(ffmpeg)" desc="只有「出生视频」用得到;不导视频可以不装。" />
         <div className={`aipet-note aipet-note--${ffmpeg?.found ? "ok" : "warn"}`}>
           {ffmpeg === null
@@ -159,7 +159,7 @@ export function PetSettingsTab() {
         </div>
       </section>
 
-      <section className="aipet-panel">
+      <section className="aipet-panel aipet-panel--scene">
         <SectionHead icon="🥚" title="关于" />
         <p className="aipet-about">
           素材规范 PetKit v0.1:8×8 图集 · 192×208 单元格 · 8 个生活状态契约 · 绿幕 #00FF00。
@@ -198,13 +198,14 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="settings-row aipet-row--toggle">
+    <div className="settings-row aipet-row--cord">
       <span className="settings-row__label">
         {label}
-        <em className="aipet-desc">{desc}</em>
+        {/* 说明收进可悬浮的「?」:原版刻意让行内只留「名称 + 拉绳」,界面才清爽 */}
+        <HintDot text={desc} />
       </span>
       <span className="settings-row__control">
-        <Switch checked={value} disabled={disabled} onChange={onChange} aria-label={label} />
+        <PullCord checked={value} disabled={disabled} label={label} onChange={onChange} />
       </span>
     </div>
   );

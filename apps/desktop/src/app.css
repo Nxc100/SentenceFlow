@@ -3449,7 +3449,7 @@ input[type="checkbox"] {
   font-family: inherit;
   font-size: var(--sf-fs-body);
   color: var(--sf-text-2);
-  padding: 8px 14px;
+  padding: 8px 14px 8px 16px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -3459,6 +3459,27 @@ input[type="checkbox"] {
   color: var(--sf-primary);
   font-weight: 600;
   border-bottom-color: var(--sf-primary);
+  position: relative;
+}
+
+/* 选中页签的呼吸光点(原版侧栏 .nav-item.active::before 的同款):
+   句流这里是下划线式页签,光点挪到文字左侧,保留那一下活着的呼吸。 */
+.aipet-tab--on::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--sf-primary);
+  animation: aipet-nav-dot 2.2s ease-in-out infinite;
+}
+
+@keyframes aipet-nav-dot {
+  0%, 100% { opacity: 0.6; box-shadow: 0 0 5px 1px var(--sf-primary); }
+  50% { opacity: 1; box-shadow: 0 0 10px 3px var(--sf-primary); }
 }
 
 .aipet-body {
@@ -3481,6 +3502,8 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* 原版 .panel 的双阴影:外投影给厚度,inset 顶沿高光给「软、暖」的质感 */
+  box-shadow: var(--sf-shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .aipet-panel--done {
@@ -3497,6 +3520,15 @@ input[type="checkbox"] {
   font-size: 20px;
   line-height: 1.4;
   flex: none;
+  /* 原版把分区图标做成 34px 渐变徽章,而不是裸 emoji */
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--sf-primary-soft-hover), var(--sf-panel));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 0 0 1px var(--sf-border);
 }
 
 .aipet-head__text {
@@ -3609,6 +3641,8 @@ input[type="checkbox"] {
 .aipet-note--warn {
   background: var(--sf-warning-bg);
   color: var(--sf-warning);
+  /* 原版靠一条 3px 左强调条区分语气(警告),比整块变色克制 */
+  border-left: 3px solid var(--sf-warning);
 }
 
 .aipet-note--err {
@@ -3672,6 +3706,8 @@ input[type="checkbox"] {
     linear-gradient(-45deg, transparent 75%, var(--sf-panel) 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  border: 2px solid var(--sf-home-line);
+  touch-action: none; /* 点选锚点时不要触发页面滚动/缩放 */
 }
 
 /* ---------------- 首次孵化 ---------------- */
@@ -3823,9 +3859,10 @@ input[type="checkbox"] {
 }
 
 .aipet-chip--lit {
-  background: var(--sf-primary-soft);
-  color: var(--sf-primary);
-  border-color: var(--sf-primary-border);
+  /* 语义是「这一态已点亮」而非「当前选中」,原版用成功绿而不是主色 */
+  background: var(--sf-success-bg);
+  color: var(--sf-success);
+  border-color: color-mix(in srgb, var(--sf-success) 40%, transparent);
   font-weight: 600;
 }
 
@@ -3847,9 +3884,10 @@ input[type="checkbox"] {
 }
 
 .aipet-pill--on {
-  background: var(--sf-primary-soft);
-  border-color: var(--sf-primary-border);
-  color: var(--sf-primary);
+  /* 原版选中态是主色实底 + 白字:淡底版在一排药丸里分不出谁被选中 */
+  background: var(--sf-primary);
+  border-color: var(--sf-primary);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -3861,12 +3899,12 @@ input[type="checkbox"] {
 }
 
 .aipet-step__no {
-  font-size: var(--sf-fs-micro);
-  color: var(--sf-text-3);
-  background: var(--sf-panel);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sf-primary);
+  background: var(--sf-primary-soft);
   border-radius: var(--sf-radius-full);
-  padding: 2px 10px;
-  white-space: nowrap;
+  padding: 4px 12px;
 }
 
 .aipet-step__label {
@@ -3893,7 +3931,7 @@ input[type="checkbox"] {
 
 .aipet-progress__fill {
   height: 100%;
-  background: var(--sf-primary);
+  background: linear-gradient(90deg, var(--sf-primary-hover), var(--sf-primary));
   transition: width var(--sf-dur-base) var(--sf-ease-standard);
 }
 
@@ -3905,13 +3943,77 @@ input[type="checkbox"] {
 
 /* ---------------- 咒语卡 ---------------- */
 
+/* 咒语卡 = 羊皮纸卷轴(上下木轴 + 纸面),逐行移植自原版 .spell-card。
+   纸面 = 26px 一道的横向抄写格线 叠 米黄渐变;三层阴影里那道
+   inset 0 0 34px 是纸张做旧的四周泛黄,少了它就只是一张米色卡。 */
 .aipet-spellcard {
-  border: 1px solid var(--sf-border);
-  border-radius: var(--sf-radius-md);
-  padding: 12px 14px;
+  position: relative;
+  margin: 16px 5px;
+  border-radius: var(--sf-radius-sm);
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  color: #4a3a2a;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 26px, rgba(150, 110, 70, 0.045) 26px 27px),
+    linear-gradient(180deg, var(--sf-scroll-paper-1), var(--sf-scroll-paper-2));
+  box-shadow:
+    0 3px 10px rgba(90, 50, 80, 0.14),
+    inset 0 0 0 1px rgba(150, 110, 70, 0.16),
+    inset 0 0 34px rgba(150, 110, 70, 0.07);
+}
+
+/* 深色下纸面本身已经压暗,墨棕字会糊 —— 交回主题文字色 */
+[data-theme="dark"] .aipet-spellcard {
+  color: var(--sf-text);
+}
+
+/* 上下木轴:顶部高光 + 底部暗边 + 外投影 = 圆柱质感,左右各探出 6px */
+.aipet-spellcard::before,
+.aipet-spellcard::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  height: 14px;
+  border-radius: var(--sf-radius-full);
+  background: linear-gradient(180deg, var(--sf-scroll-rod), var(--sf-scroll-rod-2));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.22),
+    0 3px 6px rgba(90, 50, 80, 0.22);
+}
+
+.aipet-spellcard::before {
+  top: -9px;
+}
+
+.aipet-spellcard::after {
+  bottom: -9px;
+}
+
+/* 卷轴内的咒语正文 = 墨迹写在纸上(压一层半透明白纸,墨棕字) */
+.aipet-spellcard .aipet-spell {
+  background: rgba(255, 255, 255, 0.42);
+  border-color: rgba(150, 110, 70, 0.24);
+  color: #3f3222;
+  line-height: 1.9;
+}
+
+[data-theme="dark"] .aipet-spellcard .aipet-spell {
+  background: rgba(0, 0, 0, 0.24);
+  color: var(--sf-text);
+}
+
+/* 纸上的标题与小字跟随纸面墨色,不要被全局文字色拉回灰蓝 */
+.aipet-spellcard .aipet-spellcard__title {
+  color: inherit;
+}
+
+.aipet-spellcard .aipet-spellcard__meta {
+  color: inherit;
+  opacity: 0.68;
 }
 
 .aipet-spellcard__head {
@@ -3933,15 +4035,16 @@ input[type="checkbox"] {
 
 .aipet-spell {
   margin: 0;
-  max-height: 220px;
-  overflow: auto;
   background: var(--sf-panel);
+  border: 1px solid var(--sf-border);
   border-radius: var(--sf-radius-sm);
   padding: 10px 12px;
   font-size: 12.5px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+  /* 咒语正文完整铺开,不设 max-height —— 原版的有意设计:
+     用户要整段复制,截断只会让人反复滚动 */
 }
 
 .aipet-tips {
@@ -3961,6 +4064,8 @@ input[type="checkbox"] {
   gap: 8px;
   font-size: var(--sf-fs-caption);
   line-height: 1.7;
+  /* 原版靠一条 3px 左强调条区分语气(拦截自检),比整块变色克制 */
+  border-left: 3px solid var(--sf-primary);
 }
 
 .aipet-intercept p {
@@ -3975,6 +4080,11 @@ input[type="checkbox"] {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--sf-fs-caption);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-sm);
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .aipet-table th,
@@ -3988,6 +4098,7 @@ input[type="checkbox"] {
 .aipet-table th {
   color: var(--sf-text-3);
   font-weight: 600;
+  background: var(--sf-panel);
 }
 
 /* ---------------- 视频脚本时间轴 ---------------- */
@@ -4008,6 +4119,7 @@ input[type="checkbox"] {
   min-width: 0;
   overflow: hidden;
   padding: 0 4px;
+  border: 1px solid var(--sf-primary-border);
 }
 
 .aipet-timeline__state {
@@ -4048,6 +4160,13 @@ input[type="checkbox"] {
   border: 1px solid var(--sf-border);
   border-radius: var(--sf-radius-sm);
   cursor: pointer;
+  /* 像素风素材必须禁插值,否则浏览器会把帧糊掉(原版 .thumb 同款) */
+  image-rendering: pixelated;
+  transition: border-color var(--sf-dur-fast) var(--sf-ease-standard);
+}
+
+.aipet-thumb:hover {
+  border-color: var(--sf-primary);
 }
 
 /* ---------------- 专家工作台 ---------------- */
@@ -4074,6 +4193,10 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* 左侧状态格很长,合成面板吸顶才能边改边看(原版 .compose-panel) */
+  position: sticky;
+  top: 0;
+  align-self: start;
 }
 
 .aipet-bench__side h4 {
@@ -4088,6 +4211,7 @@ input[type="checkbox"] {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: var(--sf-shadow-1);
 }
 
 .aipet-state--filled {
@@ -4113,88 +4237,1379 @@ input[type="checkbox"] {
 
 /* ---------------- 我的宠物 ---------------- */
 
-.aipet-pets {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-}
-
-.aipet-pet {
-  border: 1px solid var(--sf-border);
-  border-radius: var(--sf-radius-md);
-  padding: 12px;
+/* 光珠动作行(原版 .state-tools):光珠自带 36px 圆形与悬浮气泡,
+   这里只负责排布 —— 顶部留出 6px 给气泡标签浮起的空间。 */
+.aipet-actions--orbs {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.aipet-pet--active {
-  border-color: var(--sf-primary-border);
-  background: var(--sf-primary-soft);
-}
-
-.aipet-pet__stage {
-  position: relative;
-  height: 150px;
-  border-radius: var(--sf-radius-sm);
-  background: var(--sf-panel);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.aipet-pet__img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.aipet-pet__egg {
-  font-size: 44px;
-}
-
-.aipet-pet__tag {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: var(--sf-fs-micro);
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: var(--sf-radius-full);
-  background: var(--sf-primary);
-  color: #fff;
-}
-
-.aipet-pet__plate {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 6px;
 }
 
-.aipet-pet__name {
-  font-size: var(--sf-fs-h3);
-  font-weight: 600;
-}
-
-.aipet-pet__tier {
-  font-size: var(--sf-fs-micro);
-  padding: 1px 8px;
+/* 状态键名(原版 .state-key):等宽 + 淡底胶囊,和中文标题拉开层次 */
+.aipet-state__name code,
+.aipet-state__key {
+  font-family: var(--sf-font-mono, ui-monospace, "Cascadia Code", Consolas, monospace);
+  font-size: 11px;
+  padding: 2px 7px;
   border-radius: var(--sf-radius-full);
   background: var(--sf-panel);
   color: var(--sf-text-2);
 }
 
-.aipet-pet__meta {
-  font-size: var(--sf-fs-micro);
-  color: var(--sf-text-3);
+/* ==== 孵化剧场(蛋 → 裂 → 登场)====
+   逐行移植自原版 studio.css「孵化剧场」段。蛋是纯 CSS 画的:
+   一个非对称 border-radius 的蛋形 + 三层内阴影给体积,伪元素点三颗棕斑,
+   再嵌两只豆眼和两片腮红。舞台头图与登场动画共用这只蛋。 */
+.aipet-egg-body {
+  position: relative;
+  border-radius: 50% 50% 48% 48% / 62% 62% 40% 40%;
+  background: radial-gradient(58% 52% at 42% 30%, #fffdf3, #fbe6c9 70%, #f0d6a2);
+  box-shadow:
+    0 10px 20px rgba(60, 40, 60, 0.3),
+    inset -6px -9px 14px rgba(150, 110, 70, 0.16),
+    inset 5px 5px 10px rgba(255, 255, 255, 0.55);
 }
 
-.aipet-pet__actions {
+.aipet-egg-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 30% 66%, rgba(205, 155, 105, 0.3) 0 5px, transparent 6px),
+    radial-gradient(circle at 66% 76%, rgba(205, 155, 105, 0.26) 0 4px, transparent 5px),
+    radial-gradient(circle at 50% 88%, rgba(205, 155, 105, 0.22) 0 3px, transparent 4px);
+}
+
+.aipet-egg-eye {
+  position: absolute;
+  top: 42%;
+  width: 8%;
+  height: 11%;
+  border-radius: 50%;
+  background: #4a3526;
+}
+
+.aipet-egg-eye--l {
+  left: 33%;
+}
+
+.aipet-egg-eye--r {
+  right: 33%;
+}
+
+.aipet-egg-cheek {
+  position: absolute;
+  top: 53%;
+  width: 12%;
+  height: 7%;
+  border-radius: 50%;
+  background: rgba(255, 150, 165, 0.6);
+}
+
+.aipet-egg-cheek--l {
+  left: 21%;
+}
+
+.aipet-egg-cheek--r {
+  right: 21%;
+}
+
+/* 裂纹:18 段 polygon 裁出的锯齿,默认透明,破壳那一刻淡入 */
+.aipet-egg-crack {
+  position: absolute;
+  top: 26%;
+  left: 20%;
+  right: 20%;
+  height: 16px;
+  background: #5a4030;
+  opacity: 0;
+  clip-path: polygon(
+    0 42%, 12% 42%, 18% 0, 30% 82%, 44% 8%, 58% 92%, 70% 18%, 82% 72%, 100% 44%,
+    100% 56%, 82% 88%, 70% 40%, 58% 100%, 44% 28%, 30% 96%, 18% 22%, 12% 56%, 0 56%
+  );
+}
+
+/* ---- 舞台头图:夜空 + 五颗星 + 聚光锥 + 双幕布 + 地台 + 摇晃的蛋 ---- */
+.aipet-hatch-stage {
+  position: relative;
+  height: 232px;
+  /* 父容器 .aipet-panels 是纵向 flex:只写 max-width + margin:auto 的话,
+     auto 外边距会压过 stretch,宽度塌成内容宽(子元素全绝对定位 → 0)。
+     必须显式给 width,原版的父容器是普通块流所以不需要这一行。 */
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto 20px;
+  flex: none;
+  border-radius: var(--sf-radius-lg);
+  overflow: hidden;
+  background: radial-gradient(120% 95% at 50% 0%, var(--sf-home-sky-2), var(--sf-home-sky-1) 72%);
+  box-shadow: var(--sf-shadow-2), inset 0 0 0 1px var(--sf-border);
+}
+
+.aipet-stage-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--sf-home-star);
+  animation: aipet-twinkle 2.6s ease-in-out infinite;
+}
+
+.aipet-stage-star:nth-child(1) { top: 22%; left: 20%; }
+.aipet-stage-star:nth-child(2) { top: 34%; left: 78%; animation-delay: 0.6s; }
+.aipet-stage-star:nth-child(3) { top: 16%; left: 56%; animation-delay: 1.2s; }
+.aipet-stage-star:nth-child(4) { top: 44%; left: 32%; animation-delay: 0.9s; }
+.aipet-stage-star:nth-child(5) { top: 26%; left: 68%; animation-delay: 1.7s; }
+
+.aipet-stage-spotlight {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  width: 230px;
+  height: 250px;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 60% at 50% 0%, rgba(255, 240, 200, 0.32), transparent 70%);
+  pointer-events: none;
+}
+
+.aipet-stage-curtain {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 66px;
+  z-index: 3;
+  background: linear-gradient(var(--dir), var(--sf-primary-hover), var(--sf-primary) 72%, transparent);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.aipet-stage-curtain--l {
+  left: 0;
+  --dir: 90deg;
+  border-radius: 0 0 46% 0;
+}
+
+.aipet-stage-curtain--r {
+  right: 0;
+  --dir: 270deg;
+  border-radius: 0 0 0 46%;
+}
+
+.aipet-stage-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.42));
+}
+
+.aipet-stage-egg {
+  position: absolute;
+  left: 50%;
+  bottom: 38px;
+  z-index: 2;
+  transform-origin: 50% 92%;
+  animation: aipet-egg-wobble 3.4s ease-in-out infinite;
+}
+
+.aipet-stage-egg .aipet-egg-body {
+  width: 96px;
+  height: 120px;
+}
+
+@keyframes aipet-egg-wobble {
+  0%, 100% { transform: translateX(-50%) rotate(-4deg); }
+  50% { transform: translateX(-50%) rotate(4deg); }
+}
+
+/* ---- 登场动画浮层:一条 2.6s 的时间线 ----
+   0s 摇晃加剧 → 0.9s 裂纹淡入 → 1.35s 闪白 → 1.4s 十二片彩纸放射
+   → 1.5s 宠物弹跳登场(带过冲)→ 1.95s 落字 → 2.6s 整体淡出。 */
+.aipet-ht {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  background: var(--sf-overlay);
+  backdrop-filter: blur(2px);
+  animation: aipet-ht-in var(--sf-dur-base) var(--sf-ease-standard);
+}
+
+.aipet-ht--done {
+  animation: aipet-ht-fadeout 0.42s ease forwards;
+}
+
+.aipet-ht__scene {
+  position: relative;
+  width: 300px;
+  height: 330px;
+}
+
+.aipet-ht__spot {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 260px;
+  height: 300px;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 55% at 50% 0%, rgba(255, 240, 200, 0.35), transparent 68%);
+  pointer-events: none;
+}
+
+.aipet-ht__egg {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  margin-left: -54px;
+  transform-origin: 50% 92%;
+  animation: aipet-ht-egg-seq 1.62s ease-in-out forwards;
+}
+
+.aipet-ht__egg .aipet-egg-body {
+  width: 108px;
+  height: 136px;
+}
+
+.aipet-ht__egg .aipet-egg-crack {
+  animation: aipet-ht-crack 0.5s ease-out 0.9s forwards;
+}
+
+.aipet-ht__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 46%, #fff, transparent 58%);
+  opacity: 0;
+  pointer-events: none;
+  animation: aipet-ht-flash 0.6s ease-out 1.35s;
+}
+
+.aipet-ht__pet {
+  position: absolute;
+  bottom: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  animation: aipet-ht-appear 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) 1.5s forwards;
+}
+
+.aipet-ht__pet-img {
+  width: 122px;
+  height: 132px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3));
+}
+
+.aipet-ht__pet-emoji {
+  font-size: 96px;
+}
+
+.aipet-ht__caption {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  animation: aipet-ht-cap 0.6s ease-out 1.95s forwards;
+}
+
+.aipet-ht__confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 12 片彩纸按 --a 角度放射飞出;末尾那个反向 rotate 抵消自转,
+   让纸片保持朝向而不是打着转飞(原版同款技巧) */
+.aipet-ht__bit {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: aipet-ht-conf 0.95s ease-out 1.4s forwards;
+}
+
+.aipet-ht__bit:nth-child(odd) {
+  background: var(--sf-primary);
+}
+
+.aipet-ht__bit:nth-child(even) {
+  background: var(--sf-home-star);
+}
+
+.aipet-ht__bit:nth-child(3n) {
+  background: var(--sf-success);
+}
+
+@keyframes aipet-ht-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes aipet-ht-fadeout {
+  to { opacity: 0; }
+}
+
+@keyframes aipet-ht-egg-seq {
+  0% { transform: rotate(-3deg); }
+  14% { transform: rotate(4deg); }
+  28% { transform: rotate(-5deg); }
+  42% { transform: rotate(5deg); }
+  56% { transform: rotate(-6deg); }
+  70% { transform: rotate(6deg) scale(1.02); }
+  84% { transform: rotate(-3deg) scale(1.06); }
+  100% { transform: scale(0.2) rotate(0); opacity: 0; }
+}
+
+@keyframes aipet-ht-crack {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes aipet-ht-flash {
+  0% { opacity: 0; }
+  40% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+@keyframes aipet-ht-appear {
+  0% { opacity: 0; transform: translateX(-50%) translateY(22px) scale(0.3); }
+  60% { opacity: 1; transform: translateX(-50%) translateY(-6px) scale(1.08); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+@keyframes aipet-ht-cap {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes aipet-ht-conf {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(0) rotate(calc(-1 * var(--a))); }
+  15% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(-120px) rotate(calc(-1 * var(--a))) scale(0.6);
+  }
+}
+
+/* 减少动效:句流全局只压缩了 --sf-dur-*,管不到 keyframes ——
+   本模块的装饰性循环动画(蛋摇晃、星星闪烁、光尘、萤火、呼吸…)在此显式停掉;
+   一次性的登场时间线同样压到极短,不让用户卡在一片空白浮层上。 */
+@media (prefers-reduced-motion: reduce) {
+  .page--aipet [class*="aipet-"],
+  .aipet-ht [class*="aipet-"] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .aipet-home-box {
+    transition: none !important;
+  }
+}
+
+/* 主推卡(原版 .panel-hero):在一堆平级面板里把"就用这个"抬出来 */
+.aipet-panel--hero {
+  border-color: var(--sf-primary-border);
+  box-shadow: var(--sf-home-shadow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* 分区场景卡(原版 .scene-panel):右上角一团柔光,卡面不再是纯白板 */
+.aipet-panel--scene {
+  position: relative;
+  overflow: hidden;
+}
+
+.aipet-panel--scene::after {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sf-primary-soft), transparent 70%);
+  pointer-events: none;
+}
+
+.aipet-panel--scene > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 拉绳行:控件比标准开关高,行高给足 */
+.aipet-row--cord {
+  align-items: center;
+  min-height: 56px;
+}
+
+/* ==== 拟物拉绳开关(设置页招牌,原版 .cord)====
+   像一根灯的拉链:关=绳收起、珠在上、暗;开=绳拉下、珠在下、发光(灯亮了)。
+   点一下珠子会弹一下再归位 —— 这一下回弹是整页最有手感的地方。 */
+.aipet-cord {
+  position: relative;
+  width: 34px;
+  height: 48px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.aipet-cord input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* 绳子:虚线渐变画出的麻绳,开关时靠 height 过渡"拉长/收起" */
+.aipet-cord__line {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 3px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    180deg,
+    var(--sf-home-line) 0 3px,
+    transparent 3px 5px
+  );
+  transition: height var(--sf-dur-base) var(--sf-ease-out);
+}
+
+.aipet-cord__bead {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transition:
+    top var(--sf-dur-base) var(--sf-ease-out),
+    background var(--sf-dur-base) var(--sf-ease-standard),
+    box-shadow var(--sf-dur-base) var(--sf-ease-standard);
+}
+
+.aipet-cord--off .aipet-cord__line {
+  height: 20px;
+}
+
+.aipet-cord--off .aipet-cord__bead {
+  top: 6px;
+  background: radial-gradient(circle at 40% 30%, rgba(255, 255, 255, 0.5), var(--sf-home-line));
+  box-shadow: 0 2px 4px rgba(90, 50, 80, 0.2);
+}
+
+.aipet-cord--on .aipet-cord__line {
+  height: 32px;
+}
+
+.aipet-cord--on .aipet-cord__bead {
+  top: 18px;
+  background: radial-gradient(circle at 40% 30%, #fff, var(--sf-primary) 70%);
+  box-shadow:
+    0 0 11px 2px var(--sf-primary-border),
+    0 2px 4px rgba(90, 50, 80, 0.2);
+}
+
+.aipet-cord--pulling .aipet-cord__bead {
+  animation: aipet-cord-pull 0.42s ease-out;
+}
+
+.aipet-cord input:focus-visible ~ .aipet-cord__bead {
+  box-shadow: 0 0 0 3px var(--sf-primary-soft-hover);
+}
+
+@keyframes aipet-cord-pull {
+  0% { margin-top: 0; }
+  35% { margin-top: 6px; }
+  70% { margin-top: -2px; }
+  100% { margin-top: 0; }
+}
+
+/* AI 萌宠 · 细滚动条(移植自原版 tokens.css「细滚动条,悬停变实」)。
+   **刻意只作用于本模块**:句流其余页面沿用系统滚动条,
+   整合的红线是不改动既有功能的观感。 */
+.page--aipet ::-webkit-scrollbar,
+.aipet-modal ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.page--aipet ::-webkit-scrollbar-track,
+.aipet-modal ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page--aipet ::-webkit-scrollbar-thumb,
+.aipet-modal ::-webkit-scrollbar-thumb {
+  background: var(--sf-home-line);
+  border-radius: var(--sf-radius-full);
+  /* 2px 透明边 + content-box 裁切 = 拇指两侧留白,不贴边 */
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.page--aipet ::-webkit-scrollbar-thumb:hover,
+.aipet-modal ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--sf-text-3);
+  background-clip: content-box;
+}
+
+.page--aipet ::-webkit-scrollbar-corner,
+.aipet-modal ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ==== AI 萌宠 · 我的宠物「动画之家」 ====
+   逐行移植自孵宠 HatchDesk(src/styles/studio.css「我的宠物 · 动画之家」段):
+   3D 分层透视舞台 + 三种栖息地(屋子 / 牢笼 / 玻璃罩)+ 光标跟随旋转,
+   夜空圆窗、摇摆吊灯与光锥、地板地毯、呼吸起伏与同步影子、飘浮光尘、
+   休眠 Zzz、摇摆「当前」挂牌、动作光珠。视觉与动效参数一字未改,
+   仅做三件事:类名加 aipet- 前缀防碰撞、色值改走 --sf-home-* 令牌(四主题)、
+   keyframes 加前缀。色板定义见 packages/ui/src/tokens.css。 */
+.aipet-homes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.aipet-pet-home {
+  position: relative;
+}
+
+/* —— 3D 舞台：透视 + 分层 translateZ，随光标视差旋转（立体感来源）—— */
+.aipet-home-3d {
+  height: 212px;
+  perspective: 900px;
+  perspective-origin: 50% 38%;
+}
+.aipet-home-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(7deg);
+  transition: transform 220ms ease-out;
+}
+.aipet-pet-home:hover .aipet-home-box {
+  transition: transform 90ms ease-out; /* 悬停时更贴手，离开时用上面的慢回弹 */
+}
+/* 每层铺满 box，靠 translateZ 拉开前后 → 旋转时产生视差立体 */
+.aipet-hl {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.aipet-hl-wall { /* 后墙 = 可见轮廓框 */
+  transform: translateZ(-38px);
+  border-radius: var(--sf-radius-lg);
+  border: 1px solid var(--sf-border);
+  background:
+    radial-gradient(130% 70% at 50% 4%, rgba(255, 255, 255, 0.5), transparent 55%),
+    linear-gradient(180deg, var(--sf-home-wall-1), var(--sf-home-wall-2));
+  box-shadow: var(--sf-shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -46px 44px -34px var(--sf-home-wall-line);
+}
+.aipet-pet-home.is-active .aipet-hl-wall {
+  border-color: var(--sf-primary-border);
+  box-shadow: var(--sf-home-shadow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -46px 44px -34px var(--sf-home-wall-line);
+}
+.aipet-hl-floor { transform: translateZ(-30px); }
+.aipet-hl-decor { transform: translateZ(-14px); }
+.aipet-hl-back { transform: translateZ(4px); }
+.aipet-hl-pet { transform: translateZ(24px); }
+.aipet-hl-front { transform: translateZ(46px); }
+
+/* —— 牢笼（金属圆顶鸟笼：前后栏杆包裹 + 藤蔓 + 萤火发光 + 华丽尖顶）—— */
+/* 金属栏杆：每根含暗边 + 亮身 + 高光，成圆管质感；前亮后暗，宠物夹在中间=立体 */
+.aipet-cage-bars {
+  position: absolute;
+  inset: 14px 16px 20px;
+  border-radius: 46% 46% var(--sf-radius-md) var(--sf-radius-md) / 34% 34% var(--sf-radius-md) var(--sf-radius-md);
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 5px,
+    color-mix(in srgb, var(--sf-home-metal) 55%, #000) 5px 5.6px,
+    var(--sf-home-metal) 5.6px 7.4px,
+    rgba(255, 255, 255, 0.75) 7.4px 8px,
+    transparent 8px 15px
+  );
+  -webkit-mask: linear-gradient(180deg, transparent 0 3%, #000 11% 94%, transparent 100%);
+  mask: linear-gradient(180deg, transparent 0 3%, #000 11% 94%, transparent 100%);
+}
+.aipet-cage-bars-front { filter: drop-shadow(0 1px 1px rgba(90, 50, 80, 0.25)); }
+.aipet-cage-bars-back { opacity: 0.4; filter: blur(0.4px); }
+
+/* 穹顶弧肋（SVG）*/
+.aipet-cage-dome {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 66%;
+  height: 54px;
+  transform: translateX(-50%);
+}
+.aipet-cage-dome svg { width: 100%; height: 100%; overflow: visible; }
+.aipet-cage-dome svg path {
+  stroke: var(--sf-home-metal);
+  stroke-width: 1.6;
+  fill: none;
+  filter: drop-shadow(0 1px 0.5px rgba(90, 50, 80, 0.2));
+}
+
+/* 华丽尖顶（发光宝珠 + 挂环）*/
+.aipet-cage-finial {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff, var(--sf-home-firefly) 55%, var(--sf-primary) 130%);
+  box-shadow: 0 0 10px 2px var(--sf-home-firefly), 0 0 3px var(--sf-primary);
+  animation: aipet-finial-glow 3s ease-in-out infinite;
+}
+.aipet-cage-finial::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translateX(-50%);
+  border: 2px solid var(--sf-home-metal);
+  border-radius: 50%;
+}
+
+/* 底座平台（描边 + 顶面高光 + 投影）*/
+.aipet-cage-base {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 74%;
+  height: 16px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 2px solid var(--sf-home-metal);
+  background: linear-gradient(180deg, var(--sf-home-floor), var(--sf-home-wall-2));
+  box-shadow: 0 4px 8px rgba(90, 50, 80, 0.24), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+.aipet-cage-rim {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  width: 66%;
+  height: 7px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent);
+}
+
+/* 宠物身后柔光（高级感）*/
+.aipet-cage-halo {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  width: 108px;
+  height: 92px;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 50%, var(--sf-primary-soft-hover), transparent 70%);
+  animation: aipet-halo-pulse 4.2s ease-in-out infinite;
+}
+
+/* 藤蔓（茎 + 叶，垂缠 + 轻摆）*/
+.aipet-cage-vine {
+  position: absolute;
+  inset: -6px 4px auto;
+  height: 130px;
+  transform-origin: 50% 0;
+  animation: aipet-vine-sway 6s ease-in-out infinite;
+  filter: drop-shadow(0 1px 1px rgba(60, 90, 50, 0.25));
+}
+.aipet-cage-vine svg { width: 100%; height: 100%; overflow: visible; }
+.aipet-cage-vine .vs {
+  stroke: var(--sf-home-vine);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.aipet-cage-vine .vl ellipse { fill: var(--sf-home-leaf); }
+.aipet-cage-vine .vl ellipse:nth-child(even) { fill: var(--sf-home-leaf-2); }
+
+/* 萤火发光 —— 漂浮的暖光点 */
+.aipet-cage-flies { position: absolute; inset: 0; pointer-events: none; }
+.aipet-firefly {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sf-home-firefly);
+  box-shadow: 0 0 8px 2px var(--sf-home-firefly), 0 0 3px 1px #fff;
+  animation: aipet-firefly-drift 5.5s ease-in-out infinite;
+}
+.aipet-firefly:nth-child(1) { left: 34%; top: 44%; animation-delay: 0s; }
+.aipet-firefly:nth-child(2) { left: 60%; top: 38%; animation-delay: 1.7s; }
+.aipet-firefly:nth-child(3) { left: 48%; top: 58%; animation-delay: 3.3s; }
+
+/* —— 玻璃罩（钟形玻璃 + 高光 + 木底座）—— */
+.aipet-jar-glass {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 10px;
+  bottom: 20px;
+  border-radius: 48% 48% 16px 16px / 62% 62% 16px 16px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.14));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 22px rgba(255, 255, 255, 0.28), 0 4px 12px rgba(90, 50, 80, 0.12);
+}
+.aipet-jar-shine {
+  position: absolute;
+  top: 9%;
+  left: 16%;
+  width: 15%;
+  height: 60%;
+  transform: rotate(12deg);
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent);
+  filter: blur(1px);
+}
+.aipet-jar-base {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 72%;
+  height: 18px;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  border: 1px solid var(--sf-home-line);
+  background: repeating-linear-gradient(
+      90deg,
+      var(--sf-home-rug) 0 7px,
+      color-mix(in srgb, var(--sf-home-rug) 88%, #000) 7px 8px
+    ),
+    linear-gradient(180deg, var(--sf-home-rug), var(--sf-home-floor));
+  box-shadow: 0 3px 7px rgba(90, 50, 80, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+.aipet-jar-rim {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 11px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+}
+/* 苔藓床 + 卵石 */
+.aipet-jar-moss {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  width: 72%;
+  height: 20px;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 10px 10px;
+  background: radial-gradient(70% 120% at 50% 100%, var(--sf-home-leaf), var(--sf-home-leaf-2));
+  box-shadow: inset 0 3px 4px rgba(255, 255, 255, 0.22);
+}
+.aipet-jar-moss .aipet-pebble {
+  position: absolute;
+  bottom: 3px;
+  width: 6px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sf-home-rug);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.aipet-jar-moss .aipet-pebble:nth-child(1) { left: 26%; }
+.aipet-jar-moss .aipet-pebble:nth-child(2) { left: 50%; bottom: 5px; }
+.aipet-jar-moss .aipet-pebble:nth-child(3) { left: 70%; }
+/* 发光菌菇 */
+.aipet-jar-mushroom { position: absolute; bottom: 22px; width: 14px; height: 22px; }
+.aipet-jar-mushroom::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 13px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #fbf1e6, #ecd9c6);
+}
+.aipet-jar-mushroom::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 10px;
+  border-radius: 50% 50% 42% 42%;
+  background: radial-gradient(circle at 40% 28%, #fff 6%, var(--sf-home-mush) 62%);
+  box-shadow: 0 0 10px 2px var(--sf-home-mush-glow);
+  animation: aipet-mush-glow 3.4s ease-in-out infinite;
+}
+.aipet-jar-mushroom-a { left: 32%; bottom: 20px; transform: scale(0.86); }
+.aipet-jar-mushroom-b { left: 60%; bottom: 25px; }
+.aipet-jar-mushroom-b::after { animation-delay: 1.6s; }
+/* 悬浮孢子 */
+.aipet-jar-spores { position: absolute; inset: 0; pointer-events: none; }
+.aipet-spore {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sf-home-mush-glow);
+  box-shadow: 0 0 7px 1px var(--sf-home-mush-glow);
+  animation: aipet-spore-rise 6.5s linear infinite;
+}
+.aipet-spore:nth-child(1) { left: 40%; bottom: 38px; }
+.aipet-spore:nth-child(2) { left: 56%; bottom: 34px; animation-delay: 2.2s; }
+.aipet-spore:nth-child(3) { left: 48%; bottom: 48px; animation-delay: 4.3s; }
+
+/* —— 屋子精修：串灯 + 壁挂画 + 盆栽 —— */
+.aipet-room-lights { position: absolute; top: 4px; left: 12px; right: 12px; height: 28px; }
+.aipet-room-lights::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 2%;
+  right: 2%;
+  height: 16px;
+  border-bottom: 2px solid var(--sf-home-line);
+  border-radius: 0 0 50% 50%;
+}
+.aipet-bulb {
+  position: absolute;
+  top: 16px;
+  width: 7px;
+  height: 9px;
+  border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%;
+  background: radial-gradient(circle at 40% 30%, #fff, var(--sf-home-firefly) 62%);
+  box-shadow: 0 0 7px 1px var(--sf-home-firefly);
+  animation: bulb-aipet-twinkle 3s ease-in-out infinite;
+}
+.aipet-bulb:nth-child(1) { left: 6%; top: 16px; }
+.aipet-bulb:nth-child(2) { left: 24%; top: 20px; animation-delay: 0.6s; }
+.aipet-bulb:nth-child(3) { left: 42%; top: 22px; animation-delay: 1.2s; }
+.aipet-bulb:nth-child(4) { left: 58%; top: 22px; animation-delay: 1.8s; }
+.aipet-bulb:nth-child(5) { left: 76%; top: 20px; animation-delay: 2.4s; }
+.aipet-bulb:nth-child(6) { left: 92%; top: 16px; animation-delay: 0.9s; }
+.aipet-bulb:nth-child(even) {
+  background: radial-gradient(circle at 40% 30%, #fff, var(--sf-primary) 72%);
+  box-shadow: 0 0 7px 1px var(--sf-primary-border);
+}
+.aipet-room-frame {
+  position: absolute;
+  top: 66px;
+  left: 26px;
+  width: 40px;
+  height: 32px;
+  border: 3px solid var(--sf-home-metal);
+  border-radius: 4px;
+  background: linear-gradient(160deg, var(--sf-home-sky-2), var(--sf-home-sky-1));
+  box-shadow: 0 3px 6px rgba(90, 50, 80, 0.2), inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+  display: grid;
+  place-items: center;
+}
+.aipet-room-frame-art { font-size: 15px; }
+.aipet-room-plant { position: absolute; left: 16px; bottom: 42px; width: 34px; height: 46px; }
+.aipet-plant-pot {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 18px;
+  border-radius: 4px 4px 9px 9px;
+  background: linear-gradient(180deg, var(--sf-primary-hover), var(--sf-primary-hover));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+.aipet-plant-leaf {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  width: 10px;
+  height: 22px;
+  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  background: linear-gradient(180deg, var(--sf-home-leaf), var(--sf-home-leaf-2));
+  transform-origin: bottom center;
+}
+.aipet-plant-leaf:nth-child(2) { transform: translateX(-50%) rotate(-26deg); }
+.aipet-plant-leaf:nth-child(3) { transform: translateX(-50%) rotate(0deg); }
+.aipet-plant-leaf:nth-child(4) { transform: translateX(-50%) rotate(26deg); }
+
+/* —— 圆窗 + 夜空 + 月亮 + 星 —— */
+.aipet-home-window {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--sf-home-sky-1), var(--sf-home-sky-2));
+  box-shadow: 0 0 0 4px var(--sf-home-wall-2), 0 0 0 5px var(--sf-home-line),
+    inset 0 2px 6px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.aipet-home-moon {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--sf-home-star);
+  box-shadow: 4px 2px 0 -1px var(--sf-home-sky-1), 0 0 10px var(--sf-home-star);
+}
+.aipet-home-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--sf-home-star);
+  animation: aipet-twinkle 2.4s ease-in-out infinite;
+}
+.aipet-home-star:nth-child(2) { top: 34px; left: 16px; animation-delay: 0.2s; }
+.aipet-home-star:nth-child(3) { top: 42px; left: 38px; animation-delay: 0.9s; }
+.aipet-home-star:nth-child(4) { top: 20px; left: 40px; animation-delay: 1.5s; }
+
+/* —— 吊灯 + 光晕 —— */
+.aipet-home-lamp {
+  position: absolute;
+  top: -2px;
+  left: 46px;
+  width: 2px;
+  height: 26px;
+  background: var(--sf-home-line);
+  transform-origin: top center;
+  animation: aipet-lamp-sway 5.5s ease-in-out infinite;
+}
+.aipet-home-lamp::before {
+  content: "";
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  width: 18px;
+  height: 14px;
+  transform: translateX(-50%);
+  border-radius: 0 0 50% 50% / 0 0 70% 70%;
+  background: linear-gradient(180deg, #ffe9a8, var(--sf-home-lamp));
+  box-shadow: 0 0 12px 2px var(--sf-home-lamp);
+}
+.aipet-home-lamp::after {
+  content: "";
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  width: 86px;
+  height: 104px;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 60% at 50% 0%, var(--sf-home-lamp), transparent 70%);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.aipet-pet-home.is-active .aipet-home-lamp::after { opacity: 0.42; }
+
+/* —— 地板 + 地毯 —— */
+.aipet-home-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  background: linear-gradient(180deg, var(--sf-home-floor), var(--sf-home-wall-2));
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25);
+  z-index: 2;
+}
+.aipet-home-rug {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  width: 118px;
+  height: 26px;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 60% at 50% 50%, var(--sf-home-rug), transparent 72%);
+  z-index: 3;
+}
+
+/* —— 宠物（呼吸起伏）+ 影子 —— */
+.aipet-home-pet {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 4;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.aipet-home-pet-img {
+  width: 104px;
+  height: 112px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  transform-origin: bottom center;
+  animation: aipet-home-breathe 3.6s ease-in-out infinite;
+  filter: drop-shadow(0 4px 3px rgba(90, 50, 80, 0.22));
+}
+.aipet-home-pet-egg {
+  /* 还没有缩略图时用蛋占位:沿用 img 的尺寸盒,补上字号与居中 */
+  display: grid;
+  place-items: center;
+  font-size: 46px;
+  line-height: 1;
+}
+
+.aipet-pet-shadow {
+  position: absolute;
+  bottom: -4px;
+  width: 74px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(90, 50, 80, 0.22);
+  filter: blur(2px);
+  animation: aipet-shadow-breathe 3.6s ease-in-out infinite;
+}
+
+/* —— 飘浮光尘 —— */
+.aipet-home-motes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.aipet-mote {
+  position: absolute;
+  bottom: 40px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sf-home-star);
+  opacity: 0;
+  animation: aipet-mote-float 6s linear infinite;
+}
+.aipet-mote:nth-child(1) { left: 26%; animation-delay: 0s; }
+.aipet-mote:nth-child(2) { left: 52%; animation-delay: 1.8s; }
+.aipet-mote:nth-child(3) { left: 70%; animation-delay: 3.4s; }
+.aipet-mote:nth-child(4) { left: 40%; animation-delay: 4.7s; }
+
+/* —— Zzz（休眠中的非当前宠）—— */
+.aipet-home-zzz {
+  position: absolute;
+  top: 44px;
+  left: 58%;
+  z-index: 6;
+  color: var(--sf-text-2);
+  font-weight: 700;
+  pointer-events: none;
+}
+.aipet-home-zzz span {
+  position: absolute;
+  animation: aipet-zzz-float 3.4s ease-out infinite;
+}
+.aipet-home-zzz span:nth-child(1) { font-size: 12px; animation-delay: 0s; }
+.aipet-home-zzz span:nth-child(2) { font-size: 15px; left: 8px; animation-delay: 1.1s; }
+.aipet-home-zzz span:nth-child(3) { font-size: 18px; left: 18px; animation-delay: 2.2s; }
+
+/* —— "当前"挂牌 —— */
+.aipet-home-tag {
+  position: absolute;
+  top: 0;
+  left: 18px;
+  z-index: 7;
+  padding: 4px 12px 5px;
+  border-radius: 0 0 var(--sf-radius-sm) var(--sf-radius-sm);
+  background: var(--sf-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: var(--sf-home-shadow-accent);
+  animation: aipet-tag-swing 4s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+/* —— 名牌 —— */
+.aipet-home-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
   flex-wrap: wrap;
-  gap: 6px;
+}
+.aipet-home-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sf-text);
+}
+.aipet-home-tier {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+}
+.aipet-home-meta {
+  width: 100%;
+  text-align: center;
+  margin-top: 1px;
+  /* 原版靠 .muted .small 两个工具类上色/缩字,这里内联成本体样式 */
+  color: var(--sf-text-2);
+  font-size: 12px;
+}
+
+/* —— 动作光珠（替代传统按钮）—— */
+.aipet-home-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.aipet-orb {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--sf-border);
+  background: radial-gradient(80% 80% at 50% 30%, var(--sf-card), var(--sf-panel));
+  font-size: 17px;
+  box-shadow: var(--sf-shadow-1);
+  transition: transform var(--sf-dur-fast) var(--sf-ease-standard), box-shadow var(--sf-dur-fast) var(--sf-ease-standard),
+    border-color var(--sf-dur-fast) var(--sf-ease-standard), background var(--sf-dur-fast) var(--sf-ease-standard);
+}
+.aipet-orb:hover {
+  transform: translateY(-3px) scale(1.08);
+  border-color: var(--sf-primary);
+  box-shadow: var(--sf-home-shadow-accent);
+}
+.aipet-orb:active {
+  transform: translateY(0) scale(1.02);
+}
+.aipet-orb:focus-visible {
+  outline: none;
+  border-color: var(--sf-primary);
+  box-shadow: 0 0 0 3px var(--sf-primary-soft-hover);
+}
+.aipet-orb-primary {
+  border-color: var(--sf-primary);
+  background: radial-gradient(80% 80% at 50% 25%, var(--sf-primary-hover), var(--sf-primary));
+}
+.aipet-orb-danger:hover {
+  border-color: var(--sf-error);
+  box-shadow: 0 6px 18px var(--sf-home-danger-weak);
+  background: radial-gradient(80% 80% at 50% 30%, var(--sf-card), var(--sf-home-danger-weak));
+}
+/* 悬浮气泡标签（非传统 tooltip 框，随光珠浮起）*/
+.aipet-orb-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 3px 8px;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-text);
+  color: var(--sf-card);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--sf-dur-fast) var(--sf-ease-standard), transform var(--sf-dur-fast) var(--sf-ease-standard);
+  z-index: 8;
+}
+.aipet-orb:hover .aipet-orb-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* —— 信息点：把整段说明收成一个可悬浮的「?」，界面清爽（游戏式少字·按需展开）—— */
+.aipet-hint-dot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--sf-home-line);
+  background: var(--sf-card);
+  color: var(--sf-text-2);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+  transition: color var(--sf-dur-fast) var(--sf-ease-standard), border-color var(--sf-dur-fast) var(--sf-ease-standard), background var(--sf-dur-fast) var(--sf-ease-standard);
+}
+.aipet-hint-dot:hover,
+.aipet-hint-dot:focus-visible {
+  outline: none;
+  color: var(--sf-primary);
+  border-color: var(--sf-primary);
+  background: var(--sf-primary-soft);
+}
+.aipet-hint-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  width: max-content;
+  max-width: 264px;
+  padding: 8px 11px;
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-text);
+  color: var(--sf-card);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--sf-dur-fast) var(--sf-ease-standard), transform var(--sf-dur-fast) var(--sf-ease-standard);
+  z-index: 20;
+  box-shadow: var(--sf-shadow-2);
+}
+.aipet-hint-dot:hover .aipet-hint-pop,
+.aipet-hint-dot:focus-visible .aipet-hint-pop {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* —— 领养位（导入宠物包，替代旧拖放卡）—— */
+.aipet-home-adopt {
+  height: 208px;
+  border-radius: var(--sf-radius-lg);
+  border: 2px dashed var(--sf-home-line);
+  background:
+    radial-gradient(120% 70% at 50% 8%, rgba(255, 255, 255, 0.4), transparent 55%),
+    linear-gradient(180deg, var(--sf-card), var(--sf-panel));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  transition: border-color var(--sf-dur-base) var(--sf-ease-standard), transform var(--sf-dur-base) var(--sf-ease-standard), background var(--sf-dur-base) var(--sf-ease-standard);
+}
+.aipet-home-adopt:hover,
+.aipet-home-adopt.aipet-drop--over {
+  border-color: var(--sf-primary);
+  transform: translateY(-4px);
+  background:
+    radial-gradient(120% 70% at 50% 8%, rgba(255, 255, 255, 0.5), transparent 55%),
+    linear-gradient(180deg, var(--sf-primary-soft), var(--sf-panel));
+}
+.aipet-home-adopt .aipet-adopt-plus {
+  font-size: 34px;
+  line-height: 1;
+  animation: aipet-home-breathe 3.6s ease-in-out infinite;
+}
+.aipet-home-adopt .aipet-adopt-title {
+  font-weight: 700;
+  color: var(--sf-text);
+}
+
+/* —— 空巢（一只都没有）—— */
+.aipet-home-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--sf-text-2);
+  padding: 32px 0;
+  line-height: 2;
+}
+.aipet-home-empty .aipet-empty-egg {
+  font-size: 52px;
+  animation: aipet-home-breathe 3.2s ease-in-out infinite;
+}
+
+/* —— 房间相关动效 —— */
+@keyframes aipet-home-breathe {
+  0%, 100% { transform: translateY(0) scaleY(1) scaleX(1); }
+  50% { transform: translateY(-3px) scaleY(1.035) scaleX(0.985); }
+}
+@keyframes aipet-shadow-breathe {
+  0%, 100% { transform: scaleX(1); opacity: 0.22; }
+  50% { transform: scaleX(0.9); opacity: 0.16; }
+}
+@keyframes aipet-mote-float {
+  0% { transform: translateY(0); opacity: 0; }
+  18% { opacity: 0.85; }
+  100% { transform: translateY(-118px); opacity: 0; }
+}
+@keyframes aipet-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+@keyframes aipet-lamp-sway {
+  0%, 100% { transform: rotate(-2.4deg); }
+  50% { transform: rotate(2.4deg); }
+}
+@keyframes aipet-tag-swing {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes aipet-zzz-float {
+  0% { transform: translate(0, 0); opacity: 0; }
+  25% { opacity: 0.9; }
+  100% { transform: translate(10px, -26px); opacity: 0; }
+}
+@keyframes aipet-finial-glow {
+  0%, 100% { box-shadow: 0 0 8px 1px var(--sf-home-firefly), 0 0 3px var(--sf-primary); }
+  50% { box-shadow: 0 0 14px 3px var(--sf-home-firefly), 0 0 6px var(--sf-primary); }
+}
+@keyframes aipet-halo-pulse {
+  0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(0.96); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.04); }
+}
+@keyframes aipet-vine-sway {
+  0%, 100% { transform: rotate(-1.6deg); }
+  50% { transform: rotate(1.6deg); }
+}
+@keyframes aipet-firefly-drift {
+  0% { transform: translate(0, 0); opacity: 0.2; }
+  25% { opacity: 1; }
+  50% { transform: translate(10px, -14px); opacity: 0.7; }
+  75% { opacity: 1; }
+  100% { transform: translate(-6px, 4px); opacity: 0.2; }
+}
+@keyframes aipet-mush-glow {
+  0%, 100% { box-shadow: 0 0 7px 1px var(--sf-home-mush-glow); }
+  50% { box-shadow: 0 0 13px 3px var(--sf-home-mush-glow); }
+}
+@keyframes aipet-spore-rise {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 0.9; }
+  100% { transform: translate(6px, -46px); opacity: 0; }
+}
+@keyframes aipet-bulb-twinkle {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 .aipet-confirm,
@@ -4221,15 +5636,59 @@ input[type="checkbox"] {
 
 .aipet-pomo {
   position: relative;
-  width: 184px;
-  height: 184px;
-  margin: 0 auto;
+  width: 210px;
+  height: 210px;
+  margin: 16px auto 20px;
 }
 
+/* 夜空盘(原版 .pomo-sky):inset 16px 让进度环跑在夜空之外的一圈上 */
+.aipet-pomo__sky {
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 50% 18%, var(--sf-home-sky-2), var(--sf-home-sky-1) 72%);
+  box-shadow:
+    inset 0 6px 16px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* 月亮:用一枚同色阴影从圆盘上"咬"出弯月,再加一圈月晕 */
+.aipet-pomo__moon {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--sf-home-star);
+  box-shadow:
+    6px 3px 0 -2px var(--sf-home-sky-1),
+    0 0 14px var(--sf-home-star);
+}
+
+.aipet-pomo__star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--sf-home-star);
+  animation: aipet-twinkle 2.6s ease-in-out infinite;
+}
+
+/* 坐标与延迟照抄原版,错峰闪烁才不像跑马灯 */
+.aipet-pomo__star:nth-child(2) { top: 34%; left: 26%; animation-delay: 0.2s; }
+.aipet-pomo__star:nth-child(3) { top: 62%; left: 36%; animation-delay: 0.9s; }
+.aipet-pomo__star:nth-child(4) { top: 46%; left: 66%; animation-delay: 1.5s; }
+.aipet-pomo__star:nth-child(5) { top: 72%; left: 58%; animation-delay: 0.5s; }
+.aipet-pomo__star:nth-child(6) { top: 30%; left: 52%; animation-delay: 2s; }
+.aipet-pomo__star:nth-child(7) { top: 56%; left: 24%; animation-delay: 1.2s; }
+
 .aipet-pomo__ring {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  transform: rotate(-90deg);
 }
 
 .aipet-pomo__track {
@@ -4243,11 +5702,19 @@ input[type="checkbox"] {
   stroke: var(--sf-primary);
   stroke-width: 10;
   stroke-linecap: round;
-  transition: stroke-dashoffset var(--sf-dur-base) linear;
+  /* 贴着每秒 tick 走,别用缓动;发光让进度弧从夜空里"浮"出来 */
+  transition: stroke-dashoffset 0.95s linear;
+  filter: drop-shadow(0 0 5px var(--sf-primary-border));
+  /* 起点扳到 12 点:转 circle 本身而不是整个 svg(原版 .ring-prog) */
+  transform: rotate(-90deg);
+  transform-origin: 92px 92px;
 }
 
-.aipet-pomo--on .aipet-pomo__prog {
+/* 原版语义:专注=主色、休息=薄荷绿,靠颜色一眼区分两个阶段。
+   (此前写成「只要在跑就转绿」,等于把两个阶段的区分抹掉了) */
+.aipet-pomo--break .aipet-pomo__prog {
   stroke: var(--sf-success);
+  filter: drop-shadow(0 0 5px var(--sf-success));
 }
 
 .aipet-pomo__center {
@@ -4258,22 +5725,30 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: center;
   gap: 2px;
+  z-index: 2;
+  text-align: center;
 }
 
 .aipet-pomo__time {
-  font-size: 34px;
-  font-weight: 600;
+  font-size: 46px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  /* 句流某层用的是 px 行高,会被字面继承(22px),46px 的字会溢出压住下一行。
+     原版 body 行高是无单位值所以没这问题 —— 这里显式给回。 */
+  line-height: 1.12;
+  /* 压在夜空上,固定白字 + 微发光(四主题一致,不跟随文字色) */
+  color: #fff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
 }
 
 .aipet-pomo__phase {
-  font-size: var(--sf-fs-caption);
-  color: var(--sf-text-2);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .aipet-pomo__round {
-  font-size: var(--sf-fs-micro);
-  color: var(--sf-text-3);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .aipet-pomo__cfg {
@@ -4292,9 +5767,10 @@ input[type="checkbox"] {
 }
 
 .aipet-reminders {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  /* 原版是多列网格:提醒通常短小,单列堆叠会把页面拉得很长 */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
 }
 
 .aipet-reminder {
@@ -4303,7 +5779,18 @@ input[type="checkbox"] {
   gap: 12px;
   border: 1px solid var(--sf-border);
   border-radius: var(--sf-radius-md);
-  padding: 10px 14px;
+  padding: 12px 16px;
+  background: var(--sf-card);
+  box-shadow: var(--sf-shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition:
+    transform var(--sf-dur-base) var(--sf-ease-standard),
+    box-shadow var(--sf-dur-base) var(--sf-ease-standard),
+    opacity var(--sf-dur-base) var(--sf-ease-standard);
+}
+
+.aipet-reminder:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sf-shadow-2);
 }
 
 .aipet-reminder--off {
@@ -4311,7 +5798,15 @@ input[type="checkbox"] {
 }
 
 .aipet-reminder__icon {
-  font-size: 20px;
+  /* 原版把图标做成 38px 主色淡底徽章,而不是裸 emoji */
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  font-size: 19px;
+  background: var(--sf-primary-soft);
 }
 
 .aipet-reminder__body {

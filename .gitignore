@@ -62,3 +62,6 @@ fix/
 /*_l[1-6].json
 /*_sentences.json
 /nul
+
+# 视频素材(录屏 / 宣传片):二进制不入 git,同 release/ 与 dist-portable/
+video/

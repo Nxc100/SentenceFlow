@@ -22,6 +22,7 @@ import type {
   StripView,
 } from "../../pet/types";
 import { ALL_STATES, STATE_NAMES } from "../../pet/types";
+import { HatchStage, HatchTheater } from "./HatchTheater";
 import {
   DropZone,
   IMG_EXTS,
@@ -84,6 +85,8 @@ function FirstHatch({
   const [autoTol, setAutoTol] = useState<number | null>(null);
   const [tol, setTol] = useState<number | null>(null); // null = 跟随自动
   const [busy, setBusy] = useState(false);
+  /** 非空时正在演登场动画;演完才 onHatched() 跳走 */
+  const [debut, setDebut] = useState<{ name: string; thumb: string | null } | null>(null);
   const { show: toast } = useToast();
 
   const refresh = useCallback(
@@ -125,8 +128,14 @@ function FirstHatch({
     try {
       const result = await petIpc.l0Hatch(path, tol ?? autoTol, name.trim());
       if (result.ok) {
-        toast(`${name.trim()} 已经住到桌面上了!接下来教它动起来`, "success");
-        onHatched();
+        // 签名时刻:先把登场动画演完,再跳去下一步 —— 这是用户等了几十秒的回报
+        let thumb: string | null = null;
+        try {
+          thumb = result.petId ? await petIpc.thumb(result.petId) : null;
+        } catch {
+          /* 缩略图拿不到就用 🐣 兜底,不能让动画因此不演 */
+        }
+        setDebut({ name: name.trim(), thumb });
       } else {
         setReport(result.report);
         toast("素材未通过校验,看看下方提示", "error");
@@ -136,10 +145,21 @@ function FirstHatch({
     } finally {
       setBusy(false);
     }
-  }, [path, name, tol, autoTol, onHatched, toast]);
+  }, [path, name, tol, autoTol, toast]);
 
   return (
     <div className="aipet-panels">
+      {debut && (
+        <HatchTheater
+          name={debut.name}
+          thumb={debut.thumb}
+          onDone={() => {
+            setDebut(null);
+            onHatched();
+          }}
+        />
+      )}
+      <HatchStage />
       <section className="aipet-panel aipet-hero">
         <div className="aipet-hero__egg" aria-hidden>
           🥚
@@ -553,7 +573,7 @@ function VideoEvolveCard({
   if (!vp || !plan) return null;
 
   return (
-    <section className="aipet-panel">
+    <section className="aipet-panel aipet-panel--hero">
       <SectionHead
         icon="🎬"
         title="视频进化 · 一次生成,全部学会"
@@ -578,12 +598,24 @@ function VideoEvolveCard({
         脚本共 {plan.seconds} 秒 · {plan.segments.length} 个动作 · {plan.desc}
       </p>
       <div className="aipet-timeline">
-        {plan.segments.map((seg, i) => (
-          <div key={i} className="aipet-timeline__seg" style={{ flex: seg.seconds }} title={seg.desc}>
-            <span className="aipet-timeline__state">{seg.stateName}</span>
-            <span className="aipet-timeline__time">{seg.seconds}s</span>
-          </div>
-        ))}
+        {plan.segments.map((seg, i) => {
+          // 原版标的是 `from–to` 区间而不是单段时长 —— 用户照着脚本演时
+          // 需要知道"第几秒该换动作",单看时长还得自己做加法。
+          const from = plan.segments.slice(0, i).reduce((s, x) => s + x.seconds, 0);
+          return (
+            <div
+              key={i}
+              className="aipet-timeline__seg"
+              style={{ flex: seg.seconds }}
+              title={seg.desc}
+            >
+              <span className="aipet-timeline__state">{seg.stateName}</span>
+              <span className="aipet-timeline__time">
+                {from}–{from + seg.seconds}s
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {session ? (
